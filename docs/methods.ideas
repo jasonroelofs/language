@@ -1,0 +1,155 @@
+Method syntax is IMO super important in building a language people like to use.
+I initially thought I wanted Smalltalk/Self-like methods, where it's always keyword-based:
+
+`Array#at:put: -> list at: 0 put: 10`
+
+However, to then make methods chainable these languages made use of the comma:
+
+`list at: 0 put: 10, at: 1 put: 11, at: 2 put: 20`
+
+I am not a huge fan of space-delimiting of message send. Maybe it's my Ruby background but
+I find it easier to read with periods for sending messages and commas to split arguments:
+
+`list.put(0, 10)`
+
+I really like keyword arguments though, and I think that should be the main way that methods are
+called as that encourages self-documenting code. However the wording cannot be the same as Smalltalk
+as context is simply different. Where in Smalltalk, `at:` is both part of the method name *and* the first parameter,
+we have a split between method name and all parameters.
+
+```
+list.put(10, at: 0)
+```
+
+And this is where nice syntax really comes into play. What we really want is this:
+
+```
+list[0] = 10
+list << 11
+```
+
+But this will come later with macros for syntax extensions. This will get rewritten to something like:
+
+```
+list.set(index: 0, value: 10)
+list.append(10)
+```
+
+My thoughts on method calling rules right now:
+
+* Methods with no parameters can be called without parentheses :: `list.size`
+* Methods with one parameter can be called without keywording the argument name :: `list.append(10)` or `list.append(value: 10)`
+* Methods with > 1 parameter are required to use keywords when calling :: `list.set(index: 0, value: 10)`
+* When using keywords, arguments do not have to be in the same order as the method definition :: `list.set(value: 10, index: 0)`
+
+Defining methods and blocks
+
+I'd like to try to stay with a single shared definition for any place that requires a block of code, but we shall
+see how well that works in practice. What I'd like to start with is the following:
+
+Methods are designated by curly brackets `{}`. Parameters to that block are via the `||` syntax
+
+No parameters: `{ ... }`
+
+One parameter: `{ |param| ... }`
+
+Multiple Parameters: `{ |param1, param2| ... }`
+
+Parameters with Defaults: `{ |param: "default"| ... }`
+
+Parameters with and without defaults: `{ |param1, param2: "default", param3| ... }`
+
+Varargs (`params` will be a hash of all passed in params): `{ |params...| ... }`
+  - As multiple parameters require keywords, varargs will always pass in a dictionary/hash of the parameters
+
+If the method takes one parameter and that parameter is itself a method/block, parameters are not necessary.
+  - `method { |element| ... }`
+
+These will create a `Method` object that responds to the `call` message. When created in the context of
+an object:
+
+```
+obj = Object.new(
+  size: {
+    1
+  },
+  print: (message) {
+    message
+  }
+)
+
+obj.size # => 1
+obj.print "this is amazing" # => "this is amazing"
+```
+
+Calling the method will also bind the variable `self` to the scope for access to that method's other slots.
+
+All methods should be closures.
+
+Are parentheses fully optional? Ruby-esque?
+
+Methods will apply implicit return of the last value in the message, or make use of the `return` keyword.
+
+Methods can be defined as anonymous for iterators and the like.
+
+```
+list.each (item) { # <= Ambiguity!
+
+}
+```
+
+```
+list.each { |item|
+}
+
+obj = Object.new(
+  print: { |message|
+  },
+  print: { |message: "default"|
+  },
+  print: { |param1, param2, message: "default", rest... |
+  }
+)
+```
+
+Object.new can be implemented with var-args. Iterate over every key and `addSlot(name, value)`.
+
+Do we support multiple dispatch? Find the matching message based on name and parameters?
+  - This would be difficult for single-parameter methods as we don't require keywording that parameter.
+    The compiler would need to reject the definition as ambiguous.
+  - Neat idea but probably impracticle. Good naming choices fixes a lot of these problems, and we aren't
+    staticly typed so can't use type information.
+
+## Documentation
+
+Designing for humans is the core of everything this language will do, and part of that is providing and designing to support documentation as a first-class citizen.
+
+Now, this may be a bit more complicated as we don't have static locations to lock said documentation like you would in a class-based language. We could do something like Python, where if a method includes a triple-delimited (`"""`) string as it's first expression, that is the method's documentation (called the "Docstring" https://www.python.org/dev/peps/pep-0257/). I'm not personally a big fan of how that splits the definition with its implementation. We could do something that's part of the parser (Gather up all `#` lines directly preceding a block) but I'm not sure that would work with such a simple setup as is currently defined.
+
+```
+Array = Object.new(
+  # The current number of elements in the array
+  size: { ... }
+
+  # Add the given object to the end of the array
+  append: { |obj| ... }
+)
+```
+
+The documentation needs to be attached to the slot name, or possibly the slot itself, and in the case of object creation this is nothing more than a list of arguments that will eventually be turned into slots.
+
+Smalltalk implements it as a message send, `Account comment: "My documentation here"`. Smalltalk also has the concept of 'categories" for grouping methods together (https://www.gnu.org/software/smalltalk/manual/html_node/Defining-methods.html#Defining-methods). Ah, Smalltalk does the same thing as Python but does not have any built-in tools for extracting that comment. It's really nothing more than a throw-away statement.
+
+I want to be able to do something like:
+
+```
+Array.help        # => "An Array is a contiguous collection of objects"
+
+obj = Array.new
+
+obj.help("size")  # => "The current number of elements in the array"
+```
+
+Julia does it by letting you define a string immediately preceding the function (https://docs.julialang.org/en/v1/manual/documentation/). Julia also has a macro, @doc, for documenting anything else.
+
+With `Object.new()` being just a keyword function call, we could make docs work there but how about cases where an object is built up over time? Documentation when using `obj.addSlot()`?

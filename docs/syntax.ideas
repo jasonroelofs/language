@@ -1,0 +1,128 @@
+Simplest base syntax, prototypal objects
+
+Variable case like Ruby. Upper-case names are the Prototypes, lowercase are the objects (???).
+
+```
+obj = object.clone do
+  addSlot: "name", is: "Test Object"
+  addSlot: "version", is: 1
+
+  addSlot: "sum", is: (x, y) -> {
+    x + y
+  }
+end
+```
+
+Or less strict? Or syntax sugar? Assignment is "set in slot". Or do we need "addSlot" vs "updateSlot"?
+IO has `:=` and `::=` which is confusing
+
+```
+obj = object.clone do
+  name = "Test Object"
+  version = 1
+
+  sum = (x, y) -> { x + y }
+end
+```
+
+There will be different kinds of slots. Metadata slots, parent slots. Need a way of differentiating?
+
+Everything is intended to be a message to an object (Self / Smalltalk).
+
+Defining methods on the prototype itself. `define` could be a macro that calls `addSlot`
+
+```
+object.prototype do
+  addSlot: "sum", is: (x, y) -> { x + y }
+
+  define: "sum", as: (x, y) -> { x + y }
+
+  define "sum" do |x, y|
+    
+  end
+end
+```
+
+Defining "blocks". I'd prefer Ruby-esque, `do...end` or `{ ... }`. Problem with `{ ... }` is that it's also the syntax for hashes so that makes the grammar non-context-free. Smalltalk does `[]` for blocks and `#()` for arrays. IO does `( )` for blocks, does not have syntax for arrays `List clone` or hashes `Dict clone`. If we do `do ... end` then we probably need two forms, one for inline and one for multi-line. Seems excessive to start already at that point.
+
+```
+Car = Object.new(
+  make: "",
+  model: "",
+  year: 0,
+  speed: 0,
+  direction: 0,
+  go: {
+    speed += 1
+  },
+  stop: {
+    speed -= 1
+  },
+  steer: direction {
+    # Turn left or right
+  },
+  steer: { |direction|
+    
+  },
+  steer: (direction) {
+
+  },
+  openDoors: (left, right) {
+
+  }
+)
+
+audi = Car.new(make: "Audi", model: "A8", year: 2018)
+audi = new Car(make: "Audi", model: "A8", year: 2018)
+audi = Car.clone(make: "Audi", model: "A8", year: 2018)
+
+car.make
+car.model
+car.year
+
+audi.make
+audi.go
+audi.speed
+
+car.go
+car.stop
+car.steer: "left"
+
+Stack = Object.new(
+  store: [],
+  ptr: 0,
+  push: thing {
+    store[ptr] = thing
+    ptr += 1
+  },
+  pop: {
+    obj = store[ptr]
+    ptr -= 1
+    obj
+  }
+).freeze
+
+stack = Stack.new
+stack.push 1
+stack.push 2
+stack.push 3
+stack.pop
+
+Array = Object.new(
+  store: [],
+
+  @syntax([index] = obj)
+  at: index, put: obj {
+    store[index] = obj
+  }
+).freeze
+
+Array.refine(
+  size: {
+  }
+)
+
+list = List.new
+list.at: 4, put: 10
+list[4] = 10
+```

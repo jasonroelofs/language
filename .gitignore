@@ -1,1 +1,5 @@
+# Build artifacts go here
+dist
+
+# Package install location
 node_modules

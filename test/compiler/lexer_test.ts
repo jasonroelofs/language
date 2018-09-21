@@ -1,6 +1,6 @@
 import "mocha"
 import * as assert from "assert"
-import Lexer from "../../src/compiler/lexer"
+import Lexer from "@compiler/lexer"
 
 describe("Lexer", () => {
   it("works", () => {

@@ -10,16 +10,16 @@ export default class Lexer {
     this.currentPos = 0
   }
 
-  nextToken(): Token {
-    // console.log("Next token. Current position is %o", this.currentPos)
-
-    if(this.atEOF()) {
-      return { type: TokenType.EOF }
-    }
+  tokenize(): Array<Token> {
+    var tokens: Array<Token> = []
 
     // Neat pattern from CoffeeScript's lexer.
     var chunk: string
     while(chunk = this.input.substring(this.currentPos)) {
+
+      if(chunk == "") {
+        break
+      }
 
       let token =
         this.numberToken(chunk) ||
@@ -27,9 +27,11 @@ export default class Lexer {
 
       if(token) {
         this.consume(token.value)
-        return token
+        tokens.push(token)
       }
     }
+
+    return tokens
   }
 
   numberToken(chunk: string) {
@@ -61,16 +63,11 @@ export default class Lexer {
     }
   }
 
-  atEOF() {
-    return this.currentPos >= this.input.length
-  }
-
   /**
    * Regex matchers
    */
 
   // Match all number types.
-  //
   NUMBER_REGEX = /^\d*\.?\d+/
 
   UNKNOWN_REGEX = /^\S+/

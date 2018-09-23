@@ -20,7 +20,6 @@ describe("Lexer", () => {
       // Does not match
       { type: TokenType.Unknown, value: "start" },
       { type: TokenType.Unknown, value: "end5" },
-      { type: TokenType.EOF }
     ]
 
     assertTokens(input, expected)
@@ -29,10 +28,7 @@ describe("Lexer", () => {
 
 function assertTokens(input, expected) {
   let lexer = new Lexer(input)
+  let tokens = lexer.tokenize()
 
-  for(let token of expected) {
-    let next = lexer.nextToken()
-
-    assert.deepEqual(token, next)
-  }
+  assert.deepEqual(tokens, expected)
 }

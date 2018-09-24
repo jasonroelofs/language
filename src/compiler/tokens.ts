@@ -1,5 +1,8 @@
 export enum TokenType {
   Number = "NUMBER",
+  Identifier = "IDENTIFIER",
+  Operator = "OPERATOR",
+
   Unknown = "UNKNOWN",
   EOF = "EOF",
 }

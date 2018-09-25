@@ -1,4 +1,4 @@
-import { Token, TokenType } from "@compiler/tokens"
+import { Token, TokenType, tokenLength } from "@compiler/tokens"
 
 export default class Lexer {
 
@@ -26,12 +26,13 @@ export default class Lexer {
 
       let token =
         this.numberToken(chunk) ||
+        this.stringToken(chunk) ||
         this.operatorToken(chunk) ||
         this.identifierToken(chunk) ||
         this.unknownToken(chunk)
 
       if(token) {
-        this.consume(token.value)
+        this.consume(token)
         tokens.push(token)
       }
     }
@@ -49,11 +50,21 @@ export default class Lexer {
     }
   }
 
-  identifierToken(chunk: string) {
-    let test = chunk.match(this.IDENTIFIER_REGEX)
+  // Find a string that contains all letters between matching single (')
+  // or double (") quotes, but not including those wrapping quotes, and making
+  // sure to handle escaped matching quotes, e.g. ("\"" should return the string: `"`)
+  stringToken(chunk: string) {
+    let starter = chunk[0]
+    if(starter == '"' || starter == "'") {
 
-    if(test) {
-      return { type: TokenType.Identifier, value: test[0] }
+      for(var i = 1; i < chunk.length; i++) {
+        if(chunk[i] == starter && chunk[i-1] != "\\") {
+          return { type: TokenType.String, value: chunk.substring(1, i), source: chunk.substring(0, i+1) }
+        }
+      }
+
+      // TODO: We have an unterminated String, this needs to error
+      return { type: TokenType.Unknown, value: chunk }
     } else {
       return null
     }
@@ -61,6 +72,23 @@ export default class Lexer {
 
   operatorToken(chunk: string) {
     var test: string
+
+    switch(chunk[0]) {
+      case "(":
+        return { type: TokenType.OpenParen, value: "(" }
+      case ")":
+        return { type: TokenType.CloseParen, value: ")" }
+      case "{":
+        return { type: TokenType.OpenBlock, value: "{" }
+      case "}":
+        return { type: TokenType.CloseBlock, value: "}" }
+      case ":":
+        return { type: TokenType.Colon, value: ":" }
+      case ",":
+        return { type: TokenType.Comma, value: "," }
+      case "|" :
+        return { type: TokenType.Pipe, value: "|" }
+    }
 
     test = chunk.substring(0, 2)
     if(this.COMPOUND_OPERATORS.indexOf(test) > -1) {
@@ -75,6 +103,17 @@ export default class Lexer {
     return null
   }
 
+  identifierToken(chunk: string) {
+    let test = chunk.match(this.IDENTIFIER_REGEX)
+
+    if(test) {
+      return { type: TokenType.Identifier, value: test[0] }
+    } else {
+      return null
+    }
+  }
+
+
   // Fall-through final token type if nothing else matches
   // Grab everything up til the next whitespace.
   unknownToken(chunk: string) {
@@ -82,8 +121,8 @@ export default class Lexer {
     return { type: TokenType.Unknown, value: match[0] }
   }
 
-  consume(chunk: string) {
-    this.currentPos += chunk.length
+  consume(token: Token) {
+    this.currentPos += tokenLength(token)
     this.skipWhitespace()
   }
 

@@ -37,7 +37,6 @@ describe("Lexer", () => {
       b2two
       c3three3
 
-      resumé
       こんにちは
       Здравствуйте
       Χαίρετε
@@ -59,10 +58,39 @@ describe("Lexer", () => {
       { type: TokenType.Identifier, value: "c3three3" },
 
       // Unicode
-      { type: TokenType.Identifier, value: "resumé" },
       { type: TokenType.Identifier, value: "こんにちは" },
       { type: TokenType.Identifier, value: "Здравствуйте" },
       { type: TokenType.Identifier, value: "Χαίρετε" },
+    ]
+
+    assertTokens(input, expected)
+  })
+
+  it("tokenizes strings", () => {
+    let input = `
+      "one"
+      'two'
+      "thr'ee"
+      'fo"ur'
+      "fi\\"ve"
+      'si\\'x'
+      "sev\nen"
+      "ei\tght"
+      "nine\\"nine\\\\"nine\\\\\\"nine"
+      "こんにちは"
+    `
+
+    let expected = [
+      { type: TokenType.String, value: `one` },
+      { type: TokenType.String, value: `two` },
+      { type: TokenType.String, value: `thr'ee` },
+      { type: TokenType.String, value: `fo"ur` },
+      { type: TokenType.String, value: `fi\\"ve` },
+      { type: TokenType.String, value: `si\\'x` },
+      { type: TokenType.String, value: `sev\nen` },
+      { type: TokenType.String, value: `ei\tght` },
+      { type: TokenType.String, value: `nine\\"nine\\\\"nine\\\\\\"nine` },
+      { type: TokenType.String, value: `こんにちは` },
     ]
 
     assertTokens(input, expected)
@@ -139,11 +167,102 @@ describe("Lexer", () => {
 
     assertTokens(input, expected)
   })
+
+  it("tokenizes parentheses and groupings", () => {
+    let input = `
+      (1 + 2) * 3
+      obj.method(1)
+    `
+
+    let expected = [
+      { type: TokenType.OpenParen, value: "(" },
+      { type: TokenType.Number, value: "1" },
+      { type: TokenType.Operator, value: "+" },
+      { type: TokenType.Number, value: "2" },
+      { type: TokenType.CloseParen, value: ")" },
+      { type: TokenType.Operator, value: "*" },
+      { type: TokenType.Number, value: "3" },
+
+      { type: TokenType.Identifier, value: "obj" },
+      { type: TokenType.Operator, value: "." },
+      { type: TokenType.Identifier, value: "method" },
+      { type: TokenType.OpenParen, value: "(" },
+      { type: TokenType.Number, value: "1" },
+      { type: TokenType.CloseParen, value: ")" },
+    ]
+
+    assertTokens(input, expected)
+  })
+
+  it("tokenizes method calls with arguments", () => {
+    let input = `
+      send(arg1: 1, arg2: var1, arg3: (1 + 2))
+    `
+
+    let expected = [
+      { type: TokenType.Identifier, value: "send" },
+      { type: TokenType.OpenParen, value: "(" },
+
+      { type: TokenType.Identifier, value: "arg1" },
+      { type: TokenType.Colon, value: ":" },
+      { type: TokenType.Number, value: "1" },
+      { type: TokenType.Comma, value: "," },
+
+      { type: TokenType.Identifier, value: "arg2" },
+      { type: TokenType.Colon, value: ":" },
+      { type: TokenType.Identifier, value: "var1" },
+      { type: TokenType.Comma, value: "," },
+
+      { type: TokenType.Identifier, value: "arg3" },
+      { type: TokenType.Colon, value: ":" },
+      { type: TokenType.OpenParen, value: "(" },
+      { type: TokenType.Number, value: "1" },
+      { type: TokenType.Operator, value: "+" },
+      { type: TokenType.Number, value: "2" },
+      { type: TokenType.CloseParen, value: ")" },
+      { type: TokenType.CloseParen, value: ")" },
+    ]
+
+    assertTokens(input, expected)
+  })
+
+  it("tokenizes method bodies", () => {
+    let input = `
+      map { |arg1, arg2: default| arg1 + arg2 }
+    `
+
+    let expected = [
+      { type: TokenType.Identifier, value: "map" },
+      { type: TokenType.OpenBlock, value: "{" },
+
+      { type: TokenType.Pipe, value: "|" },
+      { type: TokenType.Identifier, value: "arg1" },
+      { type: TokenType.Comma, value: "," },
+
+      { type: TokenType.Identifier, value: "arg2" },
+      { type: TokenType.Colon, value: ":" },
+      { type: TokenType.Identifier, value: "default" },
+      { type: TokenType.Pipe, value: "|" },
+
+      { type: TokenType.Identifier, value: "arg1" },
+      { type: TokenType.Operator, value: "+" },
+      { type: TokenType.Identifier, value: "arg2" },
+
+      { type: TokenType.CloseBlock, value: "}" },
+    ]
+
+    assertTokens(input, expected)
+  })
 })
 
 function assertTokens(input, expected) {
   let lexer = new Lexer(input)
   let tokens = lexer.tokenize()
 
-  assert.deepEqual(tokens, expected)
+  assert.equal(tokens.length, expected.length)
+
+  for(var i = 0; i < tokens.length; i++) {
+    assert.equal(tokens[i].type, expected[i].type)
+    assert.equal(tokens[i].value, expected[i].value)
+  }
 }

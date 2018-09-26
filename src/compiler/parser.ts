@@ -32,9 +32,12 @@ export default class Parser {
     case TokenType.Number:
       this.index += 1
       return { type: NodeType.NumberLiteral, value: parseFloat(token.value) }
+    case TokenType.String:
+      this.index += 1
+      return { type: NodeType.StringLiteral, value: token.value }
     }
 
-    throw new Error("Don't know how to handle a token of type: " + token.type)
+    throw new Error("[Parser] Don't know how to handle a token of type: " + token.type)
   }
 
   currToken(): Token {

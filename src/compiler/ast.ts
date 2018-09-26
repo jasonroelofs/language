@@ -1,5 +1,6 @@
 export enum NodeType {
-  NumberLiteral
+  NumberLiteral,
+  StringLiteral,
 }
 
 export interface Node {

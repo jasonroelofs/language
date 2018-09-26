@@ -16,6 +16,18 @@ describe("Parser", () => {
       assertExpression(test, tests[test])
     }
   })
+
+  it("parses Strings", () => {
+    let tests = {
+      '"one"'     : { type: NodeType.StringLiteral, value: "one" },
+      '"two and"' : { type: NodeType.StringLiteral, value: "two and" },
+      '"three\'s"' : { type: NodeType.StringLiteral, value: "three's" },
+    }
+
+    for(var test in tests) {
+      assertExpression(test, tests[test])
+    }
+  })
 })
 
 function assertExpression(input, expected) {

@@ -19,9 +19,32 @@ describe("Parser", () => {
 
   it("parses Strings", () => {
     let tests = {
-      '"one"'     : { type: NodeType.StringLiteral, value: "one" },
-      '"two and"' : { type: NodeType.StringLiteral, value: "two and" },
+      '"one"'      : { type: NodeType.StringLiteral, value: "one" },
+      '"two and"'  : { type: NodeType.StringLiteral, value: "two and" },
       '"three\'s"' : { type: NodeType.StringLiteral, value: "three's" },
+    }
+
+    for(var test in tests) {
+      assertExpression(test, tests[test])
+    }
+  })
+
+  it("parses identifiers", () => {
+    let tests = {
+      "var1"       : { type: NodeType.Identifier, value: "var1" },
+      "こんにちは" : { type: NodeType.Identifier, value: "こんにちは" },
+    }
+
+    for(var test in tests) {
+      assertExpression(test, tests[test])
+    }
+  })
+
+  it("parses special literals", () => {
+    let tests = {
+      "true"  : { type: NodeType.BooleanLiteral, value: true },
+      "false" : { type: NodeType.BooleanLiteral, value: false },
+      "null"  : { type: NodeType.NullLiteral },
     }
 
     for(var test in tests) {

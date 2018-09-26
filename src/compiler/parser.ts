@@ -32,6 +32,7 @@ export default class Parser {
     this.prefixParse = {
       [TokenType.Number]: () => this.parseNumberLiteral(),
       [TokenType.String]: () => this.parseStringLiteral(),
+      [TokenType.Identifier]: () => this.parseIdentifier(),
     }
 
     this.infixParse = {
@@ -85,6 +86,22 @@ export default class Parser {
     let token = this.currToken()
     this.nextToken()
     return { type: NodeType.StringLiteral, value: token.value }
+  }
+
+  parseIdentifier(): Node {
+    let token = this.currToken()
+    this.nextToken()
+
+    switch(token.value) {
+      case "true":
+        return { type: NodeType.BooleanLiteral, value: true }
+      case "false":
+        return { type: NodeType.BooleanLiteral, value: false }
+      case "null":
+        return { type: NodeType.NullLiteral }
+      default:
+        return { type: NodeType.Identifier, value: token.value }
+    }
   }
 
   currToken(): Token {

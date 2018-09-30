@@ -154,7 +154,7 @@ describe("Lexer", () => {
       { type: TokenType.Number, value: "2" },
 
       { type: TokenType.Identifier, value: "obj" },
-      { type: TokenType.Operator, value: "." },
+      { type: TokenType.Dot, value: "." },
       { type: TokenType.Identifier, value: "message" },
 
       // Unary
@@ -184,7 +184,7 @@ describe("Lexer", () => {
       { type: TokenType.Number, value: "3" },
 
       { type: TokenType.Identifier, value: "obj" },
-      { type: TokenType.Operator, value: "." },
+      { type: TokenType.Dot, value: "." },
       { type: TokenType.Identifier, value: "method" },
       { type: TokenType.OpenParen, value: "(" },
       { type: TokenType.Number, value: "1" },

@@ -88,6 +88,8 @@ export default class Lexer {
         return { type: TokenType.Comma, value: "," }
       case "|" :
         return { type: TokenType.Pipe, value: "|" }
+      case ".":
+        return { type: TokenType.Dot, value: "." }
     }
 
     test = chunk.substring(0, 2)
@@ -161,7 +163,7 @@ export default class Lexer {
   IDENTIFIER_REGEX = /^[^\d\.](?:(?!\s)[\w\x7f-\uffff]|_)+/
 
   // Operators
-  SINGLE_OPERATORS = ['+', '-', '*', '/', '>', '<', '!', '=', '.']
+  SINGLE_OPERATORS = ['+', '-', '*', '/', '>', '<', '!', '=']
   COMPOUND_OPERATORS = ['>=', '<=', '!=', '==']
 
   UNKNOWN_REGEX = /^\S+/

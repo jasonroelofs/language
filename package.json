@@ -8,8 +8,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "tsc && tspath -f && mocha dist/**/*_test.js",
-    "tsc": "tsc && tspath -f"
+    "build": "tsc && tspath -f",
+    "test": "npm run-script build && mocha dist/**/*_test.js"
   },
   "dependencies": {
     "@types/mocha": "^5.2.5",

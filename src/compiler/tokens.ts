@@ -11,6 +11,7 @@ export enum TokenType {
   Comma = "COMMA",
   Colon = "COLON",
   Pipe = "PIPE",
+  Dot = "DOT",
 
   Unknown = "UNKNOWN",
   EOF = "EOF",

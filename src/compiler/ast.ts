@@ -4,12 +4,16 @@ export enum NodeType {
   BooleanLiteral,
   NullLiteral,
 
+  MessageSend,
+  Message,
+  Argument,
+
   Identifier,
 }
 
 export interface Node {
   type: NodeType
-  value?: number | string | boolean
+  [propName: string]: any
 }
 
 export interface Expression {

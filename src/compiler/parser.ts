@@ -14,6 +14,7 @@ enum Precedence {
 
 
 let Precedences = {
+  [TokenType.Dot]: Precedence.Index
 }
 
 export default class Parser {
@@ -36,6 +37,7 @@ export default class Parser {
     }
 
     this.infixParse = {
+      [TokenType.Dot]: (left) => this.parseMessageSend(left),
     }
   }
 
@@ -57,18 +59,17 @@ export default class Parser {
 
     let prefix = this.prefixParse[token.type]
     if (prefix == null) {
-      throw new Error("[Parser] No defined Prefix function for token type: " + token.type)
+      throw new Error("[Parser] No defined prefix function for token type: " + token.type)
     }
 
     var leftExp = prefix()
 
-    while (this.peekToken() && precedence < this.peekPrecedence()) {
-      let infix = this.infixParse[this.peekToken().type]
+    while (this.currToken() && precedence < this.currPrecedence()) {
+      let infix = this.infixParse[this.currToken().type]
+
       if (infix == null) {
         return leftExp
       }
-
-      this.nextToken()
 
       leftExp = infix(leftExp)
     }
@@ -104,6 +105,28 @@ export default class Parser {
     }
   }
 
+  parseMessageSend(left: Node): Node {
+    // Move pass the "."
+    this.nextToken()
+
+    return {
+      type: NodeType.MessageSend,
+      object: left,
+      message: this.parseMessage()
+    }
+  }
+
+  parseMessage(): Node {
+    let token = this.currToken()
+    this.nextToken()
+
+    return {
+      type: NodeType.Message,
+      value: token.value,
+      arguments: []
+    }
+  }
+
   currToken(): Token {
     return this.tokens[this.index]
   }
@@ -121,6 +144,17 @@ export default class Parser {
     if (peek) {
       return peek
     } else {
+      console.log("Warning: No precedence level found for type %o", this.peekToken().type)
+      return Precedence.Lowest
+    }
+  }
+
+  currPrecedence(): number {
+    let curr = Precedences[this.currToken().type]
+    if (curr) {
+      return curr
+    } else {
+      console.log("Warning: No precedence level found for type %o", this.currToken().type)
       return Precedence.Lowest
     }
   }

@@ -1,14 +1,14 @@
 export enum NodeType {
-  NumberLiteral,
-  StringLiteral,
-  BooleanLiteral,
-  NullLiteral,
+  NumberLiteral = "NumberLiteral",
+  StringLiteral = "StringLiteral",
+  BooleanLiteral = "BooleanLiteral",
+  NullLiteral = "NullLiteral",
 
-  MessageSend,
-  Message,
-  Argument,
+  MessageSend = "MessageSend",
+  Message = "Message",
+  Argument = "Argument",
 
-  Identifier,
+  Identifier = "Identifier",
 }
 
 export interface Node {

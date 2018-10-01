@@ -5,13 +5,13 @@ Syntax is meant to be as small as possible, in the vein of Smalltalk/Pharo, Self
 
 But the syntax is also meant to be readable and straight forward. As a Ruby guy, developer happiness is a great goal. We should enjoy working in a language.
 
-We also need to adhere to the Principle of Least Surprise. What do people expect to happen? Make sure it does that. One problem with Smalltalk and friends is that it does not adhere to mathematical operator presedence. 2 + 3 * 5 == 25 in these languages, and that is a non starter. Ruby can do it, we should too.
+We also need to adhere to the Principle of Least Surprise. What do people expect to happen? Make sure it does that. One problem with Smalltalk and friends is that it does not adhere to mathematical operator presedence. 2 + 3 * 5 == 25 in these languages, and that is a non starter. Ruby and IO can do it right; we should too.
 
 Smalltalk does have some semblance of operator precedence: unary operators, binary, keywords, assignment.
 
 What about NULL? Should we support it? Should we enforce null safety? Go the Swift/Kotlin route of explicitly marking a variable as nullable?
 
-**Comments**
+### Comments
 
 Comments are ignored and are used to document the code. Try to document the "why" and/or "how", as the code will tell you the "what".
 
@@ -21,7 +21,7 @@ Comments are ignored and are used to document the code. Try to document the "why
 1 + 2 * 3  # They can also go on the end of a line
 ```
 
-**Math**
+### Math
 
 Mathematical operators follow the expected operator precedence. * / + -.
 
@@ -33,7 +33,7 @@ Mathematical operators follow the expected operator precedence. * / + -.
 1/2 + 3/4   # 1.25
 ```
 
-**Variables and Assignment**
+### Variables and Assignment
 
 Local variables are creatable with the `=` operator.
 
@@ -53,7 +53,9 @@ obj.addSlot(name: "size", value: { 4 })
 obj.size = { 5 }
 ```
 
-**Conditionals**
+The `=` operator is syntax sugar for `@locals.addSlot`. Every scope will have its own `@locals` object which is used for scoping.
+
+### Conditionals
 
 Booleans respond to the `do` message which takes the parameters `ifTrue` and `ifFalse`. Both of these parameters
 have an empty block as the default and thus aren't both required.
@@ -77,7 +79,7 @@ if(1 > 2) {
 }
 ```
 
-**Comparisons**
+### Comparisons
 
 Comparisons are the usual binary operators `>`, `<`, `>=`, `<=`, `==`, and `!=`. We also support the negation operator `!` which can be used twice `!!` to force a value to be a boolean.
 
@@ -96,16 +98,81 @@ obj = Object.new(
 
 Though do note that the default implementation of `!=` is nothing more than `!(self == b)`, so if you want to change equality then define `==` which will take care of equal and not-equal.
 
-**Loops**
+### Loops
 
 Loops are done through normal comprehensions.
 
 ```
-[1, 2, 3].each({ |element|
-})
+[1, 2, 3].each { |element|
+}
 ```
 
-**Objects and Inheritance**
+### Methods and Blocks
+
+Blocks are created with curly brackets `{...}` and can have any number of defined arguments inside of pipe characters `|...|`. Blocks support the `return` keyword but will also return the last value of the block implicitly.
+
+```
+# Block with no arguments
+plain = { "Plain Block" }
+
+# Block with one argument
+oneArg = { |arg| "My argument is ${arg}" }
+
+# Block with multiple arguments
+add = { |x, y| x + y }
+
+# Block with default arguments
+split = { |str, on: ","| str.split(on) }
+```
+
+There are a couple of rules regarding how to execute blocks. All blocks respond to the `call` message which takes the arguments list and runs the block with those arguments. This is also wrapped around some syntax sugar that enables direct use of parantheses `()` to call a block. When there's more than one argument to a method, explicitly naming the arguments becomes required, unless that argument has a provided default.
+
+```
+plain.call
+# or
+plain()
+
+oneArg.call "argument"
+
+add.call x: 1, y: 2
+
+split(str: "Left,Right")
+# or
+split(str: "Hello World", on: " ")
+```
+
+All blocks are assignable objects as well as closures. When a block is assigned to a slot, it becomes a method, letting the block access other slots on that method either with `self` or implicitly. When sending such a message, you can just use the name of the slot. Parenthese are optional where there is no ambiguity in arguments.
+
+```
+obj = Object.new(
+  split: { |str, on: ","| str.split(on) }
+)
+
+obj.split str: "Left,Right"
+```
+
+
+Question: If a method ends up with just one argument due to the defaults of other arguments, should that require the one argument to be keyworded?
+
+```
+obj.split "Left,Right"
+```
+
+Blocks can also take other blocks as arguments!
+
+```
+around = { |other|
+  # do something
+  other.call
+  # do something
+}
+
+around {
+  # Wrap this
+}
+```
+
+### Objects and Inheritance
 
 You've already seen how to create new objects! Every object needs to be cloned from the base `Object` or any object that has thus been cloned from `Object`.
 
@@ -121,13 +188,13 @@ third.slot3  # => "This is slot 3"
 
 Capitalization of object variables has one important distinction. It is common for developers to want to define "types" that objects will adhere to. In many languages this is accomplished with a class-based syntax, but that leads to very restrictive object models that fight against modification and malleability. Instead, we let everything be objects, but if the variable holding an object starts with a Capital letter, then it will be considered a "type" ("trait"?) and will show up in the Workbench as an available tool to use. Making use of the "tool" will create a new object from that tool to actually use in the application.
 
-**Multiple parents**
+### Multiple parents
 
 Our way of implementing mixins is through multiple parents. Any object starts with one parent but can be given any number of parents afterward. Use the `addParent` message to do so:
 
 ```
 Helpers = Object.new(help: { "This is help!" })
-obj = Object.new(this: "that")
+obj = Object.new
 
 obj.addParent(Helpers)
 
@@ -139,12 +206,12 @@ Message lookup when working with multiple parents is done via a Depth-first sear
 You can see the order of parents a current object has by calling `parents`
 
 ```
-obj1 = Object.new()
-obj2 = obj1.new()
-obj3 = obj2.new()
+obj1 = Object.new
+obj2 = obj1.new
+obj3 = obj2.new
 obj4 = Object.new
 
-obj3.addParent(obj4)
+obj3.addParent obj4
 
 obj1.parents # => [Object]
 obj2.parents # => [obj1]
@@ -190,7 +257,7 @@ size.call   # => 0
 
 ## Available data types
 
-**Array**
+### Array
 
 Arrays are contiguous collections of objects. Create one manually or you can use the syntax `[]`. Arrays can be used as stacks.
 
@@ -205,11 +272,11 @@ a2.push(4)
 a2.size        # => 4
 ```
 
-**Hash**
+### Hash
 
 Is a "Hash" just another name for an object? Syntax sugar `[]` and `[]=`? Maybe I should have syntax sugar for creating a base object. I don't like the ambiguous form of `{}` in Ruby for block and Hash, so if `{}` is block of code, `[]` is a list, what should a Hash be? `%{}` (`#` is comment, that's out)? What about `()`? That's got weird connotations related to method calls.
 
-**String**
+### String
 
 Strings are as any other language. Anything between single (') or double (") quote marks. The quote marks must match and can be embedded in each other (`"'"`, `'"'`). Explicit escaping is done with the backslash (`" \" \" "`).
 

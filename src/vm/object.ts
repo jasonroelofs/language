@@ -2,7 +2,8 @@
 enum ObjectType {
   Null     = "Null",
   Boolean  = "Boolean",
-  Number   = "Number"
+  Number   = "Number",
+  String   = "String",
 }
 
 interface Object {

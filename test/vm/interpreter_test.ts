@@ -28,6 +28,33 @@ describe("Interpreter", () => {
       assertEval(test)
     }
   })
+
+  it("evaluates strings", () => {
+    let tests = [
+      { input: `"A String"`, result: "A String", type: ObjectType.String },
+      { input: `'Single Quotes'`, result: "Single Quotes", type: ObjectType.String },
+      { input: `"Nested\\"Quotes"`, result: `Nested\\"Quotes`, type: ObjectType.String },
+    ]
+
+    for(var test of tests) {
+      assertEval(test)
+    }
+  })
+
+  /*
+  it("evaulates local assignment", () => {
+    let tests = [
+      // Assignment returns the value assigned
+      { input: "a = 1", result: 1, type: ObjectType.Number },
+      // Accessing the local slot returns the stored value
+      { input: "a = 2\na", result: 2, type: ObjectType.Number },
+    ]
+
+    for(var test of tests) {
+      assertEval(test)
+    }
+  })
+  */
 })
 
 function assertEval(test) {

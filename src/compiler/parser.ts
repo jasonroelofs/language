@@ -1,3 +1,4 @@
+import * as util from "util"
 import { Token, TokenType } from "@compiler/tokens"
 import { Expression, Node, NodeType } from "@compiler/ast"
 
@@ -59,7 +60,7 @@ export default class Parser {
 
     let prefix = this.prefixParse[token.type]
     if (prefix == null) {
-      throw new Error("[Parser] No defined prefix function for token type: " + token.type)
+      throw new Error(util.format("[Parser] No defined prefix function for token: %o", token))
     }
 
     var leftExp = prefix()

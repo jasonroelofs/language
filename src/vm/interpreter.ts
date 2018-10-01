@@ -35,6 +35,9 @@ export default class Interpreter {
       case NodeType.BooleanLiteral:
         return node.value ? True : False
 
+      case NodeType.StringLiteral:
+        return { type: ObjectType.String, value: node.value }
+
       case NodeType.NullLiteral:
         return Null
 

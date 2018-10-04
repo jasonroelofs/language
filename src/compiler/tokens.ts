@@ -1,7 +1,6 @@
 export enum TokenType {
   Number = "NUMBER",
   Identifier = "IDENTIFIER",
-  Operator = "OPERATOR",
   String = "STRING",
 
   OpenParen = "OPEN_PAREN",
@@ -12,6 +11,19 @@ export enum TokenType {
   Colon = "COLON",
   Pipe = "PIPE",
   Dot = "DOT",
+
+  Plus = "PLUS",
+  Minus = "MINUS",
+  Multiply = "MULTIPLY",
+  Divide = "DIVIDE",
+  Assign = "ASSIGN",
+  LessThan = "LESS_THAN",
+  LessThanEqual = "LESS_THAN_OR_EQUAL",
+  GreaterThan = "GREATER_THAN",
+  GreaterThanEqual = "GREATER_THAN_OR_EQUAL",
+  Equal = "EQUAL",
+  NotEqual = "NOT_EQUAL",
+  Bang = "BANG",
 
   Unknown = "UNKNOWN",
   EOF = "EOF",

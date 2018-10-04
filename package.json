@@ -8,6 +8,7 @@
     "test": "test"
   },
   "scripts": {
+    "clean": "rm -rf dist",
     "build": "tsc && tspath -f",
     "test": "npm run-script build && mocha dist/**/*_test.js"
   },

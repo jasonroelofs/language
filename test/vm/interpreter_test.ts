@@ -41,8 +41,7 @@ describe("Interpreter", () => {
     }
   })
 
-  /*
-  it("evaulates local assignment", () => {
+  it("evaulates local assignment and lookup", () => {
     let tests = [
       // Assignment returns the value assigned
       { input: "a = 1", result: 1, type: ObjectType.Number },
@@ -54,7 +53,6 @@ describe("Interpreter", () => {
       assertEval(test)
     }
   })
-  */
 })
 
 function assertEval(test) {

@@ -15,7 +15,8 @@ enum Precedence {
 
 
 let Precedences = {
-  [TokenType.Dot]: Precedence.Index
+  [TokenType.Dot]: Precedence.Index,
+  [TokenType.Assign]: Precedence.Assign,
 }
 
 export default class Parser {
@@ -39,6 +40,7 @@ export default class Parser {
 
     this.infixParse = {
       [TokenType.Dot]: (left) => this.parseMessageSend(left),
+      [TokenType.Assign]: (left) => this.parseAssignment(left),
     }
   }
 
@@ -128,6 +130,22 @@ export default class Parser {
     }
   }
 
+  parseAssignment(left: Node): Node {
+    let token = this.currToken()
+    let precedence = this.currPrecedence()
+    this.nextToken()
+
+    // TODO: Make sure that left is an Identifier
+    // so that we are always assigning to something that can be looked up
+    // and used later.
+
+    return {
+      type: NodeType.Assignment,
+      name: left.value,
+      right: this.parseExpression(precedence)
+    }
+  }
+
   currToken(): Token {
     return this.tokens[this.index]
   }
@@ -140,22 +158,11 @@ export default class Parser {
     }
   }
 
-  peekPrecedence(): number {
-    let peek = Precedences[this.peekToken().type]
-    if (peek) {
-      return peek
-    } else {
-      console.log("Warning: No precedence level found for type %o", this.peekToken().type)
-      return Precedence.Lowest
-    }
-  }
-
   currPrecedence(): number {
     let curr = Precedences[this.currToken().type]
     if (curr) {
       return curr
     } else {
-      console.log("Warning: No precedence level found for type %o", this.currToken().type)
       return Precedence.Lowest
     }
   }

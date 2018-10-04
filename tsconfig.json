@@ -5,6 +5,7 @@
     "outDir": "dist",
     "sourceMap": true,
     "moduleResolution": "node",
+    "alwaysStrict": true,
     "baseUrl": ".",
     "paths": {
       "@compiler/*": ["src/compiler/*"],

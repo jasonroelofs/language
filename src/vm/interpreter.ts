@@ -2,10 +2,14 @@ import Lexer from "@compiler/lexer"
 import Parser from "@compiler/parser"
 import { Node, NodeType, Expression } from "@compiler/ast"
 import { Object, ObjectType, Null, True, False } from "@vm/object"
+import Environment from "@vm/environment"
 
 export default class Interpreter {
 
+  currentScope: Environment
+
   constructor() {
+    this.currentScope = new Environment()
   }
 
   eval(program: string): Object {
@@ -19,16 +23,24 @@ export default class Interpreter {
     var ret = Null
 
     for(var expression of expressions) {
-      ret = this.evalExpression(expression)
+      ret = this.evalNode(expression.node)
     }
 
     return ret
   }
 
-  evalExpression(expression: Expression): Object {
-    let node = expression.node
-
+  evalNode(node: Node): Object {
     switch(node.type) {
+      case NodeType.Assignment:
+        debugger
+        let varName = node.name
+        let varValue = this.evalNode(node.right)
+        this.currentScope.set(varName, varValue)
+        return varValue
+
+      case NodeType.Identifier:
+        return this.currentScope.get(node.value)
+
       case NodeType.NumberLiteral:
         return { type: ObjectType.Number, value: node.value }
 
@@ -42,7 +54,7 @@ export default class Interpreter {
         return Null
 
       default:
-        console.log("[Eval] Don't know how to evaluate node of type %o", node.type)
+        console.log("[Eval] Don't know how to evaluate node %o", node)
         return Null
     }
   }

@@ -107,6 +107,23 @@ describe("Parser", () => {
     }
   })
 
+  it("parses assignment", () => {
+    let tests = {
+      "a = 1" : {
+        type: NodeType.Assignment,
+        name: "a",
+        right: {
+          type: NodeType.NumberLiteral,
+          value: 1,
+        }
+      },
+    }
+
+    for(var test in tests) {
+      assertExpression(test, tests[test])
+    }
+  })
+
   /**
    * The following are syntax sugar and need to be rewritten to be
    * plain message sends on the object.

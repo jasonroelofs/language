@@ -71,8 +71,6 @@ export default class Lexer {
   }
 
   operatorToken(chunk: string) {
-    var test: string
-
     switch(chunk[0]) {
       case "(":
         return { type: TokenType.OpenParen, value: "(" }
@@ -92,14 +90,16 @@ export default class Lexer {
         return { type: TokenType.Dot, value: "." }
     }
 
-    test = chunk.substring(0, 2)
-    if(this.COMPOUND_OPERATORS.indexOf(test) > -1) {
-      return { type: TokenType.Operator, value: test }
+    var test = chunk.substring(0, 2)
+    var tokenType = this.COMPOUND_OPERATORS[test]
+    if(tokenType) {
+      return { type: tokenType, value: test }
     }
 
     test = chunk[0]
-    if(this.SINGLE_OPERATORS.indexOf(test) > -1) {
-      return { type: TokenType.Operator, value: test }
+    tokenType = this.SINGLE_OPERATORS[test]
+    if(tokenType) {
+      return { type: tokenType, value: test }
     }
 
     return null
@@ -114,7 +114,6 @@ export default class Lexer {
       return null
     }
   }
-
 
   // Fall-through final token type if nothing else matches
   // Grab everything up til the next whitespace.
@@ -160,11 +159,26 @@ export default class Lexer {
   //
   // Taken and modified from Coffeescript
   //
-  IDENTIFIER_REGEX = /^[^\d\.](?:(?!\s)[\w\x7f-\uffff]|_)+/
+  IDENTIFIER_REGEX = /^[^\d\.](?:(?!\s)[\w\x7f-\uffff])*/
 
   // Operators
-  SINGLE_OPERATORS = ['+', '-', '*', '/', '>', '<', '!', '=']
-  COMPOUND_OPERATORS = ['>=', '<=', '!=', '==']
+  SINGLE_OPERATORS = {
+    '+': TokenType.Plus,
+    '-': TokenType.Minus,
+    '*': TokenType.Multiply,
+    '/': TokenType.Divide,
+    '<': TokenType.LessThan,
+    '>': TokenType.GreaterThan,
+    '!': TokenType.Bang,
+    '=': TokenType.Assign,
+  }
+
+  COMPOUND_OPERATORS = {
+    '<=': TokenType.LessThanEqual,
+    '>=': TokenType.GreaterThanEqual,
+    '==': TokenType.Equal,
+    '!=': TokenType.NotEqual,
+  }
 
   UNKNOWN_REGEX = /^\S+/
 }

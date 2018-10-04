@@ -1,5 +1,6 @@
 import "mocha"
 import * as assert from "assert"
+import * as util from "util"
 import Lexer from "@compiler/lexer"
 import {Token, TokenType} from "@compiler/tokens"
 
@@ -27,6 +28,8 @@ describe("Lexer", () => {
 
   it("tokenizes identifiers", () => {
     let input = `
+      a
+      _
       variable
       snake_case
       smallCamelCase
@@ -44,6 +47,8 @@ describe("Lexer", () => {
 
     let expected = [
       // Basic identifiers
+      { type: TokenType.Identifier, value: "a" },
+      { type: TokenType.Identifier, value: "_" },
       { type: TokenType.Identifier, value: "variable" },
       { type: TokenType.Identifier, value: "snake_case" },
       { type: TokenType.Identifier, value: "smallCamelCase" },
@@ -114,43 +119,43 @@ describe("Lexer", () => {
     let expected = [
       // Normal math
       { type: TokenType.Number, value: "1" },
-      { type: TokenType.Operator, value: "+" },
+      { type: TokenType.Plus, value: "+" },
       { type: TokenType.Number, value: "2" },
-      { type: TokenType.Operator, value: "*" },
+      { type: TokenType.Multiply, value: "*" },
       { type: TokenType.Number, value: "3" },
-      { type: TokenType.Operator, value: "-" },
+      { type: TokenType.Minus, value: "-" },
       { type: TokenType.Number, value: "4" },
-      { type: TokenType.Operator, value: "/" },
+      { type: TokenType.Divide, value: "/" },
       { type: TokenType.Number, value: "5" },
 
       // Assignment
       { type: TokenType.Identifier, value: "obj" },
-      { type: TokenType.Operator, value: "=" },
+      { type: TokenType.Assign, value: "=" },
       { type: TokenType.Number, value: "1" },
 
       // Comparisons
       { type: TokenType.Number, value: "1" },
-      { type: TokenType.Operator, value: ">" },
+      { type: TokenType.GreaterThan, value: ">" },
       { type: TokenType.Number, value: "2" },
 
       { type: TokenType.Number, value: "1" },
-      { type: TokenType.Operator, value: ">=" },
+      { type: TokenType.GreaterThanEqual, value: ">=" },
       { type: TokenType.Number, value: "2" },
 
       { type: TokenType.Number, value: "1" },
-      { type: TokenType.Operator, value: "<" },
+      { type: TokenType.LessThan, value: "<" },
       { type: TokenType.Number, value: "2" },
 
       { type: TokenType.Number, value: "1" },
-      { type: TokenType.Operator, value: "<=" },
+      { type: TokenType.LessThanEqual, value: "<=" },
       { type: TokenType.Number, value: "2" },
 
       { type: TokenType.Number, value: "1" },
-      { type: TokenType.Operator, value: "==" },
+      { type: TokenType.Equal, value: "==" },
       { type: TokenType.Number, value: "2" },
 
       { type: TokenType.Number, value: "1" },
-      { type: TokenType.Operator, value: "!=" },
+      { type: TokenType.NotEqual, value: "!=" },
       { type: TokenType.Number, value: "2" },
 
       { type: TokenType.Identifier, value: "obj" },
@@ -158,10 +163,10 @@ describe("Lexer", () => {
       { type: TokenType.Identifier, value: "message" },
 
       // Unary
-      { type: TokenType.Operator, value: "!" },
+      { type: TokenType.Bang, value: "!" },
       { type: TokenType.Identifier, value: "true" },
 
-      { type: TokenType.Operator, value: "-" },
+      { type: TokenType.Minus, value: "-" },
       { type: TokenType.Number, value: "1" },
     ]
 
@@ -177,10 +182,10 @@ describe("Lexer", () => {
     let expected = [
       { type: TokenType.OpenParen, value: "(" },
       { type: TokenType.Number, value: "1" },
-      { type: TokenType.Operator, value: "+" },
+      { type: TokenType.Plus, value: "+" },
       { type: TokenType.Number, value: "2" },
       { type: TokenType.CloseParen, value: ")" },
-      { type: TokenType.Operator, value: "*" },
+      { type: TokenType.Multiply, value: "*" },
       { type: TokenType.Number, value: "3" },
 
       { type: TokenType.Identifier, value: "obj" },
@@ -217,7 +222,7 @@ describe("Lexer", () => {
       { type: TokenType.Colon, value: ":" },
       { type: TokenType.OpenParen, value: "(" },
       { type: TokenType.Number, value: "1" },
-      { type: TokenType.Operator, value: "+" },
+      { type: TokenType.Plus, value: "+" },
       { type: TokenType.Number, value: "2" },
       { type: TokenType.CloseParen, value: ")" },
       { type: TokenType.CloseParen, value: ")" },
@@ -245,7 +250,7 @@ describe("Lexer", () => {
       { type: TokenType.Pipe, value: "|" },
 
       { type: TokenType.Identifier, value: "arg1" },
-      { type: TokenType.Operator, value: "+" },
+      { type: TokenType.Plus, value: "+" },
       { type: TokenType.Identifier, value: "arg2" },
 
       { type: TokenType.CloseBlock, value: "}" },
@@ -259,7 +264,7 @@ function assertTokens(input, expected) {
   let lexer = new Lexer(input)
   let tokens = lexer.tokenize()
 
-  assert.equal(tokens.length, expected.length)
+  assert.equal(tokens.length, expected.length, "Wrong token lengths recorded")
 
   for(var i = 0; i < tokens.length; i++) {
     assert.equal(tokens[i].type, expected[i].type)

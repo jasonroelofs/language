@@ -4,11 +4,12 @@ export enum NodeType {
   BooleanLiteral = "BooleanLiteral",
   NullLiteral = "NullLiteral",
 
+  Identifier = "Identifier",
+  Assignment = "Assignment",
+
   MessageSend = "MessageSend",
   Message = "Message",
   Argument = "Argument",
-
-  Identifier = "Identifier",
 }
 
 export interface Node {

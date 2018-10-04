@@ -169,7 +169,6 @@ export default class Lexer {
     '/': TokenType.Divide,
     '<': TokenType.LessThan,
     '>': TokenType.GreaterThan,
-    '!': TokenType.Bang,
     '=': TokenType.Assign,
   }
 

@@ -17,6 +17,16 @@ enum Precedence {
 let Precedences = {
   [TokenType.Dot]: Precedence.Index,
   [TokenType.Assign]: Precedence.Assign,
+  [TokenType.Plus]: Precedence.Sum,
+  [TokenType.Minus]: Precedence.Sum,
+  [TokenType.Multiply]: Precedence.Product,
+  [TokenType.Divide]: Precedence.Product,
+  [TokenType.LessThan]: Precedence.Compare,
+  [TokenType.LessThanEqual]: Precedence.Compare,
+  [TokenType.GreaterThan]: Precedence.Compare,
+  [TokenType.GreaterThanEqual]: Precedence.Compare,
+  [TokenType.Equal]: Precedence.Equals,
+  [TokenType.NotEqual]: Precedence.Equals,
 }
 
 export default class Parser {
@@ -41,6 +51,16 @@ export default class Parser {
     this.infixParse = {
       [TokenType.Dot]: (left) => this.parseMessageSend(left),
       [TokenType.Assign]: (left) => this.parseAssignment(left),
+      [TokenType.Plus]: (left) => this.parseInfixExpression(left),
+      [TokenType.Minus]: (left) => this.parseInfixExpression(left),
+      [TokenType.Multiply]: (left) => this.parseInfixExpression(left),
+      [TokenType.Divide]: (left) => this.parseInfixExpression(left),
+      [TokenType.LessThan]: (left) => this.parseInfixExpression(left),
+      [TokenType.LessThanEqual]: (left) => this.parseInfixExpression(left),
+      [TokenType.GreaterThan]: (left) => this.parseInfixExpression(left),
+      [TokenType.GreaterThanEqual]: (left) => this.parseInfixExpression(left),
+      [TokenType.Equal]: (left) => this.parseInfixExpression(left),
+      [TokenType.NotEqual]: (left) => this.parseInfixExpression(left),
     }
   }
 
@@ -143,6 +163,27 @@ export default class Parser {
       type: NodeType.Assignment,
       name: left.value,
       right: this.parseExpression(precedence)
+    }
+  }
+
+  /**
+   * Convert non-custom-case infix expressions into regular
+   * message sends
+   */
+  parseInfixExpression(left: Node): Node {
+    let token = this.currToken()
+    this.nextToken()
+
+    return {
+      type: NodeType.MessageSend,
+      object: left,
+      message: {
+        type: NodeType.Message,
+        name: token.value,
+        arguments: [
+          this.parseExpression(Precedence.Lowest)
+        ]
+      }
     }
   }
 

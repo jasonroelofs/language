@@ -23,7 +23,6 @@ export enum TokenType {
   GreaterThanEqual = "GREATER_THAN_OR_EQUAL",
   Equal = "EQUAL",
   NotEqual = "NOT_EQUAL",
-  Bang = "BANG",
 
   Unknown = "UNKNOWN",
   EOF = "EOF",

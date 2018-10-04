@@ -116,7 +116,6 @@ describe("Lexer", () => {
       1 == 2
       1 != 2
       obj.message
-      !true
     `
 
     let expected = [
@@ -164,10 +163,6 @@ describe("Lexer", () => {
       { type: TokenType.Identifier, value: "obj" },
       { type: TokenType.Dot, value: "." },
       { type: TokenType.Identifier, value: "message" },
-
-      // Unary
-      { type: TokenType.Bang, value: "!" },
-      { type: TokenType.Identifier, value: "true" },
     ]
 
     assertTokens(input, expected)

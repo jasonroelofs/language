@@ -53,6 +53,51 @@ describe("Interpreter", () => {
       assertEval(test)
     }
   })
+
+  /*
+  it("evaluates known math operators", () => {
+    let tests = [
+      // Direct usage
+      { input: "1 + 2", result: 3, type: ObjectType.Number },
+      { input: "1 - 2", result: -2, type: ObjectType.Number },
+      { input: "1 * 2", result: 2, type: ObjectType.Number },
+      { input: "2 / 1", result: 1, type: ObjectType.Number },
+
+      // Operation Precedence
+      { input: "1 + 2 * 3", result: 7, type: ObjectType.Number },
+      { input: "2 / 1 + 4", result: 5, type: ObjectType.Number },
+      { input: "1 * 2 + 3 - 4 / 2", result: 2, type: ObjectType.Number },
+
+      // Variable eval
+      { input: "a = 1\na + 1", result: 3, type: ObjectType.Number },
+      { input: "b = 2\n1 + b", result: 3, type: ObjectType.Number },
+      { input: "a = 1\nb = 2\na + b", result: 3, type: ObjectType.Number },
+    ]
+
+    for(var test of tests) {
+      assertEval(test)
+    }
+  })
+
+  it("evaluates comparison operators", () => {
+    let tests = [
+      { input: "1 > 2",  result: false, type: ObjectType.Boolean },
+      { input: "1 >= 1", result: true, type: ObjectType.Boolean },
+      { input: "1 >= 2", result: false, type: ObjectType.Boolean },
+      { input: "1 < 2",  result: true, type: ObjectType.Boolean },
+      { input: "1 <= 2", result: true, type: ObjectType.Boolean },
+      { input: "1 <= 1", result: true, type: ObjectType.Boolean },
+      { input: "3 == 3", result: true, type: ObjectType.Boolean },
+      { input: "3 == 4", result: false, type: ObjectType.Boolean },
+      { input: "3 != 4", result: true, type: ObjectType.Boolean },
+      { input: "3 != 3", result: false, type: ObjectType.Boolean },
+    ]
+
+    for(var test of tests) {
+      assertEval(test)
+    }
+  })
+  */
 })
 
 function assertEval(test) {

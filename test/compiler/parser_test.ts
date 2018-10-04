@@ -129,21 +129,20 @@ describe("Parser", () => {
 
   /**
    * The following are syntax sugar and need to be rewritten to be
-   * plain message sends on the object.
-   *
-   * e.g. -1 => 1.send("*", -1)
-  it("parses prefix expressions", () => {
-    let tests = {
-      "-1"  : {
-        type: NodeType.PrefixExpression,
-        operator: "-",
-        right: { type: NodeType.NumberLiteral, value: 1 }
-      },
-      "!true" : {
-        type: NodeType.PrefixExpression,
-        operator: "!",
-        right: { type: NodeType.BooleanLiteral, value: true }
-      },
+   * message sends on the object.
+   */
+  it("parses infix expressions", () => {
+    let operators = [
+      "+", "-", "*", "/", "<", "<=", ">", ">=", "==", "!="
+    ]
+    var tests = {}
+
+    for(var op of operators) {
+      tests[`1 ${op} 2`] = {
+        type: NodeType.MessageSend,
+        object: { type: NodeType.NumberLiteral, value: "1" },
+        message: { type: NodeType.Message, name: op, arguments: [{ type: NodeType.NumberLiteral, value: "2" }] }
+      }
     }
 
     for(var test in tests) {
@@ -151,12 +150,8 @@ describe("Parser", () => {
     }
   })
 
-  it("parses infix expressions", () => {
-  })
-
   it("parses complex infix expressions", () => {
   })
-  */
 })
 
 function assertExpression(input, expected) {

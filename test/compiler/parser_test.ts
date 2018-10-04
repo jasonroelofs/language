@@ -10,6 +10,9 @@ describe("Parser", () => {
       "1"   : { type: NodeType.NumberLiteral, value: 1 },
       "2.0" : { type: NodeType.NumberLiteral, value: 2.0 },
       "3.3" : { type: NodeType.NumberLiteral, value: 3.3 },
+      "-1" : { type: NodeType.NumberLiteral, value: -1 },
+      "-2.0" : { type: NodeType.NumberLiteral, value: -2.0 },
+      "-.3" : { type: NodeType.NumberLiteral, value: -0.3 },
     }
 
     for(var test in tests) {

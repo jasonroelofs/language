@@ -145,7 +145,7 @@ export default class Lexer {
    */
 
   // Match all number types.
-  NUMBER_REGEX = /^\d*\.?\d+/
+  NUMBER_REGEX = /^-?\d*\.?\d+/
 
   // Identifiers:
   //

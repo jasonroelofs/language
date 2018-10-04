@@ -6,12 +6,16 @@ import {Token, TokenType} from "@compiler/tokens"
 
 describe("Lexer", () => {
   it("tokenizes numbers", () => {
-    let input = "1 2.0 3.3 1.2.3 4start end5"
+    let input = "1 2.0 3.3 -1 -2.0 -.3 1.2.3 4start end5"
     let expected = [
       // Good matches
       { type: TokenType.Number, value: "1" },
       { type: TokenType.Number, value: "2.0" },
       { type: TokenType.Number, value: "3.3" },
+
+      { type: TokenType.Number, value: "-1" },
+      { type: TokenType.Number, value: "-2.0" },
+      { type: TokenType.Number, value: "-.3" },
 
       // Invalid syntax is not invalid tokenization!
       { type: TokenType.Number, value: "1.2" },
@@ -113,7 +117,6 @@ describe("Lexer", () => {
       1 != 2
       obj.message
       !true
-      -1
     `
 
     let expected = [
@@ -165,9 +168,6 @@ describe("Lexer", () => {
       // Unary
       { type: TokenType.Bang, value: "!" },
       { type: TokenType.Identifier, value: "true" },
-
-      { type: TokenType.Minus, value: "-" },
-      { type: TokenType.Number, value: "1" },
     ]
 
     assertTokens(input, expected)

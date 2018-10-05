@@ -57,16 +57,26 @@ describe("Parser", () => {
 
   it("parses message sends", () => {
     let tests = {
+      // Sending a message, no parameters
+      "obj.message()" : {
+        type: NodeType.MessageSend,
+        object: { type: NodeType.Identifier, value: "obj" },
+        message: {
+          type: NodeType.Message,
+          name: "message",
+          arguments: [],
+        },
+      },
+      // Parens are optional when no parameters
       "obj.message" : {
         type: NodeType.MessageSend,
         object: { type: NodeType.Identifier, value: "obj" },
         message: {
           type: NodeType.Message,
-          value: "message",
+          name: "message",
           arguments: [],
         },
       },
-      /*
       "obj.message(1)": {
         type: NodeType.MessageSend,
         object: { type: NodeType.Identifier, value: "obj" },
@@ -78,12 +88,35 @@ describe("Parser", () => {
           ]
         },
       },
+      // Expressions can be arguments
+      "obj.message(a + b)": {
+        type: NodeType.MessageSend,
+        object: { type: NodeType.Identifier, value: "obj" },
+        message: {
+          type: NodeType.Message,
+          name: "message",
+          arguments: [
+            {
+              type: NodeType.MessageSend,
+              object: { type: NodeType.Identifier, value: "a" },
+              message: {
+                type: NodeType.Message,
+                name: "+",
+                arguments: [
+                  { type: NodeType.Identifier, value: "b" }
+                ]
+              }
+            }
+          ]
+        },
+      },
+      // > 1 parameter, must be keywords
       "obj.message(a1: a1, a2: a.b)": {
         type: NodeType.MessageSend,
         object: { type: NodeType.Identifier, value: "obj" },
         message: {
           type: NodeType.Message,
-          value: "message",
+          name: "message",
           arguments: [
             {
               type: NodeType.Argument,
@@ -100,9 +133,8 @@ describe("Parser", () => {
               }
             }
           ]
-        },
+        }
       }
-      */
     }
 
     for(var test in tests) {

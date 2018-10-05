@@ -27,6 +27,7 @@ let Precedences = {
   [TokenType.GreaterThanEqual]: Precedence.Compare,
   [TokenType.Equal]: Precedence.Equals,
   [TokenType.NotEqual]: Precedence.Equals,
+  [TokenType.OpenParen]: Precedence.Index,
 }
 
 export default class Parser {
@@ -61,6 +62,7 @@ export default class Parser {
       [TokenType.GreaterThanEqual]: (left) => this.parseInfixExpression(left),
       [TokenType.Equal]: (left) => this.parseInfixExpression(left),
       [TokenType.NotEqual]: (left) => this.parseInfixExpression(left),
+      [TokenType.OpenParen]: (left) => this.parseCallSite(left),
     }
   }
 
@@ -145,7 +147,7 @@ export default class Parser {
 
     return {
       type: NodeType.Message,
-      value: token.value,
+      name: token.value,
       arguments: []
     }
   }
@@ -187,8 +189,79 @@ export default class Parser {
     }
   }
 
+  /**
+   * Found an OpenParen which means left should be a MessageSend,
+   * and now we get to add parameters to that MessageSend.
+   */
+  parseCallSite(left: Node): Node {
+    if(this.peekTokenIs(TokenType.CloseParen)) {
+      // We have an empty param set `()` so no arguments added.
+      // Skip our current token `(` and the close `)` to move forward.
+      this.nextToken()
+      this.nextToken()
+      return left
+    }
+
+    this.nextToken()
+
+    // At this point we have parameters. This can be a single plain parameter
+    // or a series of keyworded parameters. Look for the single case first then
+    // run through keywords.
+
+    // We aren't at the start of a keyword, so we are probably a plain param.
+    if (!this.peekTokenIs(TokenType.Colon)) {
+      // TODO Should this also create a NodeType.Argument wrapping the argument
+      left.message.arguments.push(
+        this.parseExpression(Precedence.Lowest)
+      )
+
+      this.nextToken()
+
+      return left
+    }
+
+    // Alright we are keywording it up!
+    while(this.peekToken() && !this.peekTokenIs(TokenType.CloseParen)) {
+      if(!this.currTokenIs(TokenType.Identifier)) {
+        throw new Error(`Expected ${TokenType.Identifier} for keyword arguments, found ${this.currToken().type} (${this.currToken().value})`)
+      }
+
+      if(!this.peekTokenIs(TokenType.Colon)) {
+        throw new Error(`Expected ${TokenType.Colon} after argument name, found ${this.peekToken().type} (${this.peekToken().value})`)
+      }
+
+      let argName = this.currToken().value
+
+      // Move past the identifier and the colon
+      this.nextToken()
+      this.nextToken()
+
+      let argValue = this.parseExpression(Precedence.Lowest)
+
+      left.message.arguments.push({
+        type: NodeType.Argument,
+        name: argName,
+        value: argValue,
+      })
+
+      // Skip past our comma if it exists
+      if(this.currTokenIs(TokenType.Comma)) {
+        this.nextToken()
+      }
+    }
+
+    // Move past the close paren, we're done
+    this.nextToken()
+
+    return left
+  }
+
   currToken(): Token {
     return this.tokens[this.index]
+  }
+
+  currTokenIs(expected: TokenType): boolean {
+    return this.currToken() && this.currToken().type == expected
   }
 
   peekToken(): Token {
@@ -197,6 +270,10 @@ export default class Parser {
     } else {
       return this.tokens[this.index + 1]
     }
+  }
+
+  peekTokenIs(expected: TokenType): boolean {
+    return this.peekToken() && this.peekToken().type == expected
   }
 
   currPrecedence(): number {

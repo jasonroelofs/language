@@ -1,6 +1,12 @@
 import * as util from "util"
 import { Token, TokenType } from "@compiler/tokens"
-import { Expression, Node, NodeType } from "@compiler/ast"
+import {
+  Node,
+  BlockNode,
+  ParameterNode,
+  Expression,
+  NodeType
+} from "@compiler/ast"
 
 enum Precedence {
   Lowest,
@@ -47,6 +53,8 @@ export default class Parser {
       [TokenType.Number]: () => this.parseNumberLiteral(),
       [TokenType.String]: () => this.parseStringLiteral(),
       [TokenType.Identifier]: () => this.parseIdentifier(),
+      [TokenType.OpenBlock]: () => this.parseBlock(),
+      // [TokenType.OpenParen]: () => this.parseGroupedExpression(),
     }
 
     this.infixParse = {
@@ -68,7 +76,6 @@ export default class Parser {
 
   parse(): Array<Expression> {
     var expressions = []
-    let node: Node
 
     while (this.index < this.tokens.length) {
       expressions.push({
@@ -128,6 +135,57 @@ export default class Parser {
       default:
         return { type: NodeType.Identifier, value: token.value }
     }
+  }
+
+  parseBlock(): Node {
+    // Move past the '{'
+    this.nextToken()
+
+    let node: BlockNode = { type: NodeType.Block, parameters: [], body: [] }
+
+    // Block parameters
+    if(this.currTokenIs(TokenType.Pipe)) {
+      this.nextToken()
+      var param: ParameterNode
+
+      while(!this.currTokenIs(TokenType.Pipe)) {
+        param = {
+          type: NodeType.Parameter,
+          name: this.currToken().value,
+          default: null
+        }
+
+        // Move past the name and following colon
+        this.nextToken()
+
+        // Default value set for this parameter
+        if(this.currTokenIs(TokenType.Colon)) {
+          this.nextToken()
+
+          param.default = this.parseExpression(Precedence.Lowest)
+        }
+
+        // More parameters?
+        if(this.currTokenIs(TokenType.Comma)) {
+          this.nextToken()
+        }
+
+        node.parameters.push(param)
+      }
+
+      // Move past the last Pipe
+      this.nextToken()
+    }
+
+    // Block body
+    while(!this.currTokenIs(TokenType.CloseBlock)) {
+      node.body.push({ node: this.parseExpression(Precedence.Lowest) })
+    }
+
+    // Move past the closing '}'
+    this.nextToken()
+
+    return node
   }
 
   parseMessageSend(left: Node): Node {

@@ -184,6 +184,79 @@ describe("Parser", () => {
 
   it("parses complex infix expressions", () => {
   })
+
+  it("parses blocks", () => {
+    let tests = {
+      // Plain block, no parameters
+      "{ 1 }": {
+        type: NodeType.Block,
+        parameters: [],
+        body: [
+          { node: { type: NodeType.NumberLiteral, value: "1" } }
+        ]
+      },
+      // Block with one parameter
+      "{ |a| a }": {
+        type: NodeType.Block,
+        parameters: [
+          { type: NodeType.Parameter, name: "a", default: null }
+        ],
+        body: [
+          { node: { type: NodeType.Identifier, value: "a" } }
+        ]
+      },
+      // Multiple parameters
+      "{ |a, b, c| a\nb\nc }": {
+        type: NodeType.Block,
+        parameters: [
+          { type: NodeType.Parameter, name: "a", default: null },
+          { type: NodeType.Parameter, name: "b", default: null },
+          { type: NodeType.Parameter, name: "c", default: null },
+        ],
+        body: [
+          { node: { type: NodeType.Identifier, value: "a" } },
+          { node: { type: NodeType.Identifier, value: "b" } },
+          { node: { type: NodeType.Identifier, value: "c" } },
+        ]
+      },
+      // Parameters with defaults
+      "{ |a: 1, b: 2 + 4, c: a + b| c }": {
+        type: NodeType.Block,
+        parameters: [
+          {
+            type: NodeType.Parameter,
+            name: "a",
+            default: { type: NodeType.NumberLiteral, value: "1" }
+          },
+          {
+            type: NodeType.Parameter,
+            name: "b",
+            default: {
+              type: NodeType.MessageSend,
+              object: { type: NodeType.NumberLiteral, value: "2" },
+              message: { type: NodeType.Message, name: "+", arguments: [{ type: NodeType.NumberLiteral, value: "4" }] }
+            }
+          },
+          {
+            type: NodeType.Parameter,
+            name: "c",
+            default: {
+              type: NodeType.MessageSend,
+              object: { type: NodeType.Identifier, value: "a" },
+              message: { type: NodeType.Message, name: "+", arguments: [{ type: NodeType.Identifier, value: "b" }] }
+            }
+          },
+        ],
+        body: [
+          { node: { type: NodeType.Identifier, value: "c" } }
+        ]
+      },
+    }
+
+    for(var test in tests) {
+      assertExpression(test, tests[test])
+    }
+  })
 })
 
 function assertExpression(input, expected) {

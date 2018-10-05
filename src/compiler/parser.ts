@@ -2,6 +2,11 @@ import * as util from "util"
 import { Token, TokenType } from "@compiler/tokens"
 import {
   Node,
+  NumberNode,
+  StringNode,
+  AssignmentNode,
+  MessageSendNode,
+  MessageNode,
   BlockNode,
   ParameterNode,
   Expression,
@@ -109,13 +114,13 @@ export default class Parser {
     return leftExp
   }
 
-  parseNumberLiteral(): Node {
+  parseNumberLiteral(): NumberNode {
     let token = this.currToken()
     this.nextToken()
     return { type: NodeType.NumberLiteral, value: parseFloat(token.value) }
   }
 
-  parseStringLiteral(): Node {
+  parseStringLiteral(): StringNode {
     let token = this.currToken()
     this.nextToken()
     return { type: NodeType.StringLiteral, value: token.value }
@@ -137,7 +142,7 @@ export default class Parser {
     }
   }
 
-  parseBlock(): Node {
+  parseBlock(): BlockNode {
     // Move past the '{'
     this.nextToken()
 
@@ -188,7 +193,7 @@ export default class Parser {
     return node
   }
 
-  parseMessageSend(left: Node): Node {
+  parseMessageSend(left: Node): MessageSendNode {
     // Move pass the "."
     this.nextToken()
 
@@ -199,7 +204,7 @@ export default class Parser {
     }
   }
 
-  parseMessage(): Node {
+  parseMessage(): MessageNode {
     let token = this.currToken()
     this.nextToken()
 
@@ -210,7 +215,7 @@ export default class Parser {
     }
   }
 
-  parseAssignment(left: Node): Node {
+  parseAssignment(left: Node): AssignmentNode {
     let token = this.currToken()
     let precedence = this.currPrecedence()
     this.nextToken()

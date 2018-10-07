@@ -59,7 +59,7 @@ export default class Parser {
       [TokenType.String]: () => this.parseStringLiteral(),
       [TokenType.Identifier]: () => this.parseIdentifier(),
       [TokenType.OpenBlock]: () => this.parseBlock(),
-      // [TokenType.OpenParen]: () => this.parseGroupedExpression(),
+      [TokenType.OpenParen]: () => this.parseGroupedExpression(),
     }
 
     this.infixParse = {
@@ -112,6 +112,22 @@ export default class Parser {
     }
 
     return leftExp
+  }
+
+  parseGroupedExpression(): Node {
+    // Move past the opening (
+    this.nextToken()
+
+    let exp = this.parseExpression(Precedence.Lowest)
+
+    if(!this.currTokenIs(TokenType.CloseParen)) {
+      throw new Error(`Expected ${TokenType.CloseParen} to close explicit group, found ${this.currToken().type} (${this.currToken().value})`)
+    }
+
+    // Move past the closing )
+    this.nextToken()
+
+    return exp
   }
 
   parseNumberLiteral(): NumberNode {
@@ -217,7 +233,6 @@ export default class Parser {
 
   parseAssignment(left: Node): AssignmentNode {
     let token = this.currToken()
-    let precedence = this.currPrecedence()
     this.nextToken()
 
     // TODO: Make sure that left is an Identifier
@@ -227,7 +242,7 @@ export default class Parser {
     return {
       type: NodeType.Assignment,
       name: left.value,
-      right: this.parseExpression(precedence)
+      right: this.parseExpression(Precedence.Lowest)
     }
   }
 
@@ -237,6 +252,7 @@ export default class Parser {
    */
   parseInfixExpression(left: Node): Node {
     let token = this.currToken()
+    let precedence = this.currPrecedence()
     this.nextToken()
 
     return {
@@ -246,7 +262,7 @@ export default class Parser {
         type: NodeType.Message,
         name: token.value,
         arguments: [
-          this.parseExpression(Precedence.Lowest)
+          this.parseExpression(precedence)
         ]
       }
     }

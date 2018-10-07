@@ -183,6 +183,108 @@ describe("Parser", () => {
   })
 
   it("parses complex infix expressions", () => {
+    let tests = {
+      "1 + 2 - 3": {
+        // (1.+(2)).-(3))
+        type: NodeType.MessageSend,
+        object: {
+          type: NodeType.MessageSend,
+          object: { type: NodeType.NumberLiteral, value: "1" },
+          message: {
+            type: NodeType.Message,
+            name: "+",
+            arguments: [{ type: NodeType.NumberLiteral, value: "2" }],
+          }
+        },
+        message: {
+          type: NodeType.Message,
+          name: "-",
+          arguments: [{ type: NodeType.NumberLiteral, value: "3" }]
+        }
+      },
+      "1 + 2 * 3": {
+        // Operator precedence
+        // 1.+(2.*(3))
+        type: NodeType.MessageSend,
+        object: { type: NodeType.NumberLiteral, value: "1" },
+        message: {
+          type: NodeType.Message,
+          name: "+",
+          arguments: [{
+            type: NodeType.MessageSend,
+            object: { type: NodeType.NumberLiteral, value: "2" },
+            message: {
+              type: NodeType.Message,
+              name: "*",
+              arguments: [ { type: NodeType.NumberLiteral, value: "3" } ]
+            }
+          }]
+        }
+      },
+      "1 * 2 + 3 / 4": {
+        // Operator precedence
+        // (1.*(2)).+(3./(4))
+
+        // left * right
+        type: NodeType.MessageSend,
+        object: {
+          // 1 * 2
+          type: NodeType.MessageSend,
+          object: { type: NodeType.NumberLiteral, value: "1" },
+          message: {
+            type: NodeType.Message,
+            name: "*",
+            arguments: [{ type: NodeType.NumberLiteral, value: "2" }]
+          }
+        },
+        message: {
+          type: NodeType.Message,
+          name: "+",
+          arguments: [{
+            // 3 / 4
+            type: NodeType.MessageSend,
+            object: { type: NodeType.NumberLiteral, value: "3" },
+            message: {
+              type: NodeType.Message,
+              name: "/",
+              arguments: [{ type: NodeType.NumberLiteral, value: "4"}]
+            }
+          }]
+        }
+      },
+      "(1 + 2) * (3 - 4)": {
+        // Forced grouping of expressions
+        type: NodeType.MessageSend,
+        object: {
+          // 1 + 2
+          type: NodeType.MessageSend,
+          object: { type: NodeType.NumberLiteral, value: "1" },
+          message: {
+            type: NodeType.Message,
+            name: "+",
+            arguments: [{ type: NodeType.NumberLiteral, value: "2" }]
+          }
+        },
+        message: {
+          type: NodeType.Message,
+          name: "*",
+          arguments: [{
+            // 3 / 4
+            type: NodeType.MessageSend,
+            object: { type: NodeType.NumberLiteral, value: "3" },
+            message: {
+              type: NodeType.Message,
+              name: "-",
+              arguments: [{ type: NodeType.NumberLiteral, value: "4"}]
+            }
+          }]
+        }
+      }
+    }
+
+    for(var test in tests) {
+      assertExpression(test, tests[test])
+    }
   })
 
   it("parses blocks", () => {
@@ -267,5 +369,5 @@ function assertExpression(input, expected) {
   let expressions = parser.parse()
 
   assert.equal(expressions.length, 1)
-  assert.deepEqual(expressions[0].node, expected)
+  assert.deepEqual(expressions[0].node, expected, `Comparison failed for ''${input}''`)
 }

@@ -225,7 +225,6 @@ export default class Parser {
     this.nextToken()
 
     return {
-      type: NodeType.Message,
       name: token.value,
       arguments: []
     }
@@ -259,7 +258,6 @@ export default class Parser {
       type: NodeType.MessageSend,
       object: left,
       message: {
-        type: NodeType.Message,
         name: token.value,
         arguments: [
           this.parseExpression(precedence)

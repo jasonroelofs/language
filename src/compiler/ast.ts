@@ -32,7 +32,7 @@ export interface MessageSendNode extends Node {
   message: MessageNode
 }
 
-export interface MessageNode extends Node {
+export interface MessageNode {
   name: string
   arguments: Node[] // TODO ArgumentNode[]
 }

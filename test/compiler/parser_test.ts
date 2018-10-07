@@ -62,7 +62,6 @@ describe("Parser", () => {
         type: NodeType.MessageSend,
         object: { type: NodeType.Identifier, value: "obj" },
         message: {
-          type: NodeType.Message,
           name: "message",
           arguments: [],
         },
@@ -72,7 +71,6 @@ describe("Parser", () => {
         type: NodeType.MessageSend,
         object: { type: NodeType.Identifier, value: "obj" },
         message: {
-          type: NodeType.Message,
           name: "message",
           arguments: [],
         },
@@ -81,7 +79,6 @@ describe("Parser", () => {
         type: NodeType.MessageSend,
         object: { type: NodeType.Identifier, value: "obj" },
         message: {
-          type: NodeType.Message,
           name: "message",
           arguments: [
             { type: NodeType.NumberLiteral, value: 1 }
@@ -93,14 +90,12 @@ describe("Parser", () => {
         type: NodeType.MessageSend,
         object: { type: NodeType.Identifier, value: "obj" },
         message: {
-          type: NodeType.Message,
           name: "message",
           arguments: [
             {
               type: NodeType.MessageSend,
               object: { type: NodeType.Identifier, value: "a" },
               message: {
-                type: NodeType.Message,
                 name: "+",
                 arguments: [
                   { type: NodeType.Identifier, value: "b" }
@@ -115,7 +110,6 @@ describe("Parser", () => {
         type: NodeType.MessageSend,
         object: { type: NodeType.Identifier, value: "obj" },
         message: {
-          type: NodeType.Message,
           name: "message",
           arguments: [
             {
@@ -129,7 +123,7 @@ describe("Parser", () => {
               value: {
                 type: NodeType.MessageSend,
                 object: { type: NodeType.Identifier, value: "a" },
-                message: { type: NodeType.Message, name: "b", arguments: [] },
+                message: { name: "b", arguments: [] },
               }
             }
           ]
@@ -173,7 +167,7 @@ describe("Parser", () => {
       tests[`1 ${op} 2`] = {
         type: NodeType.MessageSend,
         object: { type: NodeType.NumberLiteral, value: "1" },
-        message: { type: NodeType.Message, name: op, arguments: [{ type: NodeType.NumberLiteral, value: "2" }] }
+        message: { name: op, arguments: [{ type: NodeType.NumberLiteral, value: "2" }] }
       }
     }
 
@@ -191,13 +185,11 @@ describe("Parser", () => {
           type: NodeType.MessageSend,
           object: { type: NodeType.NumberLiteral, value: "1" },
           message: {
-            type: NodeType.Message,
             name: "+",
             arguments: [{ type: NodeType.NumberLiteral, value: "2" }],
           }
         },
         message: {
-          type: NodeType.Message,
           name: "-",
           arguments: [{ type: NodeType.NumberLiteral, value: "3" }]
         }
@@ -208,13 +200,11 @@ describe("Parser", () => {
         type: NodeType.MessageSend,
         object: { type: NodeType.NumberLiteral, value: "1" },
         message: {
-          type: NodeType.Message,
           name: "+",
           arguments: [{
             type: NodeType.MessageSend,
             object: { type: NodeType.NumberLiteral, value: "2" },
             message: {
-              type: NodeType.Message,
               name: "*",
               arguments: [ { type: NodeType.NumberLiteral, value: "3" } ]
             }
@@ -232,20 +222,17 @@ describe("Parser", () => {
           type: NodeType.MessageSend,
           object: { type: NodeType.NumberLiteral, value: "1" },
           message: {
-            type: NodeType.Message,
             name: "*",
             arguments: [{ type: NodeType.NumberLiteral, value: "2" }]
           }
         },
         message: {
-          type: NodeType.Message,
           name: "+",
           arguments: [{
             // 3 / 4
             type: NodeType.MessageSend,
             object: { type: NodeType.NumberLiteral, value: "3" },
             message: {
-              type: NodeType.Message,
               name: "/",
               arguments: [{ type: NodeType.NumberLiteral, value: "4"}]
             }
@@ -260,20 +247,17 @@ describe("Parser", () => {
           type: NodeType.MessageSend,
           object: { type: NodeType.NumberLiteral, value: "1" },
           message: {
-            type: NodeType.Message,
             name: "+",
             arguments: [{ type: NodeType.NumberLiteral, value: "2" }]
           }
         },
         message: {
-          type: NodeType.Message,
           name: "*",
           arguments: [{
             // 3 / 4
             type: NodeType.MessageSend,
             object: { type: NodeType.NumberLiteral, value: "3" },
             message: {
-              type: NodeType.Message,
               name: "-",
               arguments: [{ type: NodeType.NumberLiteral, value: "4"}]
             }
@@ -336,7 +320,7 @@ describe("Parser", () => {
             default: {
               type: NodeType.MessageSend,
               object: { type: NodeType.NumberLiteral, value: "2" },
-              message: { type: NodeType.Message, name: "+", arguments: [{ type: NodeType.NumberLiteral, value: "4" }] }
+              message: { name: "+", arguments: [{ type: NodeType.NumberLiteral, value: "4" }] }
             }
           },
           {
@@ -345,7 +329,7 @@ describe("Parser", () => {
             default: {
               type: NodeType.MessageSend,
               object: { type: NodeType.Identifier, value: "a" },
-              message: { type: NodeType.Message, name: "+", arguments: [{ type: NodeType.Identifier, value: "b" }] }
+              message: { name: "+", arguments: [{ type: NodeType.Identifier, value: "b" }] }
             }
           },
         ],

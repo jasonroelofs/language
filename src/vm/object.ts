@@ -1,20 +1,33 @@
 import * as util from "util"
+import { ParameterNode, Expression } from "@compiler/ast"
 
 enum ObjectType {
   Null     = "Null",
   Boolean  = "Boolean",
   Number   = "Number",
   String   = "String",
+  Block    = "Block",
 }
 
 interface Object {
   type: ObjectType
+}
+
+interface ValueObject extends Object {
   value: any
 }
 
-let Null = { type: ObjectType.Null, value: null }
-let True = { type: ObjectType.Boolean, value: true }
-let False = { type: ObjectType.Boolean, value: false }
+interface BlockObject extends Object {
+  // How many arguments does this block have
+  parameters: ParameterNode[]
+
+  // Body of the block, in a list of AST expressions
+  body: Expression[]
+}
+
+let Null = { type: ObjectType.Null }
+let True : ValueObject = { type: ObjectType.Boolean, value: true }
+let False : ValueObject = { type: ObjectType.Boolean, value: false }
 
 /**
  * Mapping of the results of (typeof object) to our internal
@@ -41,10 +54,19 @@ function toObject(nativeValue: any): Object {
   let objectType = typeMapping[typeof nativeValue]
 
   if(objectType) {
-    return { type: objectType, value: nativeValue }
+    return { type: objectType, value: nativeValue } as ValueObject
   }
 
   throw new Error(util.format("Don't know how to convert from native type %o", typeof nativeValue))
 }
 
-export { ObjectType, Object, toObject, Null, True, False }
+export {
+  ObjectType,
+  Object,
+  ValueObject,
+  BlockObject,
+  toObject,
+  Null,
+  True,
+  False
+}

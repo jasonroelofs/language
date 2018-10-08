@@ -1,7 +1,7 @@
 import "mocha"
 import * as assert from "assert"
 import Interpreter from "@vm/interpreter"
-import { Object, ObjectType } from "@vm/object"
+import { Object, ValueObject, BlockObject, ObjectType } from "@vm/object"
 
 describe("Interpreter", () => {
   it("evaluates numbers", () => {
@@ -98,6 +98,27 @@ describe("Interpreter", () => {
     }
   })
   */
+
+  it("builds block objects", () => {
+    let tests = {
+      "{ 1 }": { bodyLength: 1, paramLength: 0 },
+      "{ 1\n2 }": { bodyLength: 2, paramLength: 0 },
+      "{ |a| a }": { bodyLength: 1, paramLength: 1 },
+      "{ |a, b| a + b }": { bodyLength: 1, paramLength: 2 },
+    }
+
+    for(var test in tests) {
+      let i = new Interpreter()
+      let result = i.eval(test)
+      let expected = tests[test]
+
+      assert.equal(result.type, ObjectType.Block)
+
+      let blockObj = result as BlockObject
+      assert.equal(blockObj.body.length, expected.bodyLength)
+      assert.equal(blockObj.parameters.length, expected.paramLength)
+    }
+  })
 })
 
 function assertEval(test) {
@@ -105,5 +126,8 @@ function assertEval(test) {
   let result = i.eval(test.input)
 
   assert.equal(result.type, test.type)
-  assert.equal(result.value, test.result)
+
+  // This will explode if result is not a Value object
+  let obj = result as ValueObject
+  assert.equal(obj.value, test.result)
 }

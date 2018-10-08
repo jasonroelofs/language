@@ -34,7 +34,13 @@ export interface MessageSendNode extends Node {
 
 export interface MessageNode {
   name: string
-  arguments: Node[] // TODO ArgumentNode[]
+  arguments: ArgumentNode[]
+}
+
+export interface ArgumentNode {
+  // Single arguments won't be keyworded so won't have a name
+  name?: string
+  value: Node
 }
 
 export interface AssignmentNode extends Node {

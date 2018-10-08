@@ -81,7 +81,7 @@ describe("Parser", () => {
         message: {
           name: "message",
           arguments: [
-            { type: NodeType.NumberLiteral, value: 1 }
+            { value: { type: NodeType.NumberLiteral, value: 1 } }
           ]
         },
       },
@@ -92,7 +92,7 @@ describe("Parser", () => {
         message: {
           name: "message",
           arguments: [
-            {
+            { value: {
               type: NodeType.MessageSend,
               object: { type: NodeType.Identifier, value: "a" },
               message: {
@@ -101,7 +101,7 @@ describe("Parser", () => {
                   { type: NodeType.Identifier, value: "b" }
                 ]
               }
-            }
+            }}
           ]
         },
       },
@@ -113,12 +113,10 @@ describe("Parser", () => {
           name: "message",
           arguments: [
             {
-              type: NodeType.Argument,
               name: "a1",
               value: { type: NodeType.Identifier, value: "a1" }
             },
             {
-              type: NodeType.Argument,
               name: "a2",
               value: {
                 type: NodeType.MessageSend,

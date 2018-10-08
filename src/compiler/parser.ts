@@ -224,6 +224,10 @@ export default class Parser {
     let token = this.currToken()
     this.nextToken()
 
+    // This may look incorrect but the actual arguments get filled out
+    // in parseCallSite below, as this node gets treated as the "left" node
+    // when an open-paren token is found. That parsing then fills out this
+    // node's arguments list accordingly.
     return {
       name: token.value,
       arguments: []
@@ -287,10 +291,9 @@ export default class Parser {
 
     // We aren't at the start of a keyword, so we are probably a plain param.
     if (!this.peekTokenIs(TokenType.Colon)) {
-      // TODO Should this also create a NodeType.Argument wrapping the argument
-      left.message.arguments.push(
-        this.parseExpression(Precedence.Lowest)
-      )
+      left.message.arguments.push({
+        value: this.parseExpression(Precedence.Lowest)
+      })
 
       this.nextToken()
 
@@ -316,7 +319,6 @@ export default class Parser {
       let argValue = this.parseExpression(Precedence.Lowest)
 
       left.message.arguments.push({
-        type: NodeType.Argument,
         name: argName,
         value: argValue,
       })

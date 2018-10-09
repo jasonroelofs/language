@@ -1,6 +1,6 @@
 import "mocha"
 import * as assert from "assert"
-import { Object, ValueObject, BlockObject, ObjectType, toObject } from "@vm/object"
+import { IObject, toObject, Number, String, SendMessage } from "@vm/object"
 
 describe("Object", () => {
   it("has built-in true, false, and Nil", () => {
@@ -14,10 +14,10 @@ describe("Object", () => {
     let tests = [1, 2, 3.3, -4.4]
 
     for(var test of tests) {
-      let obj = toObject(test) as ValueObject
+      let obj = toObject(test)
 
-      assert.equal(obj.type, ObjectType.Number)
-      assert.equal(obj.value, test)
+      assert.equal(obj.parents[0], Number)
+      assert.equal(obj.data, test)
     }
   })
 
@@ -25,10 +25,10 @@ describe("Object", () => {
     let tests = ["test", "one", "two three", "four\"five", "こんにちは"]
 
     for(var test of tests) {
-      let obj = toObject(test) as ValueObject
+      let obj = toObject(test)
 
-      assert.equal(obj.type, ObjectType.String)
-      assert.equal(obj.value, test)
+      assert.equal(obj.parents[0], String)
+      assert.equal(obj.data, test)
     }
   })
 })

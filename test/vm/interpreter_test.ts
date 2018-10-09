@@ -1,56 +1,56 @@
 import "mocha"
 import * as assert from "assert"
 import Interpreter from "@vm/interpreter"
-import { Object, ValueObject, BlockObject, ObjectType } from "@vm/object"
+import { IObject, NewObject, Number, String, True, False, Null } from "@vm/object"
 
 describe("Interpreter", () => {
   it("evaluates numbers", () => {
-    let tests = [
-      { input: "1", result: 1, type: ObjectType.Number },
-      { input: "2", result: 2, type: ObjectType.Number },
-      { input: "3.0", result: 3, type: ObjectType.Number },
-      { input: "4.4", result: 4.4, type: ObjectType.Number },
-    ]
+    let tests = {
+      "1": NewObject(Number, {}, 1),
+      "2": NewObject(Number, {}, 2),
+      "3.0": NewObject(Number, {}, 3.0),
+      "4.4": NewObject(Number, {}, 4.4),
+    }
 
-    for(var test of tests) {
-      assertEval(test)
+    for(var test in tests) {
+      assertObjectEval(test, tests[test])
     }
   })
 
   it("evaluates specials", () => {
-    let tests = [
-      { input: "true", result: true, type: ObjectType.Boolean },
-      { input: "false", result: false, type: ObjectType.Boolean },
-      { input: "null", result: null, type: ObjectType.Null },
-    ]
+    let tests = {
+      "true": True,
+      "false": False,
+      "null": Null,
+    }
 
-    for(var test of tests) {
-      assertEval(test)
+    for(var test in tests) {
+      assertObjectEval(test, tests[test])
     }
   })
 
   it("evaluates strings", () => {
-    let tests = [
-      { input: `"A String"`, result: "A String", type: ObjectType.String },
-      { input: `'Single Quotes'`, result: "Single Quotes", type: ObjectType.String },
-      { input: `"Nested\\"Quotes"`, result: `Nested\\"Quotes`, type: ObjectType.String },
-    ]
+    let tests = {
+      [`"A String"`]: NewObject(String, {}, "A String"),
+      [`'Single Quotes'`]: NewObject(String, {}, "Single Quotes"),
+      [`"Nested\\"Quotes"`]: NewObject(String, {}, `Nested\\"Quotes`),
+    }
 
-    for(var test of tests) {
-      assertEval(test)
+    for(var test in tests) {
+      assertObjectEval(test, tests[test])
     }
   })
 
   it("evaulates local assignment and lookup", () => {
-    let tests = [
+    let tests = {
       // Assignment returns the value assigned
-      { input: "a = 1", result: 1, type: ObjectType.Number },
+      "a = 1":  NewObject(Number, {}, 1),
       // Accessing the local slot returns the stored value
-      { input: "a = 2\na", result: 2, type: ObjectType.Number },
-    ]
+      "a = 2\na": NewObject(Number, {}, 2),
+    }
 
-    for(var test of tests) {
-      assertEval(test)
+    for(var test in tests) {
+      assertObjectEval(test, tests[test])
     }
   })
 
@@ -75,7 +75,7 @@ describe("Interpreter", () => {
     ]
 
     for(var test of tests) {
-      assertEval(test)
+      assertObjectEval(test)
     }
   })
 
@@ -94,7 +94,7 @@ describe("Interpreter", () => {
     ]
 
     for(var test of tests) {
-      assertEval(test)
+      assertObjectEval(test)
     }
   })
   */
@@ -112,22 +112,17 @@ describe("Interpreter", () => {
       let result = i.eval(test)
       let expected = tests[test]
 
-      assert.equal(result.type, ObjectType.Block)
-
-      let blockObj = result as BlockObject
-      assert.equal(blockObj.body.length, expected.bodyLength)
-      assert.equal(blockObj.parameters.length, expected.paramLength)
+      assert.equal(result.slots["body"].length, expected.bodyLength)
+      assert.equal(result.slots["parameters"].length, expected.paramLength)
     }
   })
 })
 
-function assertEval(test) {
+function assertObjectEval(input: string, expected: IObject) {
   let i = new Interpreter()
-  let result = i.eval(test.input)
+  let result = i.eval(input)
 
-  assert.equal(result.type, test.type)
-
-  // This will explode if result is not a Value object
-  let obj = result as ValueObject
-  assert.equal(obj.value, test.result)
+  assert.equal(result.parents.length, expected.parents.length)
+  assert.equal(result.parents[0], expected.parents[0])
+  assert.equal(result.data, expected.data)
 }

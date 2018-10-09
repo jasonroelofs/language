@@ -1,16 +1,16 @@
-import { Object, Null } from "@vm/object"
+import { IObject, Null } from "@vm/object"
 
 class Scope {
 
   parent?: Scope
-  storage: Map<string, Object>
+  storage: Map<string, IObject>
 
   constructor(parent = null) {
     this.parent = parent
     this.storage = new Map()
   }
 
-  get(name: string): Object {
+  get(name: string): IObject {
     let found = this.storage[name]
 
     if(found) {
@@ -22,7 +22,7 @@ class Scope {
     }
   }
 
-  set(name: string, value: Object) {
+  set(name: string, value: IObject) {
     this.storage[name] = value
   }
 }
@@ -43,11 +43,11 @@ export default class Environment {
     this.currentScope = this.currentScope.parent
   }
 
-  get(name: string) {
+  get(name: string): IObject {
     return this.currentScope.get(name)
   }
 
-  set(name: string, value: Object) {
+  set(name: string, value: IObject) {
     return this.currentScope.set(name, value)
   }
 }

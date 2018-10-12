@@ -30,18 +30,7 @@ function NewObject(parent: IObject, slots = {}, data = null): IObject {
   let slotMap = new Map()
 
   Object.keys(slots).forEach(key => {
-    let value = slots[key]
-
-    // Built-in implementation handling.
-    // The javascript function gets set to `data` and the object
-    // is flagged as a code block.
-    if((typeof value) == "function") {
-      value = NewObject(Objekt, {}, value)
-      value.codeBlock = true
-      value.builtIn = true
-    }
-
-    slotMap.set(key, value)
+    slotMap.set(key, slots[key])
   })
 
   return {
@@ -94,11 +83,7 @@ let Null = NewObject(Objekt, {}, null)
 let True = NewObject(Objekt, {}, true)
 let False = NewObject(Objekt, {}, false)
 
-let Number = NewObject(Objekt, {
-  "+": function(other) {
-    return NewObject(Number, {}, this.data + other.data)
-  }
-}, 0)
+let Number = NewObject(Objekt, {}, 0)
 let String = NewObject(Objekt, {}, "")
 
 /**

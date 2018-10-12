@@ -16,9 +16,11 @@ import {
   Null,
   True,
   False,
-  Number,
-  String
 } from "@vm/object"
+import {
+  Number,
+  String,
+} from "@vm/core"
 import Environment from "@vm/environment"
 
 export default class Interpreter {

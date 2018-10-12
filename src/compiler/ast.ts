@@ -28,7 +28,7 @@ export interface StringNode extends Node {
 }
 
 export interface MessageSendNode extends Node {
-  object: Node,
+  receiver: Node,
   message: MessageNode
 }
 

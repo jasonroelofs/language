@@ -5,11 +5,18 @@ import * as util from "util"
  */
 interface IObject {
   parents: IObject[]
-  slots: {}
+  slots: Map<String, IObject>
 
   // `data` is internal-only storage of the Javascript value that this object
   // represents, used e.g. for Number and String
   data: any
+
+  // Flag that this object is actually a block of code that can be itself
+  // evaluated.
+  codeBlock: boolean
+
+  // Are we wrapping a built-in, pure javascript function?
+  builtIn: boolean
 }
 
 /**
@@ -19,10 +26,30 @@ interface IObject {
  * to the Javascript value of a given object, e.g. a number (1) or a string ("").
  */
 function NewObject(parent: IObject, slots = {}, data = null): IObject {
+  // This can hopefully be soon replaced with `Object.entries`
+  let slotMap = new Map()
+
+  Object.keys(slots).forEach(key => {
+    let value = slots[key]
+
+    // Built-in implementation handling.
+    // The javascript function gets set to `data` and the object
+    // is flagged as a code block.
+    if((typeof value) == "function") {
+      value = NewObject(Objekt, {}, value)
+      value.codeBlock = true
+      value.builtIn = true
+    }
+
+    slotMap.set(key, value)
+  })
+
   return {
     parents: (parent ? [parent] : []),
-    slots: slots,
-    data: data
+    slots: slotMap,
+    data: data,
+    codeBlock: false,
+    builtIn: false,
   }
 }
 
@@ -31,7 +58,25 @@ function NewObject(parent: IObject, slots = {}, data = null): IObject {
  * send the message to the object. This will work its way up the parent tree
  * looking for the object that responds to this message, returning the result
  */
-function SendMessage(object, message, args = {}) {
+function SendMessage(receiver: IObject, message: string): IObject {
+  if (receiver.slots.has(message)) {
+    return receiver.slots.get(message)
+  } else if (receiver.parents.length == 0) {
+    // TODO: No slot error of some sort
+    return Null
+  } else {
+    let fromParent = Null
+
+    for(var parent of receiver.parents) {
+      fromParent = SendMessage(parent, message)
+
+      if(fromParent != Null) {
+        break
+      }
+    }
+
+    return fromParent
+  }
 }
 
 /**
@@ -49,7 +94,11 @@ let Null = NewObject(Objekt, {}, null)
 let True = NewObject(Objekt, {}, true)
 let False = NewObject(Objekt, {}, false)
 
-let Number = NewObject(Objekt, {}, 0)
+let Number = NewObject(Objekt, {
+  "+": function(other) {
+    return NewObject(Number, {}, this.data + other.data)
+  }
+}, 0)
 let String = NewObject(Objekt, {}, "")
 
 /**

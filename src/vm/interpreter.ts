@@ -1,9 +1,17 @@
+import * as util from "util"
 import Lexer from "@compiler/lexer"
 import Parser from "@compiler/parser"
-import { Node, BlockNode, NodeType, Expression } from "@compiler/ast"
+import {
+  Node,
+  BlockNode,
+  MessageSendNode,
+  NodeType,
+  Expression
+} from "@compiler/ast"
 import {
   IObject,
   NewObject,
+  SendMessage,
   Objekt,
   Null,
   True,
@@ -25,10 +33,10 @@ export default class Interpreter {
     let l = new Lexer(program)
     let p = new Parser(l.tokenize())
 
-    return this.evalAST(p.parse())
+    return this.evalExpressions(p.parse())
   }
 
-  evalAST(expressions: Array<Expression>): IObject {
+  evalExpressions(expressions: Array<Expression>): IObject {
     var ret = Null
 
     for(var expression of expressions) {
@@ -62,18 +70,80 @@ export default class Interpreter {
         return Null
 
       case NodeType.Block:
-        return this.evalBlock(node as BlockNode)
+        return this.evalBlockLiteral(node as BlockNode)
+
+      case NodeType.MessageSend:
+        return this.evalMessageSend(node as MessageSendNode)
 
       default:
-        console.log("[Eval] Don't know how to evaluate node %o", node)
+        throw new Error(util.format("[Eval] Don't know how to evaluate node %o of type %o", node, node.type))
         return Null
     }
   }
 
-  evalBlock(node: BlockNode): IObject {
-    return NewObject(Objekt, {
-      body: node.body,
-      parameters: node.parameters
+  evalBlockLiteral(node: BlockNode): IObject {
+    let block = NewObject(Objekt, {
+      "body": NewObject(Objekt, {}, node.body),
+      "parameters": NewObject(Objekt, {}, node.parameters),
     })
+
+    block.codeBlock = true
+
+    return block
+  }
+
+  evalMessageSend(node: MessageSendNode): IObject {
+    let receiver = this.evalNode(node.receiver)
+    let message = node.message.name
+
+    // TODO figure out how other like languages do this.
+    //
+    // We need a way to trigger evaluation of a block's AST through a message passing
+    // structure, but it's kind of a chicken-and-egg problem.
+    // I would like the `call` message to simply return the object itself then we can
+    // just check the codeBlock flag.
+    //
+    // So hard-coding a look for a node marked as a code block
+    // and the "call" message.
+    if(receiver.codeBlock && message == "call") {
+      // Execute the code block with the arguments
+      let args = node.message.arguments
+      let codeBody = SendMessage(receiver, "body").data
+      let parameters = SendMessage(receiver, "parameters").data
+
+      // TODO
+      // Should also check arguments against the method's defined
+      // parameters but that can come next
+      this.currentScope.pushScope()
+
+      for(var idx in args) {
+        this.currentScope.set(
+          parameters[idx].name,
+          this.evalNode(args[idx].value)
+        )
+      }
+
+      let result = this.evalExpressions(codeBody)
+
+      this.currentScope.popScope()
+
+      return result
+    }
+
+    let slotValue = SendMessage(receiver, message)
+
+    if(slotValue.codeBlock && slotValue.builtIn) {
+      // We're a built-in, call it via javascript
+      let args = node.message.arguments
+      let toFunc = []
+
+      for(var idx in args) {
+        toFunc.push(this.evalNode(args[idx].value))
+      }
+
+      return slotValue.data.apply(receiver, toFunc)
+    }
+
+    return slotValue
   }
 }

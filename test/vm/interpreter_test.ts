@@ -112,8 +112,30 @@ describe("Interpreter", () => {
       let result = i.eval(test)
       let expected = tests[test]
 
-      assert.equal(result.slots["body"].length, expected.bodyLength)
-      assert.equal(result.slots["parameters"].length, expected.paramLength)
+      assert.equal(result.slots.get("body").data.length, expected.bodyLength)
+      assert.equal(result.slots.get("parameters").data.length, expected.paramLength)
+    }
+  })
+
+  it("evaluates blocks", () => {
+    let tests = {
+      "a = { 1 }; a.call()": NewObject(Number, {}, 1),
+      // Single arguments
+      "a = { |x| x }; a.call(1)": NewObject(Number, {}, 1),
+      // Keyword multi-arguments
+      "a = { |a, b| a + b }; a.call(a: 1, b: 2)": NewObject(Number, {}, 3),
+      // Keyword arguments out-of-order
+      // Single argument but with default
+      // Keyword arguments with default
+      // Default arguments and one required argument
+    }
+
+    for(var test in tests) {
+      let i = new Interpreter()
+      let result = i.eval(test)
+      let expected = tests[test]
+
+      assert.equal(result.data, expected.data, `Incorrect return value for "${test}"`)
     }
   })
 })

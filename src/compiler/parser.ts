@@ -215,7 +215,7 @@ export default class Parser {
 
     return {
       type: NodeType.MessageSend,
-      object: left,
+      receiver: left,
       message: this.parseMessage()
     }
   }
@@ -253,19 +253,19 @@ export default class Parser {
    * Convert non-custom-case infix expressions into regular
    * message sends
    */
-  parseInfixExpression(left: Node): Node {
+  parseInfixExpression(left: Node): MessageSendNode {
     let token = this.currToken()
     let precedence = this.currPrecedence()
     this.nextToken()
 
     return {
       type: NodeType.MessageSend,
-      object: left,
+      receiver: left,
       message: {
         name: token.value,
-        arguments: [
-          this.parseExpression(precedence)
-        ]
+        arguments: [{
+          value: this.parseExpression(precedence)
+        }]
       }
     }
   }

@@ -77,27 +77,25 @@ describe("Interpreter", () => {
       assertObjectEval(test, tests[test])
     }
   })
-  /*
 
   it("evaluates comparison operators", () => {
-    let tests = [
-      { input: "1 > 2",  result: false, type: ObjectType.Boolean },
-      { input: "1 >= 1", result: true, type: ObjectType.Boolean },
-      { input: "1 >= 2", result: false, type: ObjectType.Boolean },
-      { input: "1 < 2",  result: true, type: ObjectType.Boolean },
-      { input: "1 <= 2", result: true, type: ObjectType.Boolean },
-      { input: "1 <= 1", result: true, type: ObjectType.Boolean },
-      { input: "3 == 3", result: true, type: ObjectType.Boolean },
-      { input: "3 == 4", result: false, type: ObjectType.Boolean },
-      { input: "3 != 4", result: true, type: ObjectType.Boolean },
-      { input: "3 != 3", result: false, type: ObjectType.Boolean },
-    ]
+    let tests = {
+      "1 > 2":  False,
+      "1 >= 1": True,
+      "1 >= 2": False,
+      "1 < 2":  True,
+      "1 <= 2": True,
+      "1 <= 1": True,
+      "3 == 3": True,
+      "3 == 4": False,
+      "3 != 4": True,
+      "3 != 3": False,
+    }
 
-    for(var test of tests) {
-      assertObjectEval(test)
+    for(var test in tests) {
+      assertObjectEval(test, tests[test])
     }
   })
-  */
 
   it("builds block objects", () => {
     let tests = {

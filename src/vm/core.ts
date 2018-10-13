@@ -28,6 +28,30 @@ Number.slots.set("/", builtInFunc(function(other) {
   return toObject(this.data / other.data)
 }))
 
+Number.slots.set(">", builtInFunc(function(other) {
+  return toObject(this.data > other.data)
+}))
+
+Number.slots.set(">=", builtInFunc(function(other) {
+  return toObject(this.data >= other.data)
+}))
+
+Number.slots.set("<", builtInFunc(function(other) {
+  return toObject(this.data < other.data)
+}))
+
+Number.slots.set("<=", builtInFunc(function(other) {
+  return toObject(this.data <= other.data)
+}))
+
+Number.slots.set("==", builtInFunc(function(other) {
+  return toObject(this.data == other.data)
+}))
+
+Number.slots.set("!=", builtInFunc(function(other) {
+  return toObject(this.data != other.data)
+}))
+
 export {
   Number,
   String,

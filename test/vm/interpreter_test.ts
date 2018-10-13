@@ -1,15 +1,15 @@
 import "mocha"
 import * as assert from "assert"
 import Interpreter from "@vm/interpreter"
-import { IObject, NewObject, Number, String, True, False, Null } from "@vm/object"
+import { IObject, NewObject, toObject, Number, String, True, False, Null } from "@vm/object"
 
 describe("Interpreter", () => {
   it("evaluates numbers", () => {
     let tests = {
-      "1": NewObject(Number, {}, 1),
-      "2": NewObject(Number, {}, 2),
-      "3.0": NewObject(Number, {}, 3.0),
-      "4.4": NewObject(Number, {}, 4.4),
+      "1": toObject(1),
+      "2": toObject(2),
+      "3.0": toObject(3.0),
+      "4.4": toObject(4.4),
     }
 
     for(var test in tests) {
@@ -31,9 +31,9 @@ describe("Interpreter", () => {
 
   it("evaluates strings", () => {
     let tests = {
-      [`"A String"`]: NewObject(String, {}, "A String"),
-      [`'Single Quotes'`]: NewObject(String, {}, "Single Quotes"),
-      [`"Nested\\"Quotes"`]: NewObject(String, {}, `Nested\\"Quotes`),
+      [`"A String"`]: toObject("A String"),
+      [`'Single Quotes'`]: toObject("Single Quotes"),
+      [`"Nested\\"Quotes"`]: toObject(`Nested\\"Quotes`),
     }
 
     for(var test in tests) {
@@ -44,9 +44,9 @@ describe("Interpreter", () => {
   it("evaulates local assignment and lookup", () => {
     let tests = {
       // Assignment returns the value assigned
-      "a = 1":  NewObject(Number, {}, 1),
+      "a = 1": toObject(1),
       // Accessing the local slot returns the stored value
-      "a = 2\na": NewObject(Number, {}, 2),
+      "a = 2\na": toObject(2),
     }
 
     for(var test in tests) {
@@ -54,30 +54,30 @@ describe("Interpreter", () => {
     }
   })
 
-  /*
   it("evaluates known math operators", () => {
-    let tests = [
+    let tests = {
       // Direct usage
-      { input: "1 + 2", result: 3, type: ObjectType.Number },
-      { input: "1 - 2", result: -2, type: ObjectType.Number },
-      { input: "1 * 2", result: 2, type: ObjectType.Number },
-      { input: "2 / 1", result: 1, type: ObjectType.Number },
+      "1 + 2": toObject(3),
+      "1 - 2": toObject(-1),
+      "1 * 2": toObject(2),
+      "2 / 1": toObject(2),
 
       // Operation Precedence
-      { input: "1 + 2 * 3", result: 7, type: ObjectType.Number },
-      { input: "2 / 1 + 4", result: 5, type: ObjectType.Number },
-      { input: "1 * 2 + 3 - 4 / 2", result: 2, type: ObjectType.Number },
+      "1 + 2 * 3": toObject(7),
+      "2 / 1 + 4": toObject(6),
+      "1 * 2 + 3 - 4 / 2": toObject(3),
 
       // Variable eval
-      { input: "a = 1\na + 1", result: 3, type: ObjectType.Number },
-      { input: "b = 2\n1 + b", result: 3, type: ObjectType.Number },
-      { input: "a = 1\nb = 2\na + b", result: 3, type: ObjectType.Number },
-    ]
+      "a = 1\na + 1": toObject(2),
+      "b = 2\n1 + b": toObject(3),
+      "a = 1\nb = 2\na + b": toObject(3),
+    }
 
-    for(var test of tests) {
-      assertObjectEval(test)
+    for(var test in tests) {
+      assertObjectEval(test, tests[test])
     }
   })
+  /*
 
   it("evaluates comparison operators", () => {
     let tests = [
@@ -146,5 +146,5 @@ function assertObjectEval(input: string, expected: IObject) {
 
   assert.equal(result.parents.length, expected.parents.length)
   assert.equal(result.parents[0], expected.parents[0])
-  assert.equal(result.data, expected.data)
+  assert.equal(result.data, expected.data, `Incorrect return value for "${input}"`)
 }

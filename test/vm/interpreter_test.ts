@@ -1,7 +1,7 @@
 import "mocha"
 import * as assert from "assert"
 import Interpreter from "@vm/interpreter"
-import { IObject, NewObject, toObject, Number, String, True, False, Null } from "@vm/object"
+import { IObject, toObject, Number, String, True, False, Null } from "@vm/object"
 
 describe("Interpreter", () => {
   it("evaluates numbers", () => {
@@ -117,15 +117,33 @@ describe("Interpreter", () => {
 
   it("evaluates blocks", () => {
     let tests = {
-      "a = { 1 }; a.call()": NewObject(Number, {}, 1),
+      "a = { 1 }; a.call()": toObject(1),
+
       // Single arguments
-      "a = { |x| x }; a.call(1)": NewObject(Number, {}, 1),
+      "a = { |x| x }; a.call(1)": toObject(1),
+
+      // Single arguments can be given keyword args
+      "a = { |x| x }; a.call(x: 10)": toObject(10),
+
       // Keyword multi-arguments
-      "a = { |a, b| a + b }; a.call(a: 1, b: 2)": NewObject(Number, {}, 3),
+      "a = { |a, b| a + b }; a.call(a: 1, b: 2)": toObject(3),
+
       // Keyword arguments out-of-order
+      "a = { |a, b| a / b }; a.call(b: 2, a: 4)": toObject(2),
+
       // Single argument but with default
+      "a = { |a: 3| a }; a.call() + a.call(5)": toObject(8),
+
       // Keyword arguments with default
+      "a = { |x: 1, y: 2| x * y }; a.call() + a.call(x: 2, y: 3)": toObject(8),
+
       // Default arguments and one required argument
+      "a = { |x, y: 2| x * y }; a.call(5) + a.call(x: 10, y: 10)": toObject(110),
+
+      // The above implies that we should support the first argument to always
+      // be able to match the first parameter, and let further params be keyworded
+      // to make it easy to add params later if you need more specificity.
+      "a = { |x, y: 2| x * y }; a.call(5) + a.call(10, y: 10)": toObject(110),
     }
 
     for(var test in tests) {

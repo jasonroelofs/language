@@ -283,6 +283,7 @@ export default class Parser {
       return left
     }
 
+    // Move past the OpenParen
     this.nextToken()
 
     // At this point we have parameters. This can be a single plain parameter
@@ -290,14 +291,22 @@ export default class Parser {
     // run through keywords.
 
     // We aren't at the start of a keyword, so we are probably a plain param.
+    // There can only be one of these.
     if (!this.peekTokenIs(TokenType.Colon)) {
       left.message.arguments.push({
         value: this.parseExpression(Precedence.Lowest)
       })
 
-      this.nextToken()
+      // No more arguments, move on
+      if(this.currTokenIs(TokenType.CloseParen)) {
+        this.nextToken()
+        return left
+      }
 
-      return left
+      // Prepare for more arguments!
+      if(this.currTokenIs(TokenType.Comma)) {
+        this.nextToken()
+      }
     }
 
     // Alright we are keywording it up!

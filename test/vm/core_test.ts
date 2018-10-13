@@ -3,6 +3,9 @@ import * as assert from "assert"
 import {toObject} from "@vm/object"
 import Interpreter from "@vm/interpreter"
 
+describe("Object", () => {
+})
+
 describe("Number", () => {
   it("exposes basic arithmetic operations", () => {
     let tests = {

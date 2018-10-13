@@ -124,6 +124,27 @@ describe("Parser", () => {
             }
           ]
         }
+      },
+      // > 1 parameter, but first parameter can still be unnamed
+      "obj.message(a1, a2: a.b)": {
+        type: NodeType.MessageSend,
+        receiver: { type: NodeType.Identifier, value: "obj" },
+        message: {
+          name: "message",
+          arguments: [
+            {
+              value: { type: NodeType.Identifier, value: "a1" }
+            },
+            {
+              name: "a2",
+              value: {
+                type: NodeType.MessageSend,
+                receiver: { type: NodeType.Identifier, value: "a" },
+                message: { name: "b", arguments: [] },
+              }
+            }
+          ]
+        }
       }
     }
 

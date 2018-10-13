@@ -113,16 +113,24 @@ export default class Interpreter {
       let codeBody = SendMessage(receiver, "body").data
       let parameters = SendMessage(receiver, "parameters").data
 
-      // TODO
-      // Should also check arguments against the method's defined
-      // parameters but that can come next
       this.currentScope.pushScope()
 
-      for(var idx in args) {
-        this.currentScope.set(
-          parameters[idx].name,
-          this.evalNode(args[idx].value)
-        )
+      // Check for plain first argument and fix it up to match the name
+      // of the first parameter
+      if(args.length > 0 && args[0].name == null) {
+        args[0].name = parameters[0].name
+      }
+
+      for(var param of parameters) {
+        let arg = args.find((a) => { return a.name == param.name })
+
+        if(arg) {
+          this.currentScope.set(param.name, this.evalNode(arg.value))
+        } else if(param.default) {
+          this.currentScope.set(param.name, this.evalNode(param.default))
+        } else {
+          // ERROR Unmatched required parameter
+        }
       }
 
       let result = this.evalExpressions(codeBody)
@@ -132,6 +140,7 @@ export default class Interpreter {
       return result
     }
 
+    // Not a code block, figure out what's at this location
     let slotValue = SendMessage(receiver, message)
 
     if(slotValue.codeBlock && slotValue.builtIn) {

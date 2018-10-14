@@ -1,4 +1,4 @@
-Unnamed Language
+Unnamed Language [![Build Status](https://travis-ci.org/jasonroelofs/language.svg?branch=master)](https://travis-ci.org/jasonroelofs/language)
 ----------------
 
 Influenced by Smalltalk, Self, IO, Javascript, and Ruby.

@@ -1,0 +1,7 @@
+language: node_js
+node_js:
+  - 10
+# https://docs.npmjs.com/cli/ci
+cache:
+  directories:
+    - "$HOME/.npm"

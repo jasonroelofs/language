@@ -52,7 +52,13 @@ Number.slots.set("!=", builtInFunc(function(other) {
   return toObject(this.data != other.data)
 }))
 
+let IO = NewObject(Objekt)
+IO.slots.set("puts", builtInFunc(function(message) {
+  console.log(message.toString())
+}))
+
 export {
   Number,
   String,
+  IO,
 }

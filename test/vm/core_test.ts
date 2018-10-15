@@ -19,9 +19,18 @@ describe("Number", () => {
       assertExpression(test, tests[test])
     }
   })
+
+  it("supports toString to get the Javascript value", () => {
+    assert.equal(toObject(2).toString(), "2")
+    assert.equal(toObject(5.5).toString(), "5.5")
+    assert.equal(toObject(-3).toString(), "-3")
+  })
 })
 
 describe("String", () => {
+  it("supports toString to get the Javascript value", () => {
+    assert.equal(toObject("Hello").toString(), "Hello")
+  })
 })
 
 function assertExpression(input, expected) {

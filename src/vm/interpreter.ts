@@ -20,6 +20,7 @@ import {
 import {
   Number,
   String,
+  IO,
 } from "@vm/core"
 import Environment from "@vm/environment"
 
@@ -29,6 +30,16 @@ export default class Interpreter {
 
   constructor() {
     this.currentScope = new Environment()
+
+    // HACK. I will be moving the "scoping" setup here to actually be
+    // just more objects, so the global "scope" will be the World object,
+    // Constant and variable lookup will be messages on World slots.
+    // A user's workspace is a Space. Blocks will have a Locals (and figure out
+    // closure handling).
+    this.currentScope.set("Object", Objekt)
+    this.currentScope.set("Number", Number)
+    this.currentScope.set("String", String)
+    this.currentScope.set("IO", IO)
   }
 
   eval(program: string): IObject {

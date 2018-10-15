@@ -17,6 +17,22 @@ interface IObject {
 
   // Are we wrapping a built-in, pure javascript function?
   builtIn: boolean
+
+  // Output ourselves to the world as a String
+  toString(): string
+}
+
+/**
+ * All objects should be serializable into a string format for easy
+ * debugging. This is the base form of toString that any object will use
+ * if the `toString` message isn't otherwise defined.
+ */
+let baseToString = function() {
+  if(this.data) {
+    return this.data
+  } else {
+    return this
+  }
 }
 
 /**
@@ -39,6 +55,7 @@ function NewObject(parent: IObject, slots = {}, data = null): IObject {
     data: data,
     codeBlock: false,
     builtIn: false,
+    toString: baseToString,
   }
 }
 

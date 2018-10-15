@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Unnamed Language ----------------",
   "main": "index.js",
+  "bin": {
+    "cli": "./dist/bin/lang-cli.js"
+  },
   "directories": {
     "doc": "docs",
     "test": "test"
@@ -10,7 +13,10 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsc && tspath -f",
-    "test": "npm run-script build && mocha dist/**/*_test.js"
+    "pretest": "npm run build",
+    "test": "mocha dist/**/*_test.js",
+    "precli": "npm run build",
+    "cli": "node dist/bin/lang-cli.js"
   },
   "dependencies": {
     "@types/mocha": "^5.2.5",

@@ -1,4 +1,7 @@
-import {NewObject, toObject, IObject, Objekt, Number, String} from "@vm/object"
+import {
+  NewObject, toObject, IObject, Objekt,
+  Number, String, True, False, Null
+} from "@vm/object"
 
 //
 // Our core set of built-ins
@@ -66,6 +69,10 @@ World.slots.set("Object", Objekt)
 World.slots.set("Number", Number)
 World.slots.set("String", String)
 World.slots.set("IO",     IO)
+
+World.slots.set("True", True)
+World.slots.set("False", False)
+World.slots.set("Null", Null)
 
 /**
  * However, all actual execution happens in a Space, which is

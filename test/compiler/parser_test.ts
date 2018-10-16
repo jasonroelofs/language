@@ -145,7 +145,7 @@ describe("Parser", () => {
             }
           ]
         }
-      }
+      },
     }
 
     for(var test in tests) {

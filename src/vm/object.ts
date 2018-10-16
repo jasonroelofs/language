@@ -28,7 +28,7 @@ interface IObject {
  * if the `toString` message isn't otherwise defined.
  */
 let baseToString = function() {
-  if(this.data) {
+  if(this.data != undefined && this.data != null) {
     return this.data
   } else {
     return this

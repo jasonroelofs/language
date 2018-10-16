@@ -154,6 +154,25 @@ describe("Interpreter", () => {
       assert.equal(result.data, expected.data, `Incorrect return value for "${test}"`)
     }
   })
+
+  it("evaluates direct message calls on objects", () => {
+    let i = new Interpreter()
+
+    // Get raw values back
+    i.eval(`Object.addSlot("size", v: 3)`)
+    var result = i.eval("Object.size")
+    assert.equal(result.data, 3)
+
+    // Eval a block with no arguments
+    i.eval(`Object.addSlot("count", v: { 5 })`)
+    var result = i.eval("Object.count()")
+    assert.equal(result.data, 5)
+
+    // Call blocks at the slot with arguments
+    i.eval(`Object.addSlot("pow", v: { |x| x * x })`)
+    result = i.eval("Object.pow(3)")
+    assert.equal(result.data, 9)
+  })
 })
 
 function assertObjectEval(input: string, expected: IObject) {

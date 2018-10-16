@@ -5,6 +5,7 @@ import {
   Node,
   BlockNode,
   MessageSendNode,
+  ArgumentNode,
   NodeType,
   Expression
 } from "@compiler/ast"
@@ -103,6 +104,7 @@ export default class Interpreter {
   evalMessageSend(node: MessageSendNode): IObject {
     let receiver = this.evalNode(node.receiver)
     let message = node.message.name
+    let args = node.message.arguments
 
     // TODO figure out how other like languages do this.
     //
@@ -114,54 +116,59 @@ export default class Interpreter {
     // So hard-coding a look for a node marked as a code block
     // and the "call" message.
     if(receiver.codeBlock && message == "call") {
-      // Execute the code block with the arguments
-      let args = node.message.arguments
-      let codeBody = SendMessage(receiver, "body").data
-      let parameters = SendMessage(receiver, "parameters").data
-
-      let blockSpace = this.newNestedSpace()
-
-      // Check for plain first argument and fix it up to match the name
-      // of the first parameter
-      if(args.length > 0 && args[0].name == null) {
-        args[0].name = parameters[0].name
-      }
-
-      for(var param of parameters) {
-        let arg = args.find((a) => { return a.name == param.name })
-
-        if(arg) {
-          blockSpace.slots.set(param.name, this.evalNode(arg.value))
-        } else if(param.default) {
-          blockSpace.slots.set(param.name, this.evalNode(param.default))
-        } else {
-          // ERROR Unmatched required parameter
-        }
-      }
-
-      let result = this.evalExpressions(codeBody)
-
-      this.popSpace()
-
-      return result
+      return this.evalCodeBlock(receiver, args)
     }
 
     // Not a code block, figure out what's at this location
     let slotValue = SendMessage(receiver, message)
 
-    if(slotValue.codeBlock && slotValue.builtIn) {
-      // We're a built-in, call it via javascript
-      let args = node.message.arguments
-      let toFunc = []
+    if(slotValue.codeBlock) {
+      if(slotValue.builtIn) {
+        // We're a built-in, call it via javascript
+        let toFunc = []
 
-      for(var idx in args) {
-        toFunc.push(this.evalNode(args[idx].value))
+        for(var idx in args) {
+          toFunc.push(this.evalNode(args[idx].value))
+        }
+
+        return slotValue.data.apply(receiver, toFunc)
+      } else {
+        return this.evalCodeBlock(slotValue, args)
       }
-
-      return slotValue.data.apply(receiver, toFunc)
     }
 
     return slotValue
+  }
+
+  evalCodeBlock(codeBlock: IObject, args: ArgumentNode[]): IObject {
+    let codeBody = SendMessage(codeBlock, "body").data
+    let parameters = SendMessage(codeBlock, "parameters").data
+
+    let blockSpace = this.newNestedSpace()
+
+    // Check for plain first argument and fix it up to match the name
+    // of the first parameter
+    if(args.length > 0 && args[0].name == null) {
+      args[0].name = parameters[0].name
+    }
+
+    for(var param of parameters) {
+      let arg = args.find((a) => { return a.name == param.name })
+
+      if(arg) {
+        blockSpace.slots.set(param.name, this.evalNode(arg.value))
+      } else if(param.default) {
+        blockSpace.slots.set(param.name, this.evalNode(param.default))
+      } else {
+        // ERROR Unmatched required parameter
+      }
+    }
+
+    let result = this.evalExpressions(codeBody)
+
+    this.popSpace()
+
+    return result
   }
 
   newNestedSpace(): IObject {

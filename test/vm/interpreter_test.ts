@@ -1,7 +1,7 @@
 import "mocha"
 import * as assert from "assert"
 import Interpreter from "@vm/interpreter"
-import { IObject, toObject, Number, String, True, False, Null } from "@vm/object"
+import { IObject, toObject, True, False, Null } from "@vm/object"
 
 describe("Interpreter", () => {
   it("evaluates numbers", () => {

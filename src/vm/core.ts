@@ -1,6 +1,7 @@
 import {
   NewObject, toObject, IObject, Objekt,
-  Number, String, True, False, Null
+  Number, String, True, False, Null,
+  AddSlot,
 } from "@vm/object"
 
 //
@@ -8,71 +9,78 @@ import {
 //
 
 function builtInFunc(func): IObject {
-  let value = NewObject(Objekt, {}, func)
+  let value = NewObject(Objekt, func)
   value.codeBlock = true
   value.builtIn = true
 
   return value
 }
 
-Number.slots.set("+", builtInFunc(function(other) {
+AddSlot(Objekt, "addSlot", builtInFunc(function(slotName, slotValue) {
+  AddSlot(this, slotName, slotValue)
+}))
+
+AddSlot(Number, "+", builtInFunc(function(other) {
   return toObject(this.data + other.data)
 }))
 
-Number.slots.set("-", builtInFunc(function(other) {
+AddSlot(Number, "-", builtInFunc(function(other) {
   return toObject(this.data - other.data)
 }))
 
-Number.slots.set("*", builtInFunc(function(other) {
+AddSlot(Number, "*", builtInFunc(function(other) {
   return toObject(this.data * other.data)
 }))
 
-Number.slots.set("/", builtInFunc(function(other) {
+AddSlot(Number, "/", builtInFunc(function(other) {
   return toObject(this.data / other.data)
 }))
 
-Number.slots.set(">", builtInFunc(function(other) {
+AddSlot(Number, ">", builtInFunc(function(other) {
   return toObject(this.data > other.data)
 }))
 
-Number.slots.set(">=", builtInFunc(function(other) {
+AddSlot(Number, ">=", builtInFunc(function(other) {
   return toObject(this.data >= other.data)
 }))
 
-Number.slots.set("<", builtInFunc(function(other) {
+AddSlot(Number, "<", builtInFunc(function(other) {
   return toObject(this.data < other.data)
 }))
 
-Number.slots.set("<=", builtInFunc(function(other) {
+AddSlot(Number, "<=", builtInFunc(function(other) {
   return toObject(this.data <= other.data)
 }))
 
-Number.slots.set("==", builtInFunc(function(other) {
+AddSlot(Number, "==", builtInFunc(function(other) {
   return toObject(this.data == other.data)
 }))
 
-Number.slots.set("!=", builtInFunc(function(other) {
+AddSlot(Number, "!=", builtInFunc(function(other) {
   return toObject(this.data != other.data)
 }))
 
 let IO = NewObject(Objekt)
-IO.slots.set("puts", builtInFunc(function(message) {
+AddSlot(IO, "puts", builtInFunc(function(message) {
   console.log(message.toString())
 }))
 
 /**
  * The World is the top-level, global object and context.
  * All main constants are defined here.
+ * The World is alway accessible directly via the 'World' constant.
  */
 let World = NewObject(Objekt)
-World.slots.set("Object", Objekt)
-World.slots.set("Number", Number)
-World.slots.set("String", String)
-World.slots.set("IO",     IO)
+AddSlot(World, "World", World)
 
-World.slots.set("True", True)
-World.slots.set("False", False)
-World.slots.set("Null", Null)
+AddSlot(World, "Object", Objekt)
+AddSlot(World, "Number", Number)
+AddSlot(World, "String", String)
+AddSlot(World, "IO",     IO)
+
+AddSlot(World, "True",   True)
+AddSlot(World, "False",  False)
+AddSlot(World, "Null",   Null)
 
 /**
  * However, all actual execution happens in a Space, which is
@@ -82,8 +90,10 @@ World.slots.set("Null", Null)
  * layered on top of and along side each other to build abstractions.
  */
 let Space = NewObject(World)
+AddSlot(Space, "Space", Space)
 
 export {
+  Objekt,
   Number,
   String,
   IO,

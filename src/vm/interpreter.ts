@@ -12,6 +12,7 @@ import {
   IObject,
   NewObject,
   SendMessage,
+  AddSlot,
   Objekt,
   Null,
   True,
@@ -66,13 +67,13 @@ export default class Interpreter {
         return SendMessage(this.currentSpace, node.value)
 
       case NodeType.NumberLiteral:
-        return NewObject(Number, {}, node.value)
+        return NewObject(Number, node.value)
 
       case NodeType.BooleanLiteral:
         return node.value ? True : False
 
       case NodeType.StringLiteral:
-        return NewObject(String, {}, node.value)
+        return NewObject(String, node.value)
 
       case NodeType.NullLiteral:
         return Null
@@ -90,10 +91,9 @@ export default class Interpreter {
   }
 
   evalBlockLiteral(node: BlockNode): IObject {
-    let block = NewObject(Objekt, {
-      "body": NewObject(Objekt, {}, node.body),
-      "parameters": NewObject(Objekt, {}, node.parameters),
-    })
+    let block = NewObject(Objekt)
+    AddSlot(block, "body", NewObject(Objekt, node.body))
+    AddSlot(block, "parameters", NewObject(Objekt, node.parameters))
 
     block.codeBlock = true
 

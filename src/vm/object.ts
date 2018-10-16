@@ -5,7 +5,14 @@ import * as util from "util"
  */
 interface IObject {
   parents: IObject[]
-  slots: Map<String, IObject>
+
+  // TODO: Slot keys should be themselves IObjects but we don't have logic set up
+  // yet to hash objects into good look-up keys. For now forcing to a string in
+  // javascript.
+  slots: Map<string, IObject>
+
+  // Unique identifier for this object
+  objectId: number
 
   // `data` is internal-only storage of the Javascript value that this object
   // represents, used e.g. for Number and String
@@ -37,21 +44,15 @@ let baseToString = function() {
 
 /**
  * Create a new object from a given parent.
- * Can be used to pre-fill the initial set of slots.
  * The `data` parameter is meant for internal use only, as a pointer
  * to the Javascript value of a given object, e.g. a number (1) or a string ("").
  */
-function NewObject(parent: IObject, slots = {}, data = null): IObject {
-  // This can hopefully be soon replaced with `Object.entries`
-  let slotMap = new Map()
-
-  Object.keys(slots).forEach(key => {
-    slotMap.set(key, slots[key])
-  })
-
+var objectIdSeq = 0; // TODO Not multi-interpreter or thread safe at all :D
+function NewObject(parent: IObject, data = null): IObject {
   return {
     parents: (parent ? [parent] : []),
-    slots: slotMap,
+    slots: new Map(),
+    objectId: objectIdSeq++,
     data: data,
     codeBlock: false,
     builtIn: false,
@@ -64,7 +65,10 @@ function NewObject(parent: IObject, slots = {}, data = null): IObject {
  * send the message to the object. This will work its way up the parent tree
  * looking for the object that responds to this message, returning the result
  */
-function SendMessage(receiver: IObject, message: string): IObject {
+function SendMessage(receiver: IObject, messageName: string | IObject): IObject {
+  // TODO Ensure this is a String
+  let message = toObject(messageName).data
+
   if (receiver.slots.has(message)) {
     return receiver.slots.get(message)
   } else if (receiver.parents.length == 0) {
@@ -86,6 +90,14 @@ function SendMessage(receiver: IObject, message: string): IObject {
 }
 
 /**
+ * Apply a slot to the given Object.
+ * Name of the slot needs to be a String. The value can be any object.
+ */
+function AddSlot(reciever: IObject, message: string | IObject, value: IObject) {
+  reciever.slots.set(toObject(message).data, value)
+}
+
+/**
  * The base of all objects. Should not ever be used directly.
  * Provides the slots for Object, through which everything else should build off of.
  */
@@ -96,12 +108,12 @@ let ObjectBase = NewObject(null)
 // This will be properly renamed back to "Object" when in the language.
 let Objekt = NewObject(ObjectBase)
 
-let Null = NewObject(Objekt, {}, null)
-let True = NewObject(Objekt, {}, true)
-let False = NewObject(Objekt, {}, false)
+let Null = NewObject(Objekt, null)
+let True = NewObject(Objekt, true)
+let False = NewObject(Objekt, false)
 
-let Number = NewObject(Objekt, {}, 0)
-let String = NewObject(Objekt, {}, "")
+let Number = NewObject(Objekt, 0)
+let String = NewObject(Objekt, "")
 
 /**
  * Mapping of the results of (typeof object) to our internal
@@ -128,7 +140,12 @@ function toObject(nativeValue: any): IObject {
   let parentObject = typeMapping[typeof nativeValue]
 
   if(parentObject) {
-    return NewObject(parentObject, {}, nativeValue)
+    return NewObject(parentObject, nativeValue)
+  }
+
+  // Already an Object, pass it through
+  if('objectId' in nativeValue) {
+    return nativeValue
   }
 
   throw new Error(util.format("Don't know how to convert from native type %o", typeof nativeValue))
@@ -138,6 +155,7 @@ export {
   IObject,
   NewObject,
   SendMessage,
+  AddSlot,
   toObject,
   Objekt,
   Null,

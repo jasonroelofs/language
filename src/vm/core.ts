@@ -57,8 +57,29 @@ IO.slots.set("puts", builtInFunc(function(message) {
   console.log(message.toString())
 }))
 
+/**
+ * The World is the top-level, global object and context.
+ * All main constants are defined here.
+ */
+let World = NewObject(Objekt)
+World.slots.set("Object", Objekt)
+World.slots.set("Number", Number)
+World.slots.set("String", String)
+World.slots.set("IO",     IO)
+
+/**
+ * However, all actual execution happens in a Space, which is
+ * a child of the World. This constrains all code to it's own context
+ * while still having full access to everything defined in the World.
+ * My thought here is that system execution will consist of many spaces
+ * layered on top of and along side each other to build abstractions.
+ */
+let Space = NewObject(World)
+
 export {
   Number,
   String,
   IO,
+  World,
+  Space,
 }

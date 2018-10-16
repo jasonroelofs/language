@@ -21,25 +21,18 @@ import {
   Number,
   String,
   IO,
+  World,
+  Space,
 } from "@vm/core"
-import Environment from "@vm/environment"
 
 export default class Interpreter {
 
-  currentScope: Environment
+  theWorld: IObject
+  currentSpace: IObject
 
   constructor() {
-    this.currentScope = new Environment()
-
-    // HACK. I will be moving the "scoping" setup here to actually be
-    // just more objects, so the global "scope" will be the World object,
-    // Constant and variable lookup will be messages on World slots.
-    // A user's workspace is a Space. Blocks will have a Locals (and figure out
-    // closure handling).
-    this.currentScope.set("Object", Objekt)
-    this.currentScope.set("Number", Number)
-    this.currentScope.set("String", String)
-    this.currentScope.set("IO", IO)
+    this.theWorld = World
+    this.currentSpace = Space
   }
 
   eval(program: string): IObject {
@@ -61,14 +54,16 @@ export default class Interpreter {
 
   evalNode(node: Node): IObject {
     switch(node.type) {
+      // TODO: Update the parser to convert assignment to a MessageSend
+      // so we can drop this branch entirely.
       case NodeType.Assignment:
         let varName = node.name
         let varValue = this.evalNode(node.right)
-        this.currentScope.set(varName, varValue)
+        this.currentSpace.slots.set(varName, varValue)
         return varValue
 
       case NodeType.Identifier:
-        return this.currentScope.get(node.value)
+        return SendMessage(this.currentSpace, node.value)
 
       case NodeType.NumberLiteral:
         return NewObject(Number, {}, node.value)
@@ -124,7 +119,7 @@ export default class Interpreter {
       let codeBody = SendMessage(receiver, "body").data
       let parameters = SendMessage(receiver, "parameters").data
 
-      this.currentScope.pushScope()
+      let blockSpace = this.newNestedSpace()
 
       // Check for plain first argument and fix it up to match the name
       // of the first parameter
@@ -136,9 +131,9 @@ export default class Interpreter {
         let arg = args.find((a) => { return a.name == param.name })
 
         if(arg) {
-          this.currentScope.set(param.name, this.evalNode(arg.value))
+          blockSpace.slots.set(param.name, this.evalNode(arg.value))
         } else if(param.default) {
-          this.currentScope.set(param.name, this.evalNode(param.default))
+          blockSpace.slots.set(param.name, this.evalNode(param.default))
         } else {
           // ERROR Unmatched required parameter
         }
@@ -146,7 +141,7 @@ export default class Interpreter {
 
       let result = this.evalExpressions(codeBody)
 
-      this.currentScope.popScope()
+      this.popSpace()
 
       return result
     }
@@ -167,5 +162,15 @@ export default class Interpreter {
     }
 
     return slotValue
+  }
+
+  newNestedSpace(): IObject {
+    let newSpace = NewObject(this.currentSpace)
+    this.currentSpace = newSpace
+    return newSpace
+  }
+
+  popSpace() {
+    this.currentSpace = this.currentSpace.parents[0]
   }
 }

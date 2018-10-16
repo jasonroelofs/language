@@ -336,6 +336,13 @@ export default class Parser {
       if(this.currTokenIs(TokenType.Comma)) {
         this.nextToken()
       }
+
+      // If we're currently on a close paren, then
+      // we are also done. This can happen if a block is the value
+      // of the last argument.
+      if(this.currTokenIs(TokenType.CloseParen)) {
+        break
+      }
     }
 
     // Move past the close paren, we're done

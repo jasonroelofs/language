@@ -153,6 +153,33 @@ describe("Parser", () => {
     }
   })
 
+  it("allows messages to be given blocks as arguments", () => {
+    // Blocks can be passed in as arguments.
+    // The `b` at the end helped trigger a parser error that this
+    // test proves is fixed.
+    let test = "a.call({}, c: {})\nb"
+    let expected = {
+      type: NodeType.MessageSend,
+      receiver: { type: NodeType.Identifier, value: "a" },
+      message: {
+        name: "call",
+        arguments: [
+          { value: { type: NodeType.Block, parameters: [], body: [] } },
+          { name: "c", value: { type: NodeType.Block, parameters: [], body: [] } },
+        ]
+      }
+    }
+
+    let lexer = new Lexer(test)
+    let tokens = lexer.tokenize()
+
+    let parser = new Parser(tokens)
+    let expressions = parser.parse()
+
+    assert.equal(expressions.length, 2)
+    assert.deepEqual(expressions[0].node, expected, `Comparison failed for ''${test}''`)
+  })
+
   it("parses assignment", () => {
     let tests = {
       "a = 1" : {

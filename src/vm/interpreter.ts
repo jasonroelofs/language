@@ -14,6 +14,7 @@ import {
   NewObject,
   SendMessage,
   AddSlot,
+  toObject,
   Objekt,
   Null,
   True,
@@ -26,6 +27,9 @@ import {
   World,
   Space,
 } from "@vm/core"
+import * as glob from "fast-glob"
+import * as fs from "fs"
+import * as path from "path"
 
 export default class Interpreter {
 
@@ -33,8 +37,22 @@ export default class Interpreter {
   currentSpace: IObject
 
   constructor() {
-    this.theWorld = World
-    this.currentSpace = Space
+    this.theWorld = NewObject(World)
+    this.currentSpace = this.theWorld
+
+    this.loadCoreLib()
+
+    // Initialize our execution space and we are ready to go
+    this.currentSpace = NewObject(Space)
+  }
+
+  loadCoreLib() {
+    let coreDir = path.resolve(__dirname + "/../../lib/core");
+    let entries = glob.sync([`${coreDir}/**/*.lang`]).forEach((file) => {
+      let path = (typeof(file) == "string") ? file : file.path
+      let code = fs.readFileSync(path)
+      this.eval(code.toString())
+    })
   }
 
   eval(program: string): IObject {
@@ -116,7 +134,7 @@ export default class Interpreter {
     // So hard-coding a look for a node marked as a code block
     // and the "call" message.
     if(receiver.codeBlock && message == "call") {
-      return this.evalCodeBlock(receiver, args)
+      return this.evalCodeBlock(null, receiver, args)
     }
 
     // Not a code block, figure out what's at this location
@@ -133,18 +151,26 @@ export default class Interpreter {
 
         return slotValue.data.apply(receiver, toFunc)
       } else {
-        return this.evalCodeBlock(slotValue, args)
+        return this.evalCodeBlock(receiver, slotValue, args)
       }
     }
 
     return slotValue
   }
 
-  evalCodeBlock(codeBlock: IObject, args: ArgumentNode[]): IObject {
+  evalCodeBlock(receiver: IObject, codeBlock: IObject, args: ArgumentNode[]): IObject {
     let codeBody = SendMessage(codeBlock, "body").data
     let parameters = SendMessage(codeBlock, "parameters").data
 
     let blockSpace = this.newNestedSpace()
+
+    // As we're now executing a block in the context of an owning object
+    // aka it's a block assigned to an object's slot and not a direct block call,
+    // we set the current object to `self`
+    // TODO: "self" should be intern'd
+    if(receiver) {
+      AddSlot(blockSpace, toObject("self"), receiver)
+    }
 
     // Check for plain first argument and fix it up to match the name
     // of the first parameter
@@ -156,9 +182,9 @@ export default class Interpreter {
       let arg = args.find((a) => { return a.name == param.name })
 
       if(arg) {
-        blockSpace.slots.set(param.name, this.evalNode(arg.value))
+        AddSlot(blockSpace, toObject(param.name), this.evalNode(arg.value))
       } else if(param.default) {
-        blockSpace.slots.set(param.name, this.evalNode(param.default))
+        AddSlot(blockSpace, toObject(param.name), this.evalNode(param.default))
       } else {
         // ERROR Unmatched required parameter
       }

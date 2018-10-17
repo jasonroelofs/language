@@ -20,44 +20,36 @@ AddSlot(Objekt, "addSlot", builtInFunc(function(slotName, slotValue) {
   AddSlot(this, slotName, slotValue)
 }))
 
-AddSlot(Number, "+", builtInFunc(function(other) {
-  return toObject(this.data + other.data)
-}))
+/**
+ * Container object for all built-in methods we will be exposing to the user
+ */
+let BuiltIn = NewObject(Objekt)
 
-AddSlot(Number, "-", builtInFunc(function(other) {
-  return toObject(this.data - other.data)
-}))
-
-AddSlot(Number, "*", builtInFunc(function(other) {
-  return toObject(this.data * other.data)
-}))
-
-AddSlot(Number, "/", builtInFunc(function(other) {
-  return toObject(this.data / other.data)
-}))
-
-AddSlot(Number, ">", builtInFunc(function(other) {
-  return toObject(this.data > other.data)
-}))
-
-AddSlot(Number, ">=", builtInFunc(function(other) {
-  return toObject(this.data >= other.data)
-}))
-
-AddSlot(Number, "<", builtInFunc(function(other) {
-  return toObject(this.data < other.data)
-}))
-
-AddSlot(Number, "<=", builtInFunc(function(other) {
-  return toObject(this.data <= other.data)
-}))
-
-AddSlot(Number, "==", builtInFunc(function(other) {
-  return toObject(this.data == other.data)
-}))
-
-AddSlot(Number, "!=", builtInFunc(function(other) {
-  return toObject(this.data != other.data)
+AddSlot(BuiltIn, "numberOp", builtInFunc(function(left, op, right) {
+  switch(op.data) {
+    case "+":
+      return toObject(left.data + right.data)
+    case "-":
+      return toObject(left.data - right.data)
+    case "*":
+      return toObject(left.data * right.data)
+    case "/":
+      return toObject(left.data / right.data)
+    case ">":
+      return toObject(left.data > right.data)
+    case ">=":
+      return toObject(left.data >= right.data)
+    case "<":
+      return toObject(left.data < right.data)
+    case "<=":
+      return toObject(left.data <= right.data)
+    case "==":
+      return toObject(left.data == right.data)
+    case "!=":
+      return toObject(left.data != right.data)
+    default:
+      throw new Error(`Unknown operand on numbers '${op}'`)
+  }
 }))
 
 let IO = NewObject(Objekt)
@@ -72,6 +64,8 @@ AddSlot(IO, "puts", builtInFunc(function(message) {
  */
 let World = NewObject(Objekt)
 AddSlot(World, "World", World)
+
+AddSlot(World, "BuiltIn", BuiltIn)
 
 AddSlot(World, "Object", Objekt)
 AddSlot(World, "Number", Number)

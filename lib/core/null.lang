@@ -1,0 +1,3 @@
+Null.addSlot("do", as: { |ifTrue: {}, ifFalse: {}|
+  ifFalse.call()
+})

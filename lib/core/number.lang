@@ -1,0 +1,39 @@
+Number.addSlot("+", as: { |other|
+  BuiltIn.numberOp(left: self, op: "+", right: other)
+})
+
+Number.addSlot("-", as: { |other|
+  BuiltIn.numberOp(left: self, op: "-", right: other)
+})
+
+Number.addSlot("*", as: { |other|
+  BuiltIn.numberOp(left: self, op: "*", right: other)
+})
+
+Number.addSlot("/", as: { |other|
+  BuiltIn.numberOp(left: self, op: "/", right: other)
+})
+
+Number.addSlot(">", as: { |other|
+  BuiltIn.numberOp(left: self, op: ">", right: other)
+})
+
+Number.addSlot(">=", as: { |other|
+  BuiltIn.numberOp(left: self, op: ">=", right: other)
+})
+
+Number.addSlot("<", as: { |other|
+  BuiltIn.numberOp(left: self, op: "<", right: other)
+})
+
+Number.addSlot("<=", as: { |other|
+  BuiltIn.numberOp(left: self, op: "<=", right: other)
+})
+
+Number.addSlot("==", as: { |other|
+  BuiltIn.numberOp(left: self, op: "==", right: other)
+})
+
+Number.addSlot("!=", as: { |other|
+  BuiltIn.numberOp(left: self, op: "!=", right: other)
+})

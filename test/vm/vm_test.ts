@@ -2,9 +2,9 @@ import "mocha"
 import * as assert from "assert"
 import VM from "@vm/vm"
 import { IObject, toObject, True, False, Null } from "@vm/object"
-import { World } from "@vm/core"
+import { Objekt, World } from "@vm/core"
 
-describe("Interpreter", () => {
+describe("VM", () => {
   it("evaluates numbers", () => {
     let tests = {
       "1": toObject(1),
@@ -106,8 +106,9 @@ describe("Interpreter", () => {
       "{ |a, b| a + b }": { bodyLength: 1, paramLength: 2 },
     }
 
+    let vm = new VM()
+
     for(var test in tests) {
-      let vm = new VM()
       let result = vm.eval(test)
       let expected = tests[test]
 
@@ -147,8 +148,9 @@ describe("Interpreter", () => {
       "a = { |x, y: 2| x * y }; a.call(5) + a.call(10, y: 10)": toObject(110),
     }
 
+    let vm = new VM()
+
     for(var test in tests) {
-      let vm = new VM()
       let result = vm.eval(test)
       let expected = tests[test]
 
@@ -160,19 +162,44 @@ describe("Interpreter", () => {
     let vm = new VM()
 
     // Get raw values back
-    vm.eval(`Object.addSlot("size", v: 3)`)
+    vm.eval(`Object.addSlot("size", as: 3)`)
     var result = vm.eval("Object.size")
     assert.equal(result.data, 3)
 
     // Eval a block with no arguments
-    vm.eval(`Object.addSlot("count", v: { 5 })`)
+    vm.eval(`Object.addSlot("count", as: { 5 })`)
     var result = vm.eval("Object.count()")
     assert.equal(result.data, 5)
 
     // Call blocks at the slot with arguments
-    vm.eval(`Object.addSlot("pow", v: { |x| x * x })`)
+    vm.eval(`Object.addSlot("pow", as: { |x| x * x })`)
     result = vm.eval("Object.pow(3)")
     assert.equal(result.data, 9)
+  })
+
+  it("supports creation of new objects", () => {
+    let vm = new VM()
+
+    let test = vm.eval(`testObj = Object.new()`)
+    assert.equal(test.parents[0], Objekt)
+
+    let test2 = vm.eval(`test2 = testObj.new()`)
+    assert.equal(test2.parents[0], test)
+  })
+
+  it("supports adding slots to new objects in the constructor", () => {
+    let vm = new VM()
+    let result = vm.eval(`
+      test = Object.new(
+        size: 1,
+        count: 2,
+        add: { |x, y| x + y }
+      )
+
+      test.size + test.count + test.add(x: 4, y: 5)
+    `)
+
+    assert.equal(result.data, 12)
   })
 })
 

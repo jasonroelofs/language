@@ -16,8 +16,24 @@ function builtInFunc(func): IObject {
   return value
 }
 
-AddSlot(Objekt, "addSlot", builtInFunc(function(slotName, slotValue) {
+AddSlot(Objekt, "addSlot", builtInFunc(function(args) {
+  let slotName = args["0"]
+  let slotValue = args["as"]
   AddSlot(this, slotName, slotValue)
+}))
+
+/**
+ * Create and return a new object with the current object as the first
+ * parent, and all provided slots added to the new object.
+ */
+AddSlot(Objekt, "new", builtInFunc(function(args) {
+  let obj = NewObject(this)
+
+  for(var slotName in args) {
+    AddSlot(obj, slotName, args[slotName])
+  }
+
+  return obj
 }))
 
 /**
@@ -25,7 +41,11 @@ AddSlot(Objekt, "addSlot", builtInFunc(function(slotName, slotValue) {
  */
 let BuiltIn = NewObject(Objekt)
 
-AddSlot(BuiltIn, "numberOp", builtInFunc(function(left, op, right) {
+AddSlot(BuiltIn, "numberOp", builtInFunc(function(args) {
+  let left = args["left"]
+  let op = args["op"]
+  let right = args["right"]
+
   switch(op.data) {
     case "+":
       return toObject(left.data + right.data)
@@ -52,9 +72,8 @@ AddSlot(BuiltIn, "numberOp", builtInFunc(function(left, op, right) {
   }
 }))
 
-let IO = NewObject(Objekt)
-AddSlot(IO, "puts", builtInFunc(function(message) {
-  console.log(message.toString())
+AddSlot(BuiltIn, "puts", builtInFunc(function(args) {
+  console.log(args["message"].toString())
 }))
 
 /**
@@ -70,7 +89,6 @@ AddSlot(World, "BuiltIn", BuiltIn)
 AddSlot(World, "Object", Objekt)
 AddSlot(World, "Number", Number)
 AddSlot(World, "String", String)
-AddSlot(World, "IO",     IO)
 
 AddSlot(World, "True",   True)
 AddSlot(World, "False",  False)
@@ -80,6 +98,5 @@ export {
   Objekt,
   Number,
   String,
-  IO,
   World,
 }

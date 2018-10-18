@@ -1,0 +1,8 @@
+factorial = { |x|
+  (x == 1).do(
+    ifTrue: { 1 },
+    ifFalse: { x * factorial.call(x - 1) }
+  )
+}
+
+IO.puts(factorial.call(100))

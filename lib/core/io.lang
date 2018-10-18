@@ -1,0 +1,5 @@
+IO = Object.new(
+  puts: { |message|
+    BuiltIn.puts(message: message)
+  }
+)

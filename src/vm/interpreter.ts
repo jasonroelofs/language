@@ -124,13 +124,19 @@ export default class Interpreter {
     if(slotValue.codeBlock) {
       if(slotValue.builtIn) {
         // We're a built-in, call it via javascript
-        let toFunc = []
+        let toFunc = {}
+        var argName: string
 
         for(var idx in args) {
-          toFunc.push(this.evalNode(args[idx].value))
+          // TODO: For things like addSlot, if the first parameter doesn't have a name,
+          // what should the name of the argument be?
+          // Maybe builtInFunc should take a list of the argument names we expect?
+          argName = args[idx].name ? args[idx].name : "0"
+
+          toFunc[argName] = this.evalNode(args[idx].value)
         }
 
-        return slotValue.data.apply(receiver, toFunc)
+        return slotValue.data.call(receiver, toFunc)
       } else {
         return this.evalCodeBlock(receiver, slotValue, args)
       }

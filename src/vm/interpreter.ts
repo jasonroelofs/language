@@ -173,7 +173,7 @@ export default class Interpreter {
       } else if(param.default) {
         AddSlot(blockSpace, toObject(param.name), this.evalNode(param.default))
       } else {
-        // ERROR Unmatched required parameter
+        throw new Error(`Unmatched required parameter '${param.name}'`)
       }
     }
 

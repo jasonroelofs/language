@@ -76,21 +76,10 @@ AddSlot(World, "True",   True)
 AddSlot(World, "False",  False)
 AddSlot(World, "Null",   Null)
 
-/**
- * However, all actual execution happens in a Space, which is
- * a child of the World. This constrains all code to it's own context
- * while still having full access to everything defined in the World.
- * My thought here is that system execution will consist of many spaces
- * layered on top of and along side each other to build abstractions.
- */
-let Space = NewObject(World)
-AddSlot(Space, "Space", Space)
-
 export {
   Objekt,
   Number,
   String,
   IO,
   World,
-  Space,
 }

@@ -1,7 +1,8 @@
 import "mocha"
 import * as assert from "assert"
-import Interpreter from "@vm/interpreter"
+import VM from "@vm/vm"
 import { IObject, toObject, True, False, Null } from "@vm/object"
+import { World } from "@vm/core"
 
 describe("Interpreter", () => {
   it("evaluates numbers", () => {
@@ -106,8 +107,8 @@ describe("Interpreter", () => {
     }
 
     for(var test in tests) {
-      let i = new Interpreter()
-      let result = i.eval(test)
+      let vm = new VM()
+      let result = vm.eval(test)
       let expected = tests[test]
 
       assert.equal(result.slots.get("body").data.length, expected.bodyLength)
@@ -147,8 +148,8 @@ describe("Interpreter", () => {
     }
 
     for(var test in tests) {
-      let i = new Interpreter()
-      let result = i.eval(test)
+      let vm = new VM()
+      let result = vm.eval(test)
       let expected = tests[test]
 
       assert.equal(result.data, expected.data, `Incorrect return value for "${test}"`)
@@ -156,28 +157,28 @@ describe("Interpreter", () => {
   })
 
   it("evaluates direct message calls on objects", () => {
-    let i = new Interpreter()
+    let vm = new VM()
 
     // Get raw values back
-    i.eval(`Object.addSlot("size", v: 3)`)
-    var result = i.eval("Object.size")
+    vm.eval(`Object.addSlot("size", v: 3)`)
+    var result = vm.eval("Object.size")
     assert.equal(result.data, 3)
 
     // Eval a block with no arguments
-    i.eval(`Object.addSlot("count", v: { 5 })`)
-    var result = i.eval("Object.count()")
+    vm.eval(`Object.addSlot("count", v: { 5 })`)
+    var result = vm.eval("Object.count()")
     assert.equal(result.data, 5)
 
     // Call blocks at the slot with arguments
-    i.eval(`Object.addSlot("pow", v: { |x| x * x })`)
-    result = i.eval("Object.pow(3)")
+    vm.eval(`Object.addSlot("pow", v: { |x| x * x })`)
+    result = vm.eval("Object.pow(3)")
     assert.equal(result.data, 9)
   })
 })
 
 function assertObjectEval(input: string, expected: IObject) {
-  let i = new Interpreter()
-  let result = i.eval(input)
+  let vm = new VM()
+  let result = vm.eval(input)
 
   assert.equal(result.parents.length, expected.parents.length)
   assert.equal(result.parents[0], expected.parents[0])

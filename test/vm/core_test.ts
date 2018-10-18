@@ -1,7 +1,8 @@
 import "mocha"
 import * as assert from "assert"
-import {toObject} from "@vm/object"
-import Interpreter from "@vm/interpreter"
+import { toObject } from "@vm/object"
+import { World } from "@vm/core"
+import VM from "@vm/vm"
 
 describe("Object", () => {
 })
@@ -34,8 +35,8 @@ describe("String", () => {
 })
 
 function assertExpression(input, expected) {
-  let i = new Interpreter()
-  let result = i.eval(input)
+  let vm = new VM()
+  let result = vm.eval(input)
 
   assert.equal(result.data, expected.data, `Eval failed for ${input}`)
 }

@@ -23,36 +23,17 @@ import {
 import {
   Number,
   String,
-  IO,
-  World,
-  Space,
 } from "@vm/core"
-import * as glob from "fast-glob"
-import * as fs from "fs"
-import * as path from "path"
 
 export default class Interpreter {
 
-  theWorld: IObject
   currentSpace: IObject
 
-  constructor() {
-    this.theWorld = NewObject(World)
-    this.currentSpace = this.theWorld
+  constructor(baseSpace: IObject) {
+    this.currentSpace = baseSpace
 
-    this.loadCoreLib()
-
-    // Initialize our execution space and we are ready to go
-    this.currentSpace = NewObject(Space)
-  }
-
-  loadCoreLib() {
-    let coreDir = path.resolve(__dirname + "/../../lib/core");
-    let entries = glob.sync([`${coreDir}/**/*.lang`]).forEach((file) => {
-      let path = (typeof(file) == "string") ? file : file.path
-      let code = fs.readFileSync(path)
-      this.eval(code.toString())
-    })
+    // Initialize our own execution space and we are ready to go
+    this.newNestedSpace()
   }
 
   eval(program: string): IObject {

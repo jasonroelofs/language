@@ -1,9 +1,6 @@
-import * as fs from "fs"
-import Interpreter from "@vm/interpreter"
+import VM from "@vm/vm"
 
 let file = process.argv[process.argv.length - 1]
 
-let script = fs.readFileSync(file);
-
-let interp = new Interpreter()
-interp.eval(script.toString())
+let vm = new VM()
+vm.loadFile(file)

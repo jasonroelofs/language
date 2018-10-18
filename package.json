@@ -13,7 +13,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsc && tspath -f",
-    "postbuild": "cp -r lib/* dist/lib",
+    "postbuild": "cp -r lib/ dist/lib",
     "pretest": "npm run build",
     "test": "mocha dist/**/*_test.js",
     "precli": "npm run build",

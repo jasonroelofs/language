@@ -14,33 +14,79 @@ export default class Lexer {
     var tokens: Array<Token> = []
 
     // Bypass any leading whitespace
-    this.skipWhitespace()
+    this.skipWhitespace(true)
 
     // Neat pattern from CoffeeScript's lexer.
     var chunk: string
+    var token: Token
     while(chunk = this.input.substring(this.currentPos)) {
 
       if(chunk == "") {
         break
       }
 
-      let token =
+      token =
         this.numberToken(chunk) ||
         this.stringToken(chunk) ||
         this.operatorToken(chunk) ||
         this.identifierToken(chunk) ||
         this.unknownToken(chunk)
 
-      if(token) {
-        this.consume(token)
-        tokens.push(token)
+      this.consume(token)
+      tokens.push(token)
+
+      // We should be at a newline at this time
+      // Check to see if it's a proper "End of Statement" marker
+      // and mark it as such.
+      let eol = this.endOfStatementToken(this.input.substring(this.currentPos), token)
+      if(eol) {
+        tokens.push(eol)
+        this.currentPos += tokenLength(eol)
       }
+
+      // Now skip past all whitespace to the next non whitespace token
+      this.skipWhitespace(true)
+    }
+
+    // Add one final End of Statement to the list as we're at the end of
+    // the final statement of the program
+    if(tokens.length > 0 && tokens[tokens.length - 1].type != TokenType.EOS) {
+      tokens.push({ type: TokenType.EOS, value: "" })
     }
 
     return tokens
   }
 
-  numberToken(chunk: string) {
+  /**
+   * Much in the way of Go (https://golang.org/ref/spec#Semicolons) look
+   * for situations where we are at the End of a Statement.
+   * This could be explicit with a semicolon (;) or implicit with newlines.
+   */
+  endOfStatementToken(chunk: string, lastToken: Token): Token {
+    if(chunk[0] == ";") {
+      return { type: TokenType.EOS, value: ";" }
+    }
+
+    let eol = chunk.match(/^(\r?\n)/)
+    if(eol) {
+      // End of a line, check the last token we generated to see
+      // if we need to insert a token.
+      switch(lastToken.type) {
+        case TokenType.CloseParen:
+        case TokenType.CloseBlock:
+        case TokenType.Number:
+        case TokenType.String:
+        case TokenType.Identifier:
+          return { type: TokenType.EOS, value: eol[0] }
+        default:
+          return null
+      }
+    } else {
+      return null
+    }
+  }
+
+  numberToken(chunk: string): Token {
     let test = chunk.match(this.NUMBER_REGEX)
 
     if(test) {
@@ -53,7 +99,7 @@ export default class Lexer {
   // Find a string that contains all letters between matching single (')
   // or double (") quotes, but not including those wrapping quotes, and making
   // sure to handle escaped matching quotes, e.g. ("\"" should return the string: `"`)
-  stringToken(chunk: string) {
+  stringToken(chunk: string): Token {
     let starter = chunk[0]
     if(starter == '"' || starter == "'") {
 
@@ -70,7 +116,7 @@ export default class Lexer {
     }
   }
 
-  operatorToken(chunk: string) {
+  operatorToken(chunk: string): Token {
     switch(chunk[0]) {
       case "(":
         return { type: TokenType.OpenParen, value: "(" }
@@ -105,7 +151,7 @@ export default class Lexer {
     return null
   }
 
-  identifierToken(chunk: string) {
+  identifierToken(chunk: string): Token {
     let test = chunk.match(this.IDENTIFIER_REGEX)
 
     if(test) {
@@ -117,7 +163,7 @@ export default class Lexer {
 
   // Fall-through final token type if nothing else matches
   // Grab everything up til the next whitespace.
-  unknownToken(chunk: string) {
+  unknownToken(chunk: string): Token {
     let match = chunk.match(this.UNKNOWN_REGEX)
     return { type: TokenType.Unknown, value: match[0] }
   }
@@ -127,9 +173,11 @@ export default class Lexer {
     this.skipWhitespace()
   }
 
-  skipWhitespace() {
-    let ws = this.input.substring(this.currentPos).match(/^\s+/)
-    if(ws) {
+  skipWhitespace(skipNewlines = false) {
+    let regex = skipNewlines ?  this.WS_WITH_NEWLINES_REGEX : this.WHITESPACE_REGEX
+    let ws = this.input.substring(this.currentPos).match(regex)
+
+    if(skipNewlines && ws) {
       this.currentPos += ws[0].length
 
       // Lets try again to see if we found a new-line and if the next line
@@ -178,6 +226,11 @@ export default class Lexer {
     '==': TokenType.Equal,
     '!=': TokenType.NotEqual,
   }
+
+  // Don't immediately catch newlines, as those could be an End Of Statement.
+  // Uses a double negative to find all other whitespace
+  WHITESPACE_REGEX = /^([^\S\r\n])/
+  WS_WITH_NEWLINES_REGEX = /^\s+/
 
   UNKNOWN_REGEX = /^\S+/
 }

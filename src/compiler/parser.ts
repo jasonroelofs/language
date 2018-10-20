@@ -84,11 +84,32 @@ export default class Parser {
 
     while (this.index < this.tokens.length) {
       expressions.push({
-        node: this.parseExpression(Precedence.Lowest)
+        node: this.parseStatement()
       })
     }
 
     return expressions
+  }
+
+  parseStatement() {
+    let stmt = this.parseExpression(Precedence.Lowest)
+
+    this.checkEndOfStatement()
+
+    return stmt
+  }
+
+  checkEndOfStatement() {
+    switch(this.currToken().type) {
+      case TokenType.EOS:
+        this.nextToken()
+      case TokenType.CloseParen:
+      case TokenType.CloseBlock:
+      case TokenType.Comma:
+        break;
+      default:
+        throw new Error(`Unexpected ${this.currToken().type} found at the end of the current statement`)
+    }
   }
 
   parseExpression(precedence: number): Node {
@@ -200,7 +221,7 @@ export default class Parser {
 
     // Block body
     while(!this.currTokenIs(TokenType.CloseBlock)) {
-      node.body.push({ node: this.parseExpression(Precedence.Lowest) })
+      node.body.push({ node: this.parseStatement() })
     }
 
     // Move past the closing '}'
@@ -325,7 +346,7 @@ export default class Parser {
       this.nextToken()
       this.nextToken()
 
-      let argValue = this.parseExpression(Precedence.Lowest)
+      let argValue = this.parseStatement()
 
       left.message.arguments.push({
         name: argName,

@@ -24,6 +24,13 @@ export enum TokenType {
   Equal = "EQUAL",
   NotEqual = "NOT_EQUAL",
 
+  // The EOS marker is used to keep track of where a statement
+  // is expected to end. This can be provided by the user as an explicit
+  // seperator or will be added to the token list in defined situations.
+  // The value of this token will be the semi-colon if user provided, or will be
+  // whitespace if automatically inserted.
+  EOS = "END_OF_STATEMENT",
+
   Unknown = "UNKNOWN",
   EOF = "EOF",
 }

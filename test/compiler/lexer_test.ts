@@ -25,6 +25,8 @@ describe("Lexer", () => {
       // Does not match as a number
       { type: TokenType.Identifier, value: "start" },
       { type: TokenType.Identifier, value: "end5" },
+
+      { type: TokenType.EOS, value: "" },
     ]
 
     assertTokens(input, expected)
@@ -32,21 +34,11 @@ describe("Lexer", () => {
 
   it("tokenizes identifiers", () => {
     let input = `
-      a
-      _
-      variable
-      snake_case
-      smallCamelCase
-      CamelCase
-      _ignoreMe
+      a _ variable snake_case smallCamelCase CamelCase _ignoreMe
 
-      a1
-      b2two
-      c3three3
+      a1 b2two c3three3
 
-      こんにちは
-      Здравствуйте
-      Χαίρετε
+      こんにちは Здравствуйте Χαίρετε
     `
 
     let expected = [
@@ -61,15 +53,22 @@ describe("Lexer", () => {
       // Prefix with underscore is valid (a "ignore me" type value)
       { type: TokenType.Identifier, value: "_ignoreMe" },
 
+      // End of statement only counts when we have preceding statements
+      { type: TokenType.EOS, value: "\n" },
+
       // Numbers
       { type: TokenType.Identifier, value: "a1" },
       { type: TokenType.Identifier, value: "b2two" },
       { type: TokenType.Identifier, value: "c3three3" },
 
+      { type: TokenType.EOS, value: "\n" },
+
       // Unicode
       { type: TokenType.Identifier, value: "こんにちは" },
       { type: TokenType.Identifier, value: "Здравствуйте" },
       { type: TokenType.Identifier, value: "Χαίρετε" },
+
+      { type: TokenType.EOS, value: "\n" },
     ]
 
     assertTokens(input, expected)
@@ -91,15 +90,25 @@ describe("Lexer", () => {
 
     let expected = [
       { type: TokenType.String, value: `one` },
+      { type: TokenType.EOS, value: "\n" },
       { type: TokenType.String, value: `two` },
+      { type: TokenType.EOS, value: "\n" },
       { type: TokenType.String, value: `thr'ee` },
+      { type: TokenType.EOS, value: "\n" },
       { type: TokenType.String, value: `fo"ur` },
+      { type: TokenType.EOS, value: "\n" },
       { type: TokenType.String, value: `fi\\"ve` },
+      { type: TokenType.EOS, value: "\n" },
       { type: TokenType.String, value: `si\\'x` },
+      { type: TokenType.EOS, value: "\n" },
       { type: TokenType.String, value: `sev\nen` },
+      { type: TokenType.EOS, value: "\n" },
       { type: TokenType.String, value: `ei\tght` },
+      { type: TokenType.EOS, value: "\n" },
       { type: TokenType.String, value: `nine\\"nine\\\\"nine\\\\\\"nine` },
+      { type: TokenType.EOS, value: "\n" },
       { type: TokenType.String, value: `こんにちは` },
+      { type: TokenType.EOS, value: "\n" },
     ]
 
     assertTokens(input, expected)
@@ -129,40 +138,49 @@ describe("Lexer", () => {
       { type: TokenType.Number, value: "4" },
       { type: TokenType.Divide, value: "/" },
       { type: TokenType.Number, value: "5" },
+      { type: TokenType.EOS, value: "\n" },
 
       // Assignment
       { type: TokenType.Identifier, value: "obj" },
       { type: TokenType.Assign, value: "=" },
       { type: TokenType.Number, value: "1" },
+      { type: TokenType.EOS, value: "\n" },
 
       // Comparisons
       { type: TokenType.Number, value: "1" },
       { type: TokenType.GreaterThan, value: ">" },
       { type: TokenType.Number, value: "2" },
+      { type: TokenType.EOS, value: "\n" },
 
       { type: TokenType.Number, value: "1" },
       { type: TokenType.GreaterThanEqual, value: ">=" },
       { type: TokenType.Number, value: "2" },
+      { type: TokenType.EOS, value: "\n" },
 
       { type: TokenType.Number, value: "1" },
       { type: TokenType.LessThan, value: "<" },
       { type: TokenType.Number, value: "2" },
+      { type: TokenType.EOS, value: "\n" },
 
       { type: TokenType.Number, value: "1" },
       { type: TokenType.LessThanEqual, value: "<=" },
       { type: TokenType.Number, value: "2" },
+      { type: TokenType.EOS, value: "\n" },
 
       { type: TokenType.Number, value: "1" },
       { type: TokenType.Equal, value: "==" },
       { type: TokenType.Number, value: "2" },
+      { type: TokenType.EOS, value: "\n" },
 
       { type: TokenType.Number, value: "1" },
       { type: TokenType.NotEqual, value: "!=" },
       { type: TokenType.Number, value: "2" },
+      { type: TokenType.EOS, value: "\n" },
 
       { type: TokenType.Identifier, value: "obj" },
       { type: TokenType.Dot, value: "." },
       { type: TokenType.Identifier, value: "message" },
+      { type: TokenType.EOS, value: "\n" },
     ]
 
     assertTokens(input, expected)
@@ -182,6 +200,7 @@ describe("Lexer", () => {
       { type: TokenType.CloseParen, value: ")" },
       { type: TokenType.Multiply, value: "*" },
       { type: TokenType.Number, value: "3" },
+      { type: TokenType.EOS, value: "\n" },
 
       { type: TokenType.Identifier, value: "obj" },
       { type: TokenType.Dot, value: "." },
@@ -189,6 +208,7 @@ describe("Lexer", () => {
       { type: TokenType.OpenParen, value: "(" },
       { type: TokenType.Number, value: "1" },
       { type: TokenType.CloseParen, value: ")" },
+      { type: TokenType.EOS, value: "\n" },
     ]
 
     assertTokens(input, expected)
@@ -221,12 +241,14 @@ describe("Lexer", () => {
       { type: TokenType.Number, value: "2" },
       { type: TokenType.CloseParen, value: ")" },
       { type: TokenType.CloseParen, value: ")" },
+
+      { type: TokenType.EOS, value: "\n" },
     ]
 
     assertTokens(input, expected)
   })
 
-  it("tokenizes method bodies", () => {
+  it("tokenizes block bodies", () => {
     let input = `
       map { |arg1, arg2: default| arg1 + arg2 }
     `
@@ -249,6 +271,62 @@ describe("Lexer", () => {
       { type: TokenType.Identifier, value: "arg2" },
 
       { type: TokenType.CloseBlock, value: "}" },
+
+      { type: TokenType.EOS, value: "\n" },
+    ]
+
+    assertTokens(input, expected)
+  })
+
+  it("supports splitting statements with a semicolon", () => {
+    let input = `
+      a + 1; b + 2
+      map({
+      })
+      map(
+        { a; b; }
+      )
+    `
+
+    let expected = [
+      { type: TokenType.Identifier, value: "a" },
+      { type: TokenType.Plus, value: "+" },
+      { type: TokenType.Number, value: "1" },
+
+      { type: TokenType.EOS, value: ";" },
+
+      { type: TokenType.Identifier, value: "b" },
+      { type: TokenType.Plus, value: "+" },
+      { type: TokenType.Number, value: "2" },
+
+      { type: TokenType.EOS, value: "\n" },
+
+      { type: TokenType.Identifier, value: "map" },
+      { type: TokenType.OpenParen, value: "(" },
+      { type: TokenType.OpenBlock, value: "{" },
+
+      { type: TokenType.CloseBlock, value: "}" },
+      { type: TokenType.CloseParen, value: ")" },
+
+      { type: TokenType.EOS, value: "\n" },
+
+      { type: TokenType.Identifier, value: "map" },
+      { type: TokenType.OpenParen, value: "(" },
+      { type: TokenType.OpenBlock, value: "{" },
+
+      { type: TokenType.Identifier, value: "a" },
+
+      { type: TokenType.EOS, value: ";" },
+
+      { type: TokenType.Identifier, value: "b" },
+
+      { type: TokenType.EOS, value: ";" },
+
+      { type: TokenType.CloseBlock, value: "}" },
+      { type: TokenType.EOS, value: "\n" },
+      { type: TokenType.CloseParen, value: ")" },
+
+      { type: TokenType.EOS, value: "\n" },
     ]
 
     assertTokens(input, expected)
@@ -262,7 +340,7 @@ function assertTokens(input, expected) {
   assert.equal(tokens.length, expected.length, "Wrong token lengths recorded")
 
   for(var i = 0; i < tokens.length; i++) {
-    assert.equal(tokens[i].type, expected[i].type)
-    assert.equal(tokens[i].value, expected[i].value)
+    assert.equal(tokens[i].type, expected[i].type, `Wrong type on index ${i}`)
+    assert.equal(tokens[i].value, expected[i].value, `Wrong value on index ${i}`)
   }
 }

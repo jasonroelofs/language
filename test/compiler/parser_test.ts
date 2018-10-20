@@ -157,7 +157,7 @@ describe("Parser", () => {
     // Blocks can be passed in as arguments.
     // The `b` at the end helped trigger a parser error that this
     // test proves is fixed.
-    let test = "a.call({}, c: {})\nb"
+    let test = "a.call(\n{},\nc: {}\n)\nb"
     let expected = {
       type: NodeType.MessageSend,
       receiver: { type: NodeType.Identifier, value: "a" },
@@ -339,7 +339,7 @@ describe("Parser", () => {
         ]
       },
       // Multiple parameters
-      "{ |a, b, c| a\nb\nc }": {
+      "{ |a, b, c| a; b; c }": {
         type: NodeType.Block,
         parameters: [
           { type: NodeType.Parameter, name: "a", default: null },

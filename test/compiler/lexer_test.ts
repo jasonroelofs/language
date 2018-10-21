@@ -331,12 +331,45 @@ describe("Lexer", () => {
 
     assertTokens(input, expected)
   })
+
+  it("tokenizes comments", () => {
+    let input = `
+      # This is a comment
+
+      #This is a multi-line
+      #   comment
+
+      a + b # this is at the end of a line
+    `
+
+    let expected = [
+      { type: TokenType.Comment, value: "This is a comment" },
+
+      // Parsing will re-combine these into a single comment structure
+      // Also white-space is counted from one character in from the # to support
+      // structured documentation.
+      { type: TokenType.Comment, value: "This is a multi-line" },
+      { type: TokenType.Comment, value: "  comment" },
+
+      { type: TokenType.Identifier, value: "a" },
+      { type: TokenType.Plus, value: "+" },
+      { type: TokenType.Identifier, value: "b" },
+
+      { type: TokenType.Comment, value: "this is at the end of a line" },
+
+      { type: TokenType.EOS, value: "" },
+    ]
+
+    assertTokens(input, expected)
+  })
 })
 
 function assertTokens(input, expected) {
   let lexer = new Lexer(input)
   let tokens = lexer.tokenize()
 
+  // console.log("Expected: %o", expected)
+  // console.log("Got: %o", tokens)
   assert.equal(tokens.length, expected.length, "Wrong token lengths recorded")
 
   for(var i = 0; i < tokens.length; i++) {

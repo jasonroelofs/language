@@ -1,4 +1,7 @@
+# IO provides ways of reading to and writing from STDIN, STDOUT, and STDERR
 IO = Object.new(
+  # Print out a given message to STDOUT, followed by a newline.
+  # The `toString` message is called on `message` to get a String value.
   puts: { |message|
     BuiltIn.puts(message: message)
   }

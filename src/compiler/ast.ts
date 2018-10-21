@@ -16,6 +16,7 @@ export enum NodeType {
 
 export interface Node {
   type: NodeType
+  comment?: string
   [propName: string]: any
 }
 

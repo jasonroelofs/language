@@ -390,6 +390,76 @@ describe("Parser", () => {
       assertExpression(test, tests[test])
     }
   })
+
+  it("attaches comments to AST nodes", () => {
+    let test = `
+      # Attach to the next expression
+      a
+
+      b # This comment is ignored
+
+      # Multi-line
+      # Comments
+      # are re-combined
+      c
+
+      # Attach me to d
+      d
+    `
+
+    let lexer = new Lexer(test)
+    let tokens = lexer.tokenize()
+
+    let parser = new Parser(tokens)
+    let expressions = parser.parse()
+
+    assert.equal(expressions.length, 4)
+
+    assert.deepEqual(
+      expressions[0].node,
+      { type: NodeType.Identifier, value: "a", comment: "Attach to the next expression" }
+    )
+
+    assert.deepEqual(
+      expressions[1].node,
+      { type: NodeType.Identifier, value: "b" }
+    )
+
+    assert.deepEqual(
+      expressions[2].node,
+      { type: NodeType.Identifier, value: "c", comment: "Multi-line\nComments\nare re-combined" }
+    )
+
+    assert.deepEqual(
+      expressions[3].node,
+      { type: NodeType.Identifier, value: "d", comment: "Attach me to d" }
+    )
+  })
+
+  it("supports attaching comments to method arguments", () => {
+    let test = `
+      Object.new(
+        # This is the first method
+        first: 1,
+
+        # This is the second method
+        second: 2,
+      )
+    `
+
+    let lexer = new Lexer(test)
+    let tokens = lexer.tokenize()
+
+    let parser = new Parser(tokens)
+    let expressions = parser.parse()
+
+    assert.equal(expressions.length, 1)
+
+    let message = expressions[0].node.message
+
+    assert.equal(message.arguments[0].comment, "This is the first method")
+    assert.equal(message.arguments[1].comment, "This is the second method")
+  })
 })
 
 function assertExpression(input, expected) {

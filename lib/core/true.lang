@@ -1,3 +1,6 @@
-True.addSlot("do", as: { |ifTrue: {}, ifFalse: {}|
-  ifTrue.call()
-})
+True.addSlots(
+  # True will always execute the `ifTrue` block.
+  do: { |ifTrue: {}, ifFalse: {}|
+    ifTrue.call()
+  }
+)

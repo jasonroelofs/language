@@ -37,6 +37,8 @@ interface IObject {
 let baseToString = function() {
   if(this.data != undefined && this.data != null) {
     return this.data
+  } else if(this === Null) {
+    return "null"
   } else {
     return this
   }
@@ -93,8 +95,8 @@ function SendMessage(receiver: IObject, messageName: string | IObject): IObject 
  * Apply a slot to the given Object.
  * Name of the slot needs to be a String. The value can be any object.
  */
-function AddSlot(reciever: IObject, message: string | IObject, value: IObject) {
-  reciever.slots.set(toObject(message).data, value)
+function AddSlot(receiver: IObject, message: string | IObject, value: IObject) {
+  receiver.slots.set(toObject(message).data, value)
 }
 
 /**
@@ -103,7 +105,7 @@ function AddSlot(reciever: IObject, message: string | IObject, value: IObject) {
  */
 let ObjectBase = NewObject(null)
 
-// Sorry, this can't be "Object" in javascript land. That object is already taken
+// Sorry, this can't be "Object" in javascript land. That name is already taken
 // and will cause weird problems if we try to reuse it.
 // This will be properly renamed back to "Object" when in the language.
 let Objekt = NewObject(ObjectBase)

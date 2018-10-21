@@ -60,7 +60,7 @@ export default class Interpreter {
       case NodeType.Assignment:
         let varName = node.name
         let varValue = this.evalNode(node.right)
-        this.currentSpace.slots.set(varName, varValue)
+        AddSlot(this.currentSpace, varName, varValue)
         return varValue
 
       case NodeType.Identifier:

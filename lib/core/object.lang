@@ -1,3 +1,7 @@
-Object.addSlot("do", as: { |ifTrue: {}, ifFalse: {}|
-  ifTrue.call()
-})
+Object.addSlots(
+  # All objects except False and Null are what we call "truthy".
+  # If the `do` message is send, objects will always execute the `ifTrue` block.
+  do: { |ifTrue: {}, ifFalse: {}|
+    ifTrue.call()
+  }
+)

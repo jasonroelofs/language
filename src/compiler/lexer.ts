@@ -26,6 +26,7 @@ export default class Lexer {
       }
 
       token =
+        this.commentToken(chunk) ||
         this.numberToken(chunk) ||
         this.stringToken(chunk) ||
         this.operatorToken(chunk) ||
@@ -81,6 +82,16 @@ export default class Lexer {
         default:
           return null
       }
+    } else {
+      return null
+    }
+  }
+
+  commentToken(chunk: string): Token {
+    let test = chunk.match(this.COMMENT_REGEX)
+
+    if(test) {
+      return { type: TokenType.Comment, value: test[1], source: test[0] }
     } else {
       return null
     }
@@ -191,6 +202,9 @@ export default class Lexer {
   /**
    * Regex matchers
    */
+
+  // Match a comment (always starts with # and goes to the end of the line)
+  COMMENT_REGEX = /^#\s?(.*)/
 
   // Match all number types.
   NUMBER_REGEX = /^-?\d*\.?\d+/

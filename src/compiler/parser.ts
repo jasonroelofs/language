@@ -50,9 +50,14 @@ export default class Parser {
   prefixParse: Object
   infixParse: Object
 
+  // Keep a running track of the most recent comment we've seen
+  // to attach it to the expression it's describing
+  currentComment: string[]
+
   constructor(tokens) {
     this.tokens = tokens
     this.index = 0
+    this.currentComment = []
 
     this.prefixParse = {
       [TokenType.Number]: () => this.parseNumberLiteral(),
@@ -92,11 +97,29 @@ export default class Parser {
   }
 
   parseStatement() {
+    this.checkForComments()
+
     let stmt = this.parseExpression(Precedence.Lowest)
 
     this.checkEndOfStatement()
 
+    if(this.currentComment.length > 0) {
+      stmt.comment = this.currentComment.join("\n")
+      this.clearCurrentComments()
+    }
+
     return stmt
+  }
+
+  checkForComments() {
+    while(this.currTokenIs(TokenType.Comment)) {
+      this.currentComment.push(this.currToken().value)
+      this.nextToken()
+    }
+  }
+
+  clearCurrentComments() {
+    this.currentComment = []
   }
 
   checkEndOfStatement() {
@@ -106,6 +129,11 @@ export default class Parser {
       case TokenType.CloseParen:
       case TokenType.CloseBlock:
       case TokenType.Comma:
+        break;
+      case TokenType.Comment:
+        // Comments added to the end of a line are thrown away, as
+        // they aren't intended to contribute to public documentation
+        this.nextToken()
         break;
       default:
         throw new Error(`Unexpected ${this.currToken().type} found at the end of the current statement`)
@@ -307,6 +335,8 @@ export default class Parser {
     // Move past the OpenParen
     this.nextToken()
 
+    this.checkForComments()
+
     // At this point we have parameters. This can be a single plain parameter
     // or a series of keyworded parameters. Look for the single case first then
     // run through keywords.
@@ -314,6 +344,9 @@ export default class Parser {
     // We aren't at the start of a keyword, so we are probably a plain param.
     // There can only be one of these.
     if (!this.peekTokenIs(TokenType.Colon)) {
+      // Throw away any comments, there's nothing really to attach to
+      this.clearCurrentComments()
+
       left.message.arguments.push({
         value: this.parseExpression(Precedence.Lowest)
       })
@@ -332,6 +365,8 @@ export default class Parser {
 
     // Alright we are keywording it up!
     while(this.peekToken() && !this.peekTokenIs(TokenType.CloseParen)) {
+      this.checkForComments()
+
       if(!this.currTokenIs(TokenType.Identifier)) {
         throw new Error(`Expected ${TokenType.Identifier} for keyword arguments, found ${this.currToken().type} (${this.currToken().value})`)
       }
@@ -340,18 +375,24 @@ export default class Parser {
         throw new Error(`Expected ${TokenType.Colon} after argument name, found ${this.peekToken().type} (${this.peekToken().value})`)
       }
 
-      let argName = this.currToken().value
+      let argNode = {
+        name: this.currToken().value
+      }
 
       // Move past the identifier and the colon
       this.nextToken()
       this.nextToken()
 
-      let argValue = this.parseStatement()
+      // See if we have any comments for attaching,
+      // and if so grab them before parseStatement does.
+      if(this.currentComment.length > 0) {
+        argNode['comment'] = this.currentComment.join("\n")
+        this.clearCurrentComments()
+      }
 
-      left.message.arguments.push({
-        name: argName,
-        value: argValue,
-      })
+      argNode['value'] = this.parseStatement()
+
+      left.message.arguments.push(argNode)
 
       // Skip past our comma if it exists
       if(this.currTokenIs(TokenType.Comma)) {

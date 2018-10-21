@@ -2,6 +2,7 @@ export enum TokenType {
   Number = "NUMBER",
   Identifier = "IDENTIFIER",
   String = "STRING",
+  Comment = "COMMENT",
 
   OpenParen = "OPEN_PAREN",
   CloseParen = "CLOSE_PAREN",

@@ -146,6 +146,25 @@ describe("Parser", () => {
           ]
         }
       },
+      // Keys can also be strings, for situations where the key wouldn't make
+      // a legit identifier.
+      [`obj.message("a": a, "b": b)`]: {
+        type: NodeType.MessageSend,
+        receiver: { type: NodeType.Identifier, value: "obj" },
+        message: {
+          name: "message",
+          arguments: [
+            {
+              name: "a",
+              value: { type: NodeType.Identifier, value: "a" }
+            },
+            {
+              name: "b",
+              value: { type: NodeType.Identifier, value: "b" }
+            }
+          ]
+        }
+      },
     }
 
     for(var test in tests) {

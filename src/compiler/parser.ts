@@ -367,8 +367,8 @@ export default class Parser {
     while(this.peekToken() && !this.peekTokenIs(TokenType.CloseParen)) {
       this.checkForComments()
 
-      if(!this.currTokenIs(TokenType.Identifier)) {
-        throw new Error(`Expected ${TokenType.Identifier} for keyword arguments, found ${this.currToken().type} (${this.currToken().value})`)
+      if(!this.currTokenIs(TokenType.Identifier) && !this.currTokenIs(TokenType.String)) {
+        throw new Error(`Expected ${TokenType.Identifier} or ${TokenType.String} for keyword arguments, found ${this.currToken().type} (${this.currToken().value})`)
       }
 
       if(!this.peekTokenIs(TokenType.Colon)) {

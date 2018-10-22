@@ -96,7 +96,7 @@ describe("Parser", () => {
               type: NodeType.MessageSend,
               receiver: { type: NodeType.Identifier, value: "a" },
               message: {
-                name: "+",
+                name: { type: NodeType.StringLiteral, value: "+" },
                 arguments: [{ value: { type: NodeType.Identifier, value: "b" } }]
               }
             }}
@@ -111,11 +111,11 @@ describe("Parser", () => {
           name: "message",
           arguments: [
             {
-              name: "a1",
+              name: { type: NodeType.StringLiteral, value: "a1" },
               value: { type: NodeType.Identifier, value: "a1" }
             },
             {
-              name: "a2",
+              name: { type: NodeType.StringLiteral, value: "a2" },
               value: {
                 type: NodeType.MessageSend,
                 receiver: { type: NodeType.Identifier, value: "a" },
@@ -136,7 +136,7 @@ describe("Parser", () => {
               value: { type: NodeType.Identifier, value: "a1" }
             },
             {
-              name: "a2",
+              name: { type: NodeType.StringLiteral, value: "a2" },
               value: {
                 type: NodeType.MessageSend,
                 receiver: { type: NodeType.Identifier, value: "a" },
@@ -155,11 +155,11 @@ describe("Parser", () => {
           name: "message",
           arguments: [
             {
-              name: "a",
+              name: { type: NodeType.StringLiteral, value: "a" },
               value: { type: NodeType.Identifier, value: "a" }
             },
             {
-              name: "b",
+              name: { type: NodeType.StringLiteral, value: "b" },
               value: { type: NodeType.Identifier, value: "b" }
             }
           ]
@@ -184,7 +184,8 @@ describe("Parser", () => {
         name: "call",
         arguments: [
           { value: { type: NodeType.Block, parameters: [], body: [] } },
-          { name: "c", value: { type: NodeType.Block, parameters: [], body: [] } },
+          { name: { type: NodeType.StringLiteral, value: "c" },
+            value: { type: NodeType.Block, parameters: [], body: [] } },
         ]
       }
     }

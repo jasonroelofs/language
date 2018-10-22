@@ -12,6 +12,8 @@ import {
 import {
   IObject,
   NewObject,
+  InternString,
+  FindInternedString,
   SendMessage,
   AddSlot,
   toObject,
@@ -73,7 +75,7 @@ export default class Interpreter {
         return node.value ? True : False
 
       case NodeType.StringLiteral:
-        return NewObject(String, node.value)
+        return InternString(node.value)
 
       case NodeType.NullLiteral:
         return Null
@@ -92,8 +94,8 @@ export default class Interpreter {
 
   evalBlockLiteral(node: BlockNode): IObject {
     let block = NewObject(Objekt)
-    AddSlot(block, "body", NewObject(Objekt, node.body))
-    AddSlot(block, "parameters", NewObject(Objekt, node.parameters))
+    AddSlot(block, InternString("body"), NewObject(Objekt, node.body))
+    AddSlot(block, InternString("parameters"), NewObject(Objekt, node.parameters))
 
     block.codeBlock = true
 
@@ -119,7 +121,7 @@ export default class Interpreter {
     }
 
     // Not a code block, figure out what's at this location
-    let slotValue = SendMessage(receiver, message)
+    let slotValue = SendMessage(receiver, FindInternedString(message))
 
     if(slotValue.codeBlock) {
       if(slotValue.builtIn) {
@@ -146,8 +148,8 @@ export default class Interpreter {
   }
 
   evalCodeBlock(receiver: IObject, codeBlock: IObject, args: ArgumentNode[]): IObject {
-    let codeBody = SendMessage(codeBlock, "body").data
-    let parameters = SendMessage(codeBlock, "parameters").data
+    let codeBody = SendMessage(codeBlock, InternString("body")).data
+    let parameters = SendMessage(codeBlock, InternString("parameters")).data
 
     let blockSpace = this.newNestedSpace()
 
@@ -156,7 +158,7 @@ export default class Interpreter {
     // we set the current object to `self`
     // TODO: "self" should be intern'd
     if(receiver) {
-      AddSlot(blockSpace, toObject("self"), receiver)
+      AddSlot(blockSpace, InternString("self"), receiver)
     }
 
     // Check for plain first argument and fix it up to match the name
@@ -168,10 +170,15 @@ export default class Interpreter {
     for(var param of parameters) {
       let arg = args.find((a) => { return a.name == param.name })
 
+      InternString(param.name)
+
       if(arg) {
-        AddSlot(blockSpace, toObject(param.name), this.evalNode(arg.value))
+        // TODO This feels wrong. Maybe we should do an AST pass to find all
+        // StringLiteral nodes and pre-fill our intern'd pool?
+        InternString(arg.name)
+        AddSlot(blockSpace, FindInternedString(param.name), this.evalNode(arg.value))
       } else if(param.default) {
-        AddSlot(blockSpace, toObject(param.name), this.evalNode(param.default))
+        AddSlot(blockSpace, FindInternedString(param.name), this.evalNode(param.default))
       } else {
         throw new Error(`Unmatched required parameter '${param.name}'`)
       }

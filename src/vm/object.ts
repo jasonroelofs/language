@@ -6,10 +6,8 @@ import * as util from "util"
 interface IObject {
   parents: IObject[]
 
-  // TODO: Slot keys should be themselves IObjects but we don't have logic set up
-  // yet to hash objects into good look-up keys. For now forcing to a string in
-  // javascript.
-  slots: Map<string, IObject>
+  // Map an object key to an object value. The key should be a String.
+  slots: Map<IObject, IObject>
 
   // Unique identifier for this object
   objectId: number
@@ -68,8 +66,7 @@ function NewObject(parent: IObject, data = null): IObject {
  * looking for the object that responds to this message, returning the result
  */
 function SendMessage(receiver: IObject, messageName: string | IObject): IObject {
-  // TODO Ensure this is a String
-  let message = toObject(messageName).data
+  let message = toObject(messageName)
 
   if (receiver.slots.has(message)) {
     return receiver.slots.get(message)
@@ -96,7 +93,7 @@ function SendMessage(receiver: IObject, messageName: string | IObject): IObject 
  * Name of the slot needs to be a String. The value can be any object.
  */
 function AddSlot(receiver: IObject, message: string | IObject, value: IObject) {
-  receiver.slots.set(toObject(message).data, value)
+  receiver.slots.set(toObject(message), value)
 }
 
 /**
@@ -116,6 +113,46 @@ let False = NewObject(Objekt, false)
 
 let Number = NewObject(Objekt, 0)
 let String = NewObject(Objekt, "")
+
+/**
+* As an easy performance win and a way to simplify key lookups
+* in things like arguments and slots, we will take String literals and
+* store their objects as they are needed, allowing a quick look-up to return
+* the same String object for every place the string literal is used in the code.
+*/
+let internedStrings = new Map<string, IObject>();
+
+/**
+ * If the given string value is not intern'd already, do so,
+ * otherwise return the currently stored IObject for that string input.
+ * This should only be called in places where it is safe to add new interned
+ * strings to the system, as they will never be garbage collected.
+ *
+ * To just do a lookup, see FindInternedString.
+ */
+function InternString(value: string): IObject {
+  console.log("Interning the string %o", value)
+
+  if(!internedStrings.has(value)) {
+    let strObj = NewObject(String, value)
+    internedStrings.set(value, strObj)
+  }
+
+  return internedStrings.get(value);
+}
+
+/**
+ * Find if there's an intern'd value for this string.
+ * If not, returns javascript NULL (Not the language's NULL).
+ * This function intended to only be called from the JS layer.
+ */
+function FindInternedString(value: string): IObject {
+  if(internedStrings.has(value)) {
+    return internedStrings.get(value)
+  } else {
+    return null
+  }
+}
 
 /**
  * Mapping of the results of (typeof object) to our internal
@@ -139,10 +176,12 @@ function toObject(nativeValue: any): IObject {
     return Null
   }
 
-  let parentObject = typeMapping[typeof nativeValue]
+  if((typeof nativeValue) == "string") {
+    return FindInternedString(nativeValue) || NewObject(String, nativeValue)
+  }
 
-  if(parentObject) {
-    return NewObject(parentObject, nativeValue)
+  if((typeof nativeValue) == "number") {
+    return NewObject(Number, nativeValue)
   }
 
   // Already an Object, pass it through
@@ -158,6 +197,8 @@ export {
   NewObject,
   SendMessage,
   AddSlot,
+  InternString,
+  FindInternedString,
   toObject,
   Objekt,
   Null,

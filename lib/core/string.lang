@@ -1,0 +1,5 @@
+String.addSlots(
+  "+": { |other|
+    BuiltIn.stringOp(left: self, op: "+", right: other)
+  },
+)

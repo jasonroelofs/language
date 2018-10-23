@@ -423,7 +423,7 @@ describe("Parser", () => {
       c
 
       # Attach me to d
-      d
+      d = Object.new()
     `
 
     let lexer = new Lexer(test)
@@ -451,7 +451,19 @@ describe("Parser", () => {
 
     assert.deepEqual(
       expressions[3].node,
-      { type: NodeType.Identifier, value: "d", comment: "Attach me to d" }
+      {
+        type: NodeType.Assignment,
+        name: "d",
+        right: {
+          type: NodeType.MessageSend,
+          receiver: { type: NodeType.Identifier, value: "Object" },
+          message: {
+            name: "new",
+            arguments: []
+          }
+        },
+        comment: "Attach me to d"
+      }
     )
   })
 

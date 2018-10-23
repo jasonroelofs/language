@@ -60,7 +60,7 @@ export default class Interpreter {
       case NodeType.Assignment:
         let varName = node.name
         let varValue = this.evalNode(node.right)
-        AddSlot(this.currentSpace, varName, varValue)
+        AddSlot(this.currentSpace, varName, varValue, toObject(node.comment))
         return varValue
 
       case NodeType.Identifier:
@@ -125,6 +125,7 @@ export default class Interpreter {
       if(slotValue.builtIn) {
         // We're a built-in, call it via javascript
         let toFunc = {}
+        let meta = {}
         var argName: string
 
         for(var idx in args) {
@@ -134,9 +135,10 @@ export default class Interpreter {
           argName = args[idx].name ? args[idx].name : "0"
 
           toFunc[argName] = this.evalNode(args[idx].value)
+          meta[argName] = args[idx]
         }
 
-        return slotValue.data.call(receiver, toFunc)
+        return slotValue.data.call(receiver, toFunc, meta)
       } else {
         return this.evalCodeBlock(receiver, slotValue, args)
       }
@@ -169,7 +171,7 @@ export default class Interpreter {
       let arg = args.find((a) => { return a.name == param.name })
 
       if(arg) {
-        AddSlot(blockSpace, toObject(param.name), this.evalNode(arg.value))
+        AddSlot(blockSpace, toObject(param.name), this.evalNode(arg.value), toObject(arg.comment))
       } else if(param.default) {
         AddSlot(blockSpace, toObject(param.name), this.evalNode(param.default))
       } else {

@@ -1,7 +1,7 @@
 import {
   NewObject, toObject, IObject, Objekt,
   Number, String, True, False, Null,
-  AddSlot,
+  AddSlot, GetSlot,
 } from "@vm/object"
 
 //
@@ -22,9 +22,14 @@ AddSlot(Objekt, "addSlot", builtInFunc(function(args) {
   AddSlot(this, slotName, slotValue)
 }))
 
-AddSlot(Objekt, "addSlots", builtInFunc(function(args) {
+AddSlot(Objekt, "getSlot", builtInFunc(function(args) {
+  let slotName = args["0"]
+  return GetSlot(this, slotName)
+}))
+
+AddSlot(Objekt, "addSlots", builtInFunc(function(args, meta = {}) {
   Object.keys(args).forEach((key) => {
-    AddSlot(this, key, args[key])
+    AddSlot(this, key, args[key], meta[key].comment)
   })
 }))
 
@@ -32,11 +37,13 @@ AddSlot(Objekt, "addSlots", builtInFunc(function(args) {
  * Create and return a new object with the current object as the first
  * parent, and all provided slots added to the new object.
  */
-AddSlot(Objekt, "new", builtInFunc(function(args) {
+AddSlot(Objekt, "new", builtInFunc(function(args, meta = {}) {
   let obj = NewObject(this)
+  var comment
 
   for(var slotName in args) {
-    AddSlot(obj, slotName, args[slotName])
+    comment = meta[slotName] ? meta[slotName].comment : null
+    AddSlot(obj, slotName, args[slotName], toObject(comment))
   }
 
   return obj

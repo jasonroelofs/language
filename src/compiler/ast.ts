@@ -42,6 +42,7 @@ export interface ArgumentNode {
   // Single arguments won't be keyworded so won't have a name
   name?: string
   value: Node
+  comment?: string
 }
 
 export interface AssignmentNode extends Node {

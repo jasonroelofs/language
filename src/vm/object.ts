@@ -11,6 +11,12 @@ interface IObject {
   // javascript.
   slots: Map<string, IObject>
 
+  // This is a mapping of a slot name to some metadata we keep around for that slot.
+  // I'd like this to live with the slot itself somehow but doing that probably requires
+  // some extra work to let IObjects be keys (hashing or the like) that I'll get to
+  // later. Data in this map is accessible via GetSlot
+  metaSlots: Map<string, IObject>
+
   // Unique identifier for this object
   objectId: number
 
@@ -54,6 +60,7 @@ function NewObject(parent: IObject, data = null): IObject {
   return {
     parents: (parent ? [parent] : []),
     slots: new Map(),
+    metaSlots: new Map(),
     objectId: objectIdSeq++,
     data: data,
     codeBlock: false,
@@ -95,8 +102,22 @@ function SendMessage(receiver: IObject, messageName: string | IObject): IObject 
  * Apply a slot to the given Object.
  * Name of the slot needs to be a String. The value can be any object.
  */
-function AddSlot(receiver: IObject, message: string | IObject, value: IObject) {
-  receiver.slots.set(toObject(message).data, value)
+function AddSlot(receiver: IObject, message: string | IObject, value: IObject, comments: IObject = Null) {
+  let metaSlot = NewObject(Slot)
+  metaSlot.slots.set("value", value)
+  metaSlot.slots.set("comments", comments)
+
+  let key = toObject(message).data
+  receiver.slots.set(key, value)
+  receiver.metaSlots.set(key, metaSlot)
+}
+
+/**
+ * Return the internal Slot object that represents the value of a given slot.
+ */
+function GetSlot(receiver: IObject, slotName: string | IObject): IObject {
+  // TODO: No such slot error?
+  return receiver.metaSlots.get(toObject(slotName).data) || Null
 }
 
 /**
@@ -109,6 +130,8 @@ let ObjectBase = NewObject(null)
 // and will cause weird problems if we try to reuse it.
 // This will be properly renamed back to "Object" when in the language.
 let Objekt = NewObject(ObjectBase)
+
+let Slot = NewObject(Objekt)
 
 let Null = NewObject(Objekt, null)
 let True = NewObject(Objekt, true)
@@ -158,8 +181,10 @@ export {
   NewObject,
   SendMessage,
   AddSlot,
+  GetSlot,
   toObject,
   Objekt,
+  Slot,
   Null,
   True,
   False,

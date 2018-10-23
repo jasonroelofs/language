@@ -1,0 +1,22 @@
+IO.puts("IO")
+IO.puts(World.getSlot("IO").comments)
+IO.puts(IO.getSlot("puts").comments)
+# Want:
+# a call site with no receiver gets `self` as the default.
+# A Space is set as `self`
+# IO.puts(getSlot("IO").comments)
+
+IO.puts("")
+
+IO.puts("Object.do")
+IO.puts(Object.getSlot("do").comments)
+
+IO.puts("")
+
+IO.puts("False.do")
+IO.puts(False.getSlot("do").comments)
+
+IO.puts("")
+
+IO.puts("True.do")
+IO.puts(True.getSlot("do").comments)

@@ -1,7 +1,7 @@
 import "mocha"
 import * as assert from "assert"
 import VM from "@vm/vm"
-import { IObject, toObject, True, False, Null } from "@vm/object"
+import { IObject, toObject, SendMessage, True, False, Null } from "@vm/object"
 import { Objekt, World } from "@vm/core"
 
 describe("VM", () => {
@@ -112,8 +112,8 @@ describe("VM", () => {
       let result = vm.eval(test)
       let expected = tests[test]
 
-      assert.equal(result.slots.get("body").data.length, expected.bodyLength)
-      assert.equal(result.slots.get("parameters").data.length, expected.paramLength)
+      assert.equal(SendMessage(result, "body").data.length, expected.bodyLength)
+      assert.equal(SendMessage(result, "parameters").data.length, expected.paramLength)
     }
   })
 

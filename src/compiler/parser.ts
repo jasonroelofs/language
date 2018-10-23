@@ -103,9 +103,9 @@ export default class Parser {
 
     this.checkEndOfStatement()
 
-    if(this.currentComment.length > 0) {
-      stmt.comment = this.currentComment.join("\n")
-      this.clearCurrentComments()
+    let comment = this.getAndClearCurrentComments()
+    if(comment != "") {
+      stmt.comment = comment
     }
 
     return stmt
@@ -116,6 +116,12 @@ export default class Parser {
       this.currentComment.push(this.currToken().value)
       this.nextToken()
     }
+  }
+
+  getAndClearCurrentComments(): string {
+    let comments = this.currentComment.join("\n")
+    this.clearCurrentComments()
+    return comments
   }
 
   clearCurrentComments() {
@@ -290,12 +296,21 @@ export default class Parser {
     // TODO: Make sure that left is an Identifier
     // so that we are always assigning to something that can be looked up
     // and used later.
-
-    return {
+    let assignment = {
       type: NodeType.Assignment,
       name: left.value,
-      right: this.parseExpression(Precedence.Lowest)
+      right: null,
     }
+
+    let comments = this.getAndClearCurrentComments()
+
+    if(comments != "") {
+      assignment["comment"] = comments
+    }
+
+    assignment.right = this.parseExpression(Precedence.Lowest)
+
+    return assignment
   }
 
   /**

@@ -1,6 +1,10 @@
 import "mocha"
 import * as assert from "assert"
-import { IObject, toObject, Objekt, Number, String, NewObject, SendMessage, AddSlot } from "@vm/object"
+import {
+  IObject, toObject, Objekt,
+  Number, String,
+  NewObject, SendMessage, AddSlot, GetSlot
+} from "@vm/object"
 
 describe("Object", () => {
   it("has built-in true, false, and Nil", () => {
@@ -83,5 +87,26 @@ describe("Object", () => {
     assert.equal(SendMessage(obj, "two").data, 2)
     // Second grandparent
     assert.equal(SendMessage(obj, "three").data, 3)
+  })
+
+  it("allows getting the Slot meta-object", () => {
+    let str = toObject("testing")
+    let five = toObject(5)
+    AddSlot(str, "count", five)
+
+    let slot = GetSlot(str, "count")
+
+    assert.equal(SendMessage(slot, "value"), five)
+  })
+
+  it("supports adding comments to the slot meta-object", () => {
+    let str = toObject("testing")
+    let five = toObject(5)
+    let comment = toObject("The number of characters that might be in this string")
+    AddSlot(str, "count", five, comment)
+
+    let slot = GetSlot(str, "count")
+
+    assert.equal(SendMessage(slot, "comments"), comment)
   })
 })

@@ -16,6 +16,30 @@ function builtInFunc(func): IObject {
   return value
 }
 
+/**
+ * Create and return a new object with the current object as the first
+ * parent, and all provided slots added to the new object.
+ */
+AddSlot(Objekt, "new", builtInFunc(function(args, meta = {}) {
+  let obj = NewObject(this)
+  addSlots(obj, args, meta)
+
+  return obj
+}))
+
+AddSlot(Objekt, "addSlots", builtInFunc(function(args, meta = {}) {
+  addSlots(this, args, meta)
+}))
+
+function addSlots(obj: IObject, args, meta = {}) {
+  var comment
+
+  for(var slotName in args) {
+    comment = meta[slotName] ? meta[slotName].comment : null
+    AddSlot(obj, slotName, args[slotName], toObject(comment))
+  }
+}
+
 AddSlot(Objekt, "addSlot", builtInFunc(function(args) {
   let slotName = args["0"]
   let slotValue = args["as"]
@@ -27,30 +51,8 @@ AddSlot(Objekt, "getSlot", builtInFunc(function(args) {
   return GetSlot(this, slotName)
 }))
 
-AddSlot(Objekt, "addSlots", builtInFunc(function(args, meta = {}) {
-  Object.keys(args).forEach((key) => {
-    AddSlot(this, key, args[key], meta[key].comment)
-  })
-}))
-
 AddSlot(Objekt, "objectId", builtInFunc(function() {
   return toObject(this.objectId)
-}))
-
-/**
- * Create and return a new object with the current object as the first
- * parent, and all provided slots added to the new object.
- */
-AddSlot(Objekt, "new", builtInFunc(function(args, meta = {}) {
-  let obj = NewObject(this)
-  var comment
-
-  for(var slotName in args) {
-    comment = meta[slotName] ? meta[slotName].comment : null
-    AddSlot(obj, slotName, args[slotName], toObject(comment))
-  }
-
-  return obj
 }))
 
 /**

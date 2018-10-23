@@ -201,6 +201,14 @@ describe("VM", () => {
 
     assert.equal(result.data, 12)
   })
+
+  it("loads the core and standard libraries into the World", () => {
+    let vm = new VM()
+    // Have to use a name that's defined only in the core/stdlib for this to pass
+    let result = vm.eval(`World.getSlot("IO") == null`)
+
+    assert.equal(result, False)
+  })
 })
 
 function assertObjectEval(input: string, expected: IObject) {

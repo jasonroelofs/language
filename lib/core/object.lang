@@ -3,5 +3,19 @@ Object.addSlots(
   # When the `do` message is sent, objects will always execute the `ifTrue` block.
   do: { |ifTrue: {}, ifFalse: {}|
     ifTrue.call()
+  },
+
+  # Object comparison. Objects are equal if their objectIds are equal.
+  "==": { |other|
+    self.objectId == other.objectId
+  },
+
+  "!=": { |other|
+    # TODO: support negation via `!`
+    (self.objectId == other.objectId).do(
+      ifTrue: { false },
+      ifFalse: { true },
+    )
   }
+
 )

@@ -22,6 +22,8 @@ export default class VM {
       let path = (typeof(file) == "string") ? file : file.path
       this.loadFile(path)
     })
+
+    this.interpreter.ready()
   }
 
   loadFile(filePath: string) {

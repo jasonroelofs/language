@@ -31,7 +31,9 @@ export default class Interpreter {
 
   constructor(baseSpace: IObject) {
     this.currentSpace = baseSpace
+  }
 
+  ready() {
     // Initialize our own execution space and we are ready to go
     this.newNestedSpace()
   }

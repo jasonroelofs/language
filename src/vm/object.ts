@@ -144,7 +144,7 @@ let String = NewObject(Objekt, "")
  * Mapping of the results of (typeof object) to our internal
  * object type representation.
  */
-let typeMapping = {
+const typeMapping = {
   "number": Number,
   "string": String,
 }

@@ -33,6 +33,10 @@ AddSlot(Objekt, "addSlots", builtInFunc(function(args, meta = {}) {
   })
 }))
 
+AddSlot(Objekt, "objectId", builtInFunc(function() {
+  return toObject(this.objectId)
+}))
+
 /**
  * Create and return a new object with the current object as the first
  * parent, and all provided slots added to the new object.

@@ -1,10 +1,23 @@
 import "mocha"
 import * as assert from "assert"
-import { toObject } from "@vm/object"
+import { toObject, True, False } from "@vm/object"
 import { World } from "@vm/core"
 import VM from "@vm/vm"
 
 describe("Object", () => {
+  it("supports basic object equality", () => {
+    let tests = {
+      "true == true": True,
+      "false == false": True,
+      "true == false": False,
+      "true != false": True,
+      "null == null": True
+    }
+
+    for(var test in tests) {
+      assertExpression(test, tests[test])
+    }
+  })
 })
 
 describe("Number", () => {

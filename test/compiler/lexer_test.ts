@@ -362,15 +362,47 @@ describe("Lexer", () => {
 
     assertTokens(input, expected)
   })
+
+  describe("Error Handling", () => {
+    it("errors on unterminated strings", () => {
+      let tests = [
+        `"one`,
+        `'two`,
+        `"three\\"`,
+        `"four''`,
+        `"five''\\"`,
+        `'six""\\'`,
+      ]
+
+      for(var test of tests) {
+        let lexer = new Lexer(test)
+        let {tokens, errors} = lexer.tokenize()
+
+        assert.equal(tokens.length, 0, `Returned real tokens for ${test}`)
+        assert.equal(errors.length, 1, `Returned the wrong number of errors for ${test}`)
+
+        assert.equal(errors[0].message(), "Unterminated string")
+        assert.equal(errors[0].input, test)
+
+        assert.equal(errors[0].pos, 0)
+        assert.equal(errors[0].line, 1)
+        assert.equal(errors[0].char, 1)
+      }
+    })
+
+    it("errors on unknown tokens", () => {
+    })
+  })
 })
 
 function assertTokens(input, expected) {
   let lexer = new Lexer(input)
-  let tokens = lexer.tokenize()
+  let {tokens, errors} = lexer.tokenize()
 
   // console.log("Expected: %o", expected)
   // console.log("Got: %o", tokens)
   assert.equal(tokens.length, expected.length, "Wrong token lengths recorded")
+  assert.equal(errors.length, 0)
 
   for(var i = 0; i < tokens.length; i++) {
     assert.equal(tokens[i].type, expected[i].type, `Wrong type on index ${i}`)

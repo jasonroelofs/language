@@ -40,7 +40,8 @@ export default class Interpreter {
 
   eval(program: string): IObject {
     let l = new Lexer(program)
-    let p = new Parser(l.tokenize())
+    let {tokens} = l.tokenize()
+    let p = new Parser(tokens)
 
     return this.evalExpressions(p.parse())
   }

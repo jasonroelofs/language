@@ -32,7 +32,7 @@ export enum TokenType {
   // whitespace if automatically inserted.
   EOS = "END_OF_STATEMENT",
 
-  Unknown = "UNKNOWN",
+  Error = "ERROR",
   EOF = "EOF",
 }
 
@@ -40,6 +40,11 @@ export interface Token {
   type: TokenType
   value?: string
   source?: string
+
+  // 1-based line number of the input
+  line?: number
+  // 1-based character position on the current line
+  char?: number
 }
 
 export function tokenLength(token: Token) {

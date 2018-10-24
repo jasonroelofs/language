@@ -1,5 +1,6 @@
 import "mocha"
 import * as assert from "assert"
+import * as util from "util"
 import Lexer from "@compiler/lexer"
 import Parser from "@compiler/parser"
 import { NodeType, Node } from "@compiler/ast"
@@ -190,7 +191,7 @@ describe("Parser", () => {
     }
 
     let lexer = new Lexer(test)
-    let tokens = lexer.tokenize()
+    let {tokens} = lexer.tokenize()
 
     let parser = new Parser(tokens)
     let expressions = parser.parse()
@@ -427,7 +428,7 @@ describe("Parser", () => {
     `
 
     let lexer = new Lexer(test)
-    let tokens = lexer.tokenize()
+    let {tokens} = lexer.tokenize()
 
     let parser = new Parser(tokens)
     let expressions = parser.parse()
@@ -479,7 +480,7 @@ describe("Parser", () => {
     `
 
     let lexer = new Lexer(test)
-    let tokens = lexer.tokenize()
+    let {tokens} = lexer.tokenize()
 
     let parser = new Parser(tokens)
     let expressions = parser.parse()
@@ -495,7 +496,9 @@ describe("Parser", () => {
 
 function assertExpression(input, expected) {
   let lexer = new Lexer(input)
-  let tokens = lexer.tokenize()
+  let {tokens, errors} = lexer.tokenize()
+
+  assert.equal(errors.length, 0, util.format("Lexer returned some errors: %o", errors))
 
   let parser = new Parser(tokens)
   let expressions = parser.parse()

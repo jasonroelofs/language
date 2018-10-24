@@ -1,18 +1,58 @@
 import { Token, TokenType, tokenLength } from "@compiler/tokens"
 
+class SyntaxError {
+  input: string
+  chunk: string
+
+  // The raw position in the input
+  pos: number
+
+  // The actual line and line position of the error
+  line: number
+  char: number
+
+  message(): string {
+    return "Syntax error"
+  }
+}
+
+class UnterminatedStringError extends SyntaxError {
+  message(): string {
+    return "Unterminated string"
+  }
+}
+
+interface LexerResults {
+  tokens: Array<Token>
+  errors: Array<SyntaxError>
+}
+
 export default class Lexer {
 
   input: string
   currentPos: number
 
+  // Keep track of what line, 1-based, we're on
+  currentLine: number
+  // Inside of each line, keep track of what position
+  // we're at, again 1-based
+  currentChar: number
+
+  tokens: Array<Token>
+  errors: Array<SyntaxError>
+
   constructor(input: string) {
     this.input = input
     this.currentPos = 0
+
+    this.currentLine = 1
+    this.currentChar = 1
+
+    this.tokens = []
+    this.errors = []
   }
 
-  tokenize(): Array<Token> {
-    var tokens: Array<Token> = []
-
+  tokenize(): LexerResults {
     // Bypass any leading whitespace
     this.skipWhitespace(true)
 
@@ -25,23 +65,36 @@ export default class Lexer {
         break
       }
 
-      token =
-        this.commentToken(chunk) ||
-        this.numberToken(chunk) ||
-        this.stringToken(chunk) ||
-        this.operatorToken(chunk) ||
-        this.identifierToken(chunk) ||
-        this.unknownToken(chunk)
+      try {
+        token =
+          this.commentToken(chunk) ||
+          this.numberToken(chunk) ||
+          this.stringToken(chunk) ||
+          this.operatorToken(chunk) ||
+          this.identifierToken(chunk) ||
+          this.unknownToken(chunk)
+      } catch(error) {
+        error.input = this.input
+        error.chunk = chunk
+        error.pos = this.currentPos
+        error.line = this.currentLine
+        error.char = this.currentChar
+        this.errors.push(error)
+        break
+      }
+
+      token.line = this.currentLine
+      token.char = this.currentChar
 
       this.consume(token)
-      tokens.push(token)
+      this.tokens.push(token)
 
       // We should be at a newline at this time
       // Check to see if it's a proper "End of Statement" marker
       // and mark it as such.
       let eol = this.endOfStatementToken(this.input.substring(this.currentPos), token)
       if(eol) {
-        tokens.push(eol)
+        this.tokens.push(eol)
         this.currentPos += tokenLength(eol)
       }
 
@@ -51,11 +104,14 @@ export default class Lexer {
 
     // Add one final End of Statement to the list as we're at the end of
     // the final statement of the program
-    if(tokens.length > 0 && tokens[tokens.length - 1].type != TokenType.EOS) {
-      tokens.push({ type: TokenType.EOS, value: "" })
+    if(this.tokens.length > 0 && this.tokens[this.tokens.length - 1].type != TokenType.EOS) {
+      this.tokens.push({ type: TokenType.EOS, value: "" })
     }
 
-    return tokens
+    return {
+      tokens: this.tokens,
+      errors: this.errors
+    }
   }
 
   /**
@@ -120,8 +176,7 @@ export default class Lexer {
         }
       }
 
-      // TODO: We have an unterminated String, this needs to error
-      return { type: TokenType.Unknown, value: chunk }
+      throw new UnterminatedStringError()
     } else {
       return null
     }
@@ -176,7 +231,7 @@ export default class Lexer {
   // Grab everything up til the next whitespace.
   unknownToken(chunk: string): Token {
     let match = chunk.match(this.UNKNOWN_REGEX)
-    return { type: TokenType.Unknown, value: match[0] }
+    return { type: TokenType.Error, value: match[0] }
   }
 
   consume(token: Token) {
@@ -189,6 +244,9 @@ export default class Lexer {
     let ws = this.input.substring(this.currentPos).match(regex)
 
     if(skipNewlines && ws) {
+      this.currentLine += 1
+      this.currentChar = 0
+
       this.currentPos += ws[0].length
 
       // Lets try again to see if we found a new-line and if the next line

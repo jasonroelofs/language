@@ -363,6 +363,31 @@ describe("Lexer", () => {
     assertTokens(input, expected)
   })
 
+  it("includes input positioning information in tokens", () => {
+    let input = `
+      a
+      b; c + d
+      "long string
+        multiline"
+        nested
+    `
+
+    let lexer = new Lexer(input)
+    let {tokens} = lexer.tokenize()
+
+    assert.equal(tokens[0].pos, 7, "Wrong position for a")
+    assert.equal(tokens[1].pos, 8, "Wrong position for EOS after a")
+    assert.equal(tokens[2].pos, 15, "Wrong position for b")
+    assert.equal(tokens[3].pos, 16, "Wrong position for EOS (;) after b")
+    assert.equal(tokens[4].pos, 18, "Wrong position for c")
+    assert.equal(tokens[5].pos, 20, "Wrong position for +")
+    assert.equal(tokens[6].pos, 22, "Wrong position for d")
+    assert.equal(tokens[7].pos, 23, "Wrong position for EOS after d")
+    assert.equal(tokens[8].pos, 30, "Wrong position for string")
+    assert.equal(tokens[9].pos, 61, "Wrong position for EOS after string")
+    assert.equal(tokens[10].pos, 70, "Wrong position for nested")
+  })
+
   describe("Error Handling", () => {
     it("errors on unterminated strings", () => {
       let tests = [
@@ -382,11 +407,8 @@ describe("Lexer", () => {
         assert.equal(errors.length, 1, `Returned the wrong number of errors for ${test}`)
 
         assert.equal(errors[0].message(), "Unterminated string")
-        assert.equal(errors[0].input, test)
 
         assert.equal(errors[0].pos, 0)
-        assert.equal(errors[0].line, 1)
-        assert.equal(errors[0].char, 1)
       }
     })
 

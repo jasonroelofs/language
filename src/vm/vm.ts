@@ -28,10 +28,14 @@ export default class VM {
 
   loadFile(filePath: string) {
     let script = fs.readFileSync(filePath)
-    this.interpreter.eval(script.toString())
+    this.eval(script.toString())
   }
 
   eval(script: string) {
-    return this.interpreter.eval(script)
+    try {
+      return this.interpreter.eval(script)
+    } catch(errors) {
+      console.log("We got some errors! %o", errors)
+    }
   }
 }

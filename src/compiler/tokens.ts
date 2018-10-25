@@ -41,10 +41,9 @@ export interface Token {
   value?: string
   source?: string
 
-  // 1-based line number of the input
-  line?: number
-  // 1-based character position on the current line
-  char?: number
+  // 0-based character position of this token's beginning
+  // in the input string
+  pos?: number
 }
 
 export function tokenLength(token: Token) {

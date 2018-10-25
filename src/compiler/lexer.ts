@@ -1,15 +1,10 @@
 import { Token, TokenType, tokenLength } from "@compiler/tokens"
 
 class SyntaxError {
-  input: string
   chunk: string
 
   // The raw position in the input
   pos: number
-
-  // The actual line and line position of the error
-  line: number
-  char: number
 
   message(): string {
     return "Syntax error"
@@ -32,21 +27,12 @@ export default class Lexer {
   input: string
   currentPos: number
 
-  // Keep track of what line, 1-based, we're on
-  currentLine: number
-  // Inside of each line, keep track of what position
-  // we're at, again 1-based
-  currentChar: number
-
   tokens: Array<Token>
   errors: Array<SyntaxError>
 
   constructor(input: string) {
     this.input = input
     this.currentPos = 0
-
-    this.currentLine = 1
-    this.currentChar = 1
 
     this.tokens = []
     this.errors = []
@@ -74,17 +60,13 @@ export default class Lexer {
           this.identifierToken(chunk) ||
           this.unknownToken(chunk)
       } catch(error) {
-        error.input = this.input
         error.chunk = chunk
         error.pos = this.currentPos
-        error.line = this.currentLine
-        error.char = this.currentChar
         this.errors.push(error)
         break
       }
 
-      token.line = this.currentLine
-      token.char = this.currentChar
+      token.pos = this.currentPos
 
       this.consume(token)
       this.tokens.push(token)
@@ -94,6 +76,7 @@ export default class Lexer {
       // and mark it as such.
       let eol = this.endOfStatementToken(this.input.substring(this.currentPos), token)
       if(eol) {
+        eol.pos = this.currentPos
         this.tokens.push(eol)
         this.currentPos += tokenLength(eol)
       }
@@ -244,9 +227,6 @@ export default class Lexer {
     let ws = this.input.substring(this.currentPos).match(regex)
 
     if(skipNewlines && ws) {
-      this.currentLine += 1
-      this.currentChar = 0
-
       this.currentPos += ws[0].length
 
       // Lets try again to see if we found a new-line and if the next line

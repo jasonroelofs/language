@@ -35,8 +35,10 @@ export default class VM {
     try {
       return this.interpreter.eval(script)
     } catch(errors) {
+      let cleanFilePath = path.relative(process.cwd(), filePath)
+
       errors.forEach((error) => {
-        console.log(error.toString(script, filePath))
+        console.log(error.toString(script, cleanFilePath))
       })
     }
   }

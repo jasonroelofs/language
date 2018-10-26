@@ -1,21 +1,5 @@
 import { Token, TokenType, tokenLength } from "@compiler/tokens"
-
-class SyntaxError {
-  chunk: string
-
-  // The raw position in the input
-  pos: number
-
-  message(): string {
-    return "Syntax error"
-  }
-}
-
-class UnterminatedStringError extends SyntaxError {
-  message(): string {
-    return "Unterminated string"
-  }
-}
+import { SyntaxError, UnterminatedStringError } from "@compiler/errors"
 
 interface LexerResults {
   tokens: Array<Token>
@@ -61,7 +45,7 @@ export default class Lexer {
           this.unknownToken(chunk)
       } catch(error) {
         error.chunk = chunk
-        error.pos = this.currentPos
+        error.position = this.currentPos
         this.errors.push(error)
         break
       }

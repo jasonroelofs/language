@@ -406,9 +406,9 @@ describe("Lexer", () => {
         assert.equal(tokens.length, 0, `Returned real tokens for ${test}`)
         assert.equal(errors.length, 1, `Returned the wrong number of errors for ${test}`)
 
-        assert.equal(errors[0].message(), "Unterminated string")
+        assert.equal(errors[0].errorType(), "Unterminated String")
 
-        assert.equal(errors[0].pos, 0)
+        assert.equal(errors[0].position, 0)
       }
     })
 

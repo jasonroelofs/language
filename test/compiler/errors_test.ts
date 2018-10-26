@@ -5,9 +5,8 @@ import { SyntaxError } from "@compiler/errors"
 
 describe("Errors", () => {
   it("builds a nice, readable error message", () => {
-    let error = new SyntaxError()
     let text = "Error starts here"
-    error.chunk = text
+    let error = new SyntaxError(text)
     error.position = 0
 
     let output = error.toString(text)
@@ -22,14 +21,13 @@ describe("Errors", () => {
   })
 
   it("calculates the proper line number for the problem line", () => {
-    let error = new SyntaxError()
     let text = stripIndent`
       a + b
       b + c
       c + d
       e f +
     `
-    error.chunk = "e f +"
+    let error = new SyntaxError("e f +")
     error.position = text.indexOf(error.chunk)
 
     let output = error.toString(text)
@@ -44,12 +42,11 @@ describe("Errors", () => {
   })
 
   it("can follow the chunk if it starts further into the line of code", () => {
-    let error = new SyntaxError()
     let text = stripIndent`
       a + b; b + c
       c + d; e f +
     `
-    error.chunk = "e f +"
+    let error = new SyntaxError("e f +")
     error.position = text.indexOf(error.chunk)
 
     let output = error.toString(text)
@@ -64,9 +61,8 @@ describe("Errors", () => {
   })
 
   it("can include current file name information", () => {
-    let error = new SyntaxError()
     let text = "Error starts here"
-    error.chunk = text
+    let error = new SyntaxError(text)
     error.position = 0
 
     let output = error.toString(text, "my/test/file.lang")
@@ -87,9 +83,8 @@ describe("Errors", () => {
       }
     }
 
-    let error = new TestError()
     let text = "Error starts here"
-    error.chunk = text
+    let error = new TestError(text)
     error.position = 0
 
     let output = error.toString(text)
@@ -119,9 +114,8 @@ describe("Errors", () => {
       }
     }
 
-    let error = new TestError()
     let text = "Error starts here"
-    error.chunk = text
+    let error = new TestError(text)
     error.position = 0
 
     let output = error.toString(text)

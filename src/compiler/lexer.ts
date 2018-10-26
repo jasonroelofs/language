@@ -1,5 +1,5 @@
 import { Token, TokenType, tokenLength } from "@compiler/tokens"
-import { SyntaxError, UnterminatedStringError } from "@compiler/errors"
+import { SyntaxError, UnterminatedStringError, UnknownTokenError } from "@compiler/errors"
 
 interface LexerResults {
   tokens: Array<Token>
@@ -44,7 +44,6 @@ export default class Lexer {
           this.identifierToken(chunk) ||
           this.unknownToken(chunk)
       } catch(error) {
-        error.chunk = chunk
         error.position = this.currentPos
         this.errors.push(error)
         break
@@ -143,7 +142,7 @@ export default class Lexer {
         }
       }
 
-      throw new UnterminatedStringError()
+      throw new UnterminatedStringError(chunk)
     } else {
       return null
     }
@@ -196,9 +195,12 @@ export default class Lexer {
 
   // Fall-through final token type if nothing else matches
   // Grab everything up til the next whitespace.
+  // I honestly am not sure what will trigger this, but adding it
+  // just in case there's something that falls through the cracks.
+  // The Identifier regex seems to catch a lot of stuff.
   unknownToken(chunk: string): Token {
     let match = chunk.match(this.UNKNOWN_REGEX)
-    return { type: TokenType.Error, value: match[0] }
+    throw new UnknownTokenError(match[0])
   }
 
   consume(token: Token) {

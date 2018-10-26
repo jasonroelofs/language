@@ -32,7 +32,6 @@ export enum TokenType {
   // whitespace if automatically inserted.
   EOS = "END_OF_STATEMENT",
 
-  Error = "ERROR",
   EOF = "EOF",
 }
 

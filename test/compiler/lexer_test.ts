@@ -411,9 +411,6 @@ describe("Lexer", () => {
         assert.equal(errors[0].position, 0)
       }
     })
-
-    it("errors on unknown tokens", () => {
-    })
   })
 })
 

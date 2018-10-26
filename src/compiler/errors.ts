@@ -8,6 +8,10 @@ class SyntaxError {
   // The raw position in the input
   position: number
 
+  constructor(chunk: string) {
+    this.chunk = chunk
+  }
+
   errorType(): string {
     return null
   }
@@ -62,7 +66,14 @@ class UnterminatedStringError extends SyntaxError {
   }
 }
 
+class UnknownTokenError extends SyntaxError {
+  errorType(): string {
+    return "Unknown Token"
+  }
+}
+
 export {
   SyntaxError,
   UnterminatedStringError,
+  UnknownTokenError,
 }

@@ -12,6 +12,7 @@ import {
   Expression,
   NodeType
 } from "@compiler/ast"
+import * as errors from "@compiler/errors"
 
 enum Precedence {
   Lowest,
@@ -41,6 +42,11 @@ let Precedences = {
   [TokenType.OpenParen]: Precedence.Index,
 }
 
+interface ParserResults {
+  expressions: Array<Expression>
+  errors: Array<errors.SyntaxError>
+}
+
 export default class Parser {
 
   tokens: Array<Token>
@@ -65,6 +71,7 @@ export default class Parser {
       [TokenType.Identifier]: () => this.parseIdentifier(),
       [TokenType.OpenBlock]: () => this.parseBlock(),
       [TokenType.OpenParen]: () => this.parseGroupedExpression(),
+      [TokenType.Pipe]: () => this.incompleteExpressionError(),
     }
 
     this.infixParse = {
@@ -84,16 +91,24 @@ export default class Parser {
     }
   }
 
-  parse(): Array<Expression> {
+  parse(): ParserResults {
     var expressions = []
+    var errors = []
 
-    while (this.index < this.tokens.length) {
-      expressions.push({
-        node: this.parseStatement()
-      })
+    try {
+      while (this.index < this.tokens.length) {
+        expressions.push({
+          node: this.parseStatement()
+        })
+      }
+    } catch (error) {
+      errors.push(error)
     }
 
-    return expressions
+    return {
+      expressions: expressions,
+      errors: errors
+    }
   }
 
   parseStatement() {
@@ -142,7 +157,7 @@ export default class Parser {
         this.nextToken()
         break;
       default:
-        throw new Error(`Unexpected ${this.currToken().type} found at the end of the current statement`)
+        throw new errors.ExpectedEndOfExpressionError(this.currToken())
     }
   }
 
@@ -151,7 +166,7 @@ export default class Parser {
 
     let prefix = this.prefixParse[token.type]
     if (prefix == null) {
-      throw new Error(util.format("[Parser] No defined prefix function for token: %o", token))
+      throw new errors.InvalidStartOfExpressionError(token)
     }
 
     var leftExp = prefix()
@@ -171,12 +186,13 @@ export default class Parser {
 
   parseGroupedExpression(): Node {
     // Move past the opening (
+    let openingToken = this.currToken()
     this.nextToken()
 
     let exp = this.parseExpression(Precedence.Lowest)
 
     if(!this.currTokenIs(TokenType.CloseParen)) {
-      throw new Error(`Expected ${TokenType.CloseParen} to close explicit group, found ${this.currToken().type} (${this.currToken().value})`)
+      throw new errors.UnmatchedClosingTagError(openingToken,  this.currToken(), ")")
     }
 
     // Move past the closing )
@@ -215,28 +231,42 @@ export default class Parser {
 
   parseBlock(): BlockNode {
     // Move past the '{'
+    let startToken = this.currToken()
     this.nextToken()
 
     let node: BlockNode = { type: NodeType.Block, parameters: [], body: [] }
 
     // Block parameters
     if(this.currTokenIs(TokenType.Pipe)) {
+      let pipeStart = this.currToken()
       this.nextToken()
       var param: ParameterNode
 
-      while(!this.currTokenIs(TokenType.Pipe)) {
+      while(this.currToken() && !this.currTokenIs(TokenType.Pipe)) {
+
+        if(!this.currTokenIs(TokenType.Identifier)) {
+          throw new errors.InvalidParameterError(this.currToken())
+        }
+
         param = {
           type: NodeType.Parameter,
           name: this.currToken().value,
           default: null
         }
 
-        // Move past the name and following colon
+        // Move past the name
         this.nextToken()
 
         // Default value set for this parameter
         if(this.currTokenIs(TokenType.Colon)) {
+          let colonToken = this.currToken()
           this.nextToken()
+
+          if(this.isEndOfStatement() ||
+            this.currTokenIs(TokenType.Comma) ||
+            this.currTokenIs(TokenType.Pipe)) {
+            throw new errors.IncompleteParameterError(colonToken)
+          }
 
           param.default = this.parseExpression(Precedence.Lowest)
         }
@@ -244,9 +274,15 @@ export default class Parser {
         // More parameters?
         if(this.currTokenIs(TokenType.Comma)) {
           this.nextToken()
+        } else if(!this.currTokenIs(TokenType.Pipe)) {
+          throw new errors.ExpectedTokenMissingError(this.currToken(), ", or |")
         }
 
         node.parameters.push(param)
+      }
+
+      if(this.isEndOfStatement()) {
+        throw new errors.UnmatchedClosingTagError(pipeStart, this.currToken(), "|")
       }
 
       // Move past the last Pipe
@@ -254,8 +290,12 @@ export default class Parser {
     }
 
     // Block body
-    while(!this.currTokenIs(TokenType.CloseBlock)) {
+    while(this.currToken() && !this.currTokenIs(TokenType.CloseBlock)) {
       node.body.push({ node: this.parseStatement() })
+    }
+
+    if(!this.currTokenIs(TokenType.CloseBlock)) {
+      throw new errors.UnmatchedClosingTagError(startToken, this.currToken(), "}")
     }
 
     // Move past the closing '}'
@@ -308,6 +348,10 @@ export default class Parser {
       assignment["comment"] = comments
     }
 
+    if(this.isEndOfStatement()) {
+      throw new errors.IncompleteExpressionError(token)
+    }
+
     assignment.right = this.parseExpression(Precedence.Lowest)
 
     return assignment
@@ -321,6 +365,10 @@ export default class Parser {
     let token = this.currToken()
     let precedence = this.currPrecedence()
     this.nextToken()
+
+    if(this.isEndOfStatement()) {
+      throw new errors.IncompleteExpressionError(token)
+    }
 
     return {
       type: NodeType.MessageSend,
@@ -428,6 +476,10 @@ export default class Parser {
     return left
   }
 
+  incompleteExpressionError() {
+    throw new errors.IncompleteExpressionError(this.currToken())
+  }
+
   currToken(): Token {
     return this.tokens[this.index]
   }
@@ -446,6 +498,10 @@ export default class Parser {
 
   peekTokenIs(expected: TokenType): boolean {
     return this.peekToken() && this.peekToken().type == expected
+  }
+
+  isEndOfStatement(): boolean {
+    return this.currToken() == null || this.currTokenIs(TokenType.EOS)
   }
 
   currPrecedence(): number {

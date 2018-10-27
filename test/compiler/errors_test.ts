@@ -9,7 +9,7 @@ describe("Errors", () => {
     let error = new SyntaxError(text)
     error.position = 0
 
-    let output = error.toString(text)
+    let output = error.errorString(text)
     let expected = stripIndent`
       [Syntax Error]:
 
@@ -30,7 +30,7 @@ describe("Errors", () => {
     let error = new SyntaxError("e f +")
     error.position = text.indexOf(error.chunk)
 
-    let output = error.toString(text)
+    let output = error.errorString(text)
     let expected = stripIndent`
       [Syntax Error]:
 
@@ -49,7 +49,7 @@ describe("Errors", () => {
     let error = new SyntaxError("e f +")
     error.position = text.indexOf(error.chunk)
 
-    let output = error.toString(text)
+    let output = error.errorString(text)
     let expected = stripIndent`
       [Syntax Error]:
 
@@ -65,7 +65,7 @@ describe("Errors", () => {
     let error = new SyntaxError(text)
     error.position = 0
 
-    let output = error.toString(text, "my/test/file.lang")
+    let output = error.errorString(text, "my/test/file.lang")
     let expected = stripIndent`
       [Syntax Error] in my/test/file.lang:
 
@@ -87,7 +87,7 @@ describe("Errors", () => {
     let error = new TestError(text)
     error.position = 0
 
-    let output = error.toString(text)
+    let output = error.errorString(text)
     let expected = stripIndent`
       [Syntax Error] My Test Error:
 
@@ -118,7 +118,7 @@ describe("Errors", () => {
     let error = new TestError(text)
     error.position = 0
 
-    let output = error.toString(text)
+    let output = error.errorString(text)
     let expected = stripIndent`
       [Syntax Error] Can't Understand This:
 
@@ -132,5 +132,17 @@ describe("Errors", () => {
     ` + "\n"
 
     assert.equal(output, expected)
+  })
+
+  it("can show errors across multiple lines of code", () => {
+    // E.g., grouping errors across multiple lines
+    let test = `
+      ( a + b
+        * (c + d)
+    `
+  })
+
+  it("truncates code blocks whose end is far past the starting point of the error", () => {
+    // Follow-up from the above test
   })
 })

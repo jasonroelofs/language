@@ -4,6 +4,7 @@ import * as util from "util"
 import Lexer from "@compiler/lexer"
 import Parser from "@compiler/parser"
 import { NodeType, Node } from "@compiler/ast"
+import * as errors from "@compiler/errors"
 
 describe("Parser", () => {
   it("parses Numbers", () => {
@@ -194,7 +195,7 @@ describe("Parser", () => {
     let {tokens} = lexer.tokenize()
 
     let parser = new Parser(tokens)
-    let expressions = parser.parse()
+    let {expressions} = parser.parse()
 
     assert.equal(expressions.length, 2)
     assert.deepEqual(expressions[0].node, expected, `Comparison failed for ''${test}''`)
@@ -431,7 +432,7 @@ describe("Parser", () => {
     let {tokens} = lexer.tokenize()
 
     let parser = new Parser(tokens)
-    let expressions = parser.parse()
+    let {expressions} = parser.parse()
 
     assert.equal(expressions.length, 4)
 
@@ -483,7 +484,7 @@ describe("Parser", () => {
     let {tokens} = lexer.tokenize()
 
     let parser = new Parser(tokens)
-    let expressions = parser.parse()
+    let {expressions} = parser.parse()
 
     assert.equal(expressions.length, 1)
 
@@ -491,6 +492,114 @@ describe("Parser", () => {
 
     assert.equal(message.arguments[0].comment, "This is the first method")
     assert.equal(message.arguments[1].comment, "This is the second method")
+  })
+
+  describe("Error handling", () => {
+    it("errors on tokens that aren't supposed to start a statement", () => {
+      assertError("*15", {
+        errorType: errors.InvalidStartOfExpressionError,
+        position: 0
+      })
+    })
+
+    it("errors where a statement is supposed to end but doesn't", () => {
+      assertError("a + b c + d", {
+        errorType: errors.ExpectedEndOfExpressionError,
+        position: 6
+      })
+    })
+
+    it("errors on unclosed grouping expressions", () => {
+      let tests = [
+        "(a + b",
+        "{ a + b ",
+      ]
+
+      for(var test of tests) {
+        assertError(test, {
+          errorType: errors.UnmatchedClosingTagError,
+          position: 0
+        })
+      }
+    })
+
+    it("errors on incomplete binary operations", () => {
+      // [input, position]
+      let tests = [
+        ["a = ", 2],
+        ["1 + ", 2],
+        ["3 < ", 2],
+        ["thing *", 6],
+        // Across new-lines shouldn't matter
+        ["1 +\n", 2],
+      ]
+
+      for(var test of tests) {
+        assertError(test[0], {
+          errorType: errors.IncompleteExpressionError,
+          position: test[1]
+        })
+      }
+    })
+
+    it("errors on invalid block expressions", () => {
+      // [input, position, errorType]
+      let tests = [
+        // Unclosed parameters
+        ["{|a }", 4, errors.ExpectedTokenMissingError],
+        // Invalid argument name
+        ["{|1| }", 2, errors.InvalidParameterError],
+        // Missing a comma or colon
+        ["{|a b| }", 4, errors.ExpectedTokenMissingError],
+        ["{|a 'default'| }", 4, errors.ExpectedTokenMissingError],
+        ["{|a 1 + 2| }", 4, errors.ExpectedTokenMissingError],
+        // Missing a default value
+        ["{|a: ", 3, errors.IncompleteParameterError],
+        ["{|a:, b| }", 3, errors.IncompleteParameterError],
+        // Invalid expression as a default value
+        ["{|a: 1+| }", 7, errors.IncompleteExpressionError],
+      ]
+
+      for(var test of tests) {
+        assertError(test[0], {
+          errorType: test[2],
+          position: test[1]
+        })
+      }
+    })
+
+    it("errors on invalid message send syntax", () => {
+      let tests = [
+        // Unclosed
+        "obj.message(",
+        // Missing keywords
+        "obj.message(1, 2)",
+        "obj.message(1, 2, 3)",
+        // Missing comma
+        "obj.message(1 2)",
+        // Missing value
+        "obj.message(arg:)",
+        // Invalid argument expression
+        "obj.message(arg: 1 +)",
+        // Missing colon
+        "obj.message(arg 1, arg2: 2)",
+      ]
+    })
+
+
+    function assertError(input, {errorType, position}) {
+      let lexer = new Lexer(input)
+      var {tokens, errors} = lexer.tokenize()
+
+      assert.equal(errors.length, 0, `Lexer found errors in ${input}`)
+
+      let parser = new Parser(tokens)
+      var {expressions, errors} = parser.parse()
+
+      assert.equal(errors.length, 1, `Parser should have thrown errors in ${input}`)
+      assert(errors[0] instanceof errorType, `Wrong error type for '${input}' got: ${errors[0].errorType()}`)
+      assert.equal(errors[0].position, position, `Wrong position for '${input}'`)
+    }
   })
 })
 
@@ -501,7 +610,7 @@ function assertExpression(input, expected) {
   assert.equal(errors.length, 0, util.format("Lexer returned some errors: %o", errors))
 
   let parser = new Parser(tokens)
-  let expressions = parser.parse()
+  let {expressions} = parser.parse()
 
   assert.equal(expressions.length, 1)
   assert.deepEqual(expressions[0].node, expected, `Comparison failed for ''${input}''`)

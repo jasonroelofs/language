@@ -1,0 +1,9 @@
+#
+# Unterminated strings
+#
+
+" This is a long string
+  with many \"breaks\"
+    but it 'never'
+      'actually
+        ends'

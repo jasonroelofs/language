@@ -17,7 +17,10 @@
     "pretest": "npm run build",
     "test": "mocha dist/**/*_test.js",
     "precli": "npm run build",
-    "cli": "node dist/bin/lang-cli.js"
+    "cli": "node dist/bin/lang-cli.js",
+    "prespec": "npm run build",
+    "spec": "sh spec/runner.sh",
+    "test:all": "npm run test && npm run spec"
   },
   "dependencies": {
     "@types/mocha": "^5.2.5",

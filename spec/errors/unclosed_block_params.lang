@@ -1,0 +1,6 @@
+#
+# Unclosed Block Parameters
+#
+
+{ |a 
+}

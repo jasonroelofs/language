@@ -1,0 +1,9 @@
+#
+# Unclosed Block expressions
+#
+
+{
+  a + b
+  b.call({
+    c + d
+  })

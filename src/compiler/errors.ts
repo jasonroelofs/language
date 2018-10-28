@@ -27,6 +27,7 @@ class SyntaxError extends Error {
     let sourcePrefix = sourceInput.substring(0, this.position)
     let lines = sourcePrefix.split("\n")
     let chunkPrefix = lines[lines.length - 1]
+    let chunkSuffix = sourceInput.substring(this.position + this.chunk.length).split("\n")[0]
 
     let lineNumberSegment = `${lines.length}| `
     let pointerIndent = " ".repeat(lineNumberSegment.length + chunkPrefix.length)
@@ -38,7 +39,7 @@ class SyntaxError extends Error {
     let message = stripIndent`
       [Syntax Error]${errorType}${fileSegment}:
 
-      ${lineNumberSegment}${chunkPrefix}${this.chunk.trim()}
+      ${lineNumberSegment}${chunkPrefix}${this.chunk.trim()}${chunkSuffix}
       ${pointerIndent}${pointer}
     `
 

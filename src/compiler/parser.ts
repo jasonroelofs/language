@@ -72,6 +72,7 @@ export default class Parser {
       [TokenType.OpenBlock]: () => this.parseBlock(),
       [TokenType.OpenParen]: () => this.parseGroupedExpression(),
       [TokenType.Pipe]: () => this.incompleteExpressionError(),
+      [TokenType.CloseParen]: () => this.incompleteExpressionError(),
     }
 
     this.infixParse = {
@@ -387,6 +388,8 @@ export default class Parser {
    * and now we get to add parameters to that MessageSend.
    */
   parseCallSite(left: Node): Node {
+    let start = this.currToken()
+
     if(this.peekTokenIs(TokenType.CloseParen)) {
       // We have an empty param set `()` so no arguments added.
       // Skip our current token `(` and the close `)` to move forward.
@@ -397,6 +400,10 @@ export default class Parser {
 
     // Move past the OpenParen
     this.nextToken()
+
+    if(this.isEndOfStatement()) {
+      throw new errors.UnmatchedClosingTagError(start, this.currToken(), ")")
+    }
 
     this.checkForComments()
 
@@ -423,19 +430,26 @@ export default class Parser {
       // Prepare for more arguments!
       if(this.currTokenIs(TokenType.Comma)) {
         this.nextToken()
+      } else {
+        // No colon, no comma, no close paren. Something else is here
+        // and that's an error. Most likely this is someone forgetting to add
+        // the colon to designate the name of the argument.
+        throw new errors.ExpectedTokenMissingError(this.currToken(), ": or ,")
       }
     }
 
     // Alright we are keywording it up!
-    while(this.peekToken() && !this.peekTokenIs(TokenType.CloseParen)) {
+    while(this.peekToken()) {
       this.checkForComments()
 
-      if(!this.currTokenIs(TokenType.Identifier) && !this.currTokenIs(TokenType.String)) {
-        throw new Error(`Expected ${TokenType.Identifier} or ${TokenType.String} for keyword arguments, found ${this.currToken().type} (${this.currToken().value})`)
+      // The second argument and onward must be in the form of `name: value` or `"name": value`
+      if(!this.peekTokenIs(TokenType.Colon)) {
+        throw new errors.MissingArgumentNameError(this.currToken())
       }
 
-      if(!this.peekTokenIs(TokenType.Colon)) {
-        throw new Error(`Expected ${TokenType.Colon} after argument name, found ${this.peekToken().type} (${this.peekToken().value})`)
+      // We only support identifiers or strings as names of arguments
+      if(!(this.currTokenIs(TokenType.Identifier) || this.currTokenIs(TokenType.String))) {
+        throw new errors.InvalidArgumentNameError(this.currToken())
       }
 
       let argNode = {
@@ -453,6 +467,12 @@ export default class Parser {
         this.clearCurrentComments()
       }
 
+      if(this.currTokenIs(TokenType.Comma) ||
+        this.currTokenIs(TokenType.CloseParen) ||
+        this.isEndOfStatement()) {
+        throw new errors.MissingArgumentValueError(this.currToken())
+      }
+
       argNode['value'] = this.parseStatement()
 
       left.message.arguments.push(argNode)
@@ -468,6 +488,10 @@ export default class Parser {
       if(this.currTokenIs(TokenType.CloseParen)) {
         break
       }
+    }
+
+    if(!this.currTokenIs(TokenType.CloseParen)) {
+      throw new errors.UnmatchedClosingTagError(start, this.currToken(), ")")
     }
 
     // Move past the close paren, we're done

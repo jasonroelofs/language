@@ -569,23 +569,29 @@ describe("Parser", () => {
     })
 
     it("errors on invalid message send syntax", () => {
+      // [input, position, errorType]
       let tests = [
         // Unclosed
-        "obj.message(",
+        ["obj.message(", 11, errors.UnmatchedClosingTagError],
         // Missing keywords
-        "obj.message(1, 2)",
-        "obj.message(1, 2, 3)",
-        // Missing comma
-        "obj.message(1 2)",
+        ["obj.message(1, 2)", 15, errors.MissingArgumentNameError],
+        // Invalid token for keyword
+        ["obj.message(1, 2: 2)", 15, errors.InvalidArgumentNameError],
         // Missing value
-        "obj.message(arg:)",
-        // Invalid argument expression
-        "obj.message(arg: 1 +)",
+        ["obj.message(arg:)", 16, errors.MissingArgumentValueError],
         // Missing colon
-        "obj.message(arg 1, arg2: 2)",
+        ["obj.message(arg 1, arg2: 2)", 16, errors.ExpectedTokenMissingError],
+        // Invalid argument expression
+        ["obj.message(arg: 1 +)", 20, errors.IncompleteExpressionError],
       ]
-    })
 
+      for(var test of tests) {
+        assertError(test[0], {
+          errorType: test[2],
+          position: test[1]
+        })
+      }
+    })
 
     function assertError(input, {errorType, position}) {
       let lexer = new Lexer(input)

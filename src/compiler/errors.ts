@@ -160,6 +160,33 @@ class ExpectedTokenMissingError extends ParseError {
   }
 }
 
+class MissingArgumentNameError extends ParseError {
+  errorType(): string {
+    return `Missing Name of Argument`
+  }
+}
+
+class MissingArgumentValueError extends ParseError {
+  errorType(): string {
+    return `Missing the Value of Argument`
+  }
+}
+
+class InvalidArgumentNameError extends ParseError {
+  errorType(): string {
+    return `Invalid Argument Name`
+  }
+
+  description(): string {
+    return stripIndent`
+      Argument names can only be identifiers or strings.
+
+        block.call(one: 1, two: 2)
+        block.call("one": 1, "two": 2)
+    `
+  }
+}
+
 export {
   SyntaxError,
   UnterminatedStringError,
@@ -171,4 +198,7 @@ export {
   InvalidParameterError,
   IncompleteParameterError,
   ExpectedTokenMissingError,
+  MissingArgumentNameError,
+  MissingArgumentValueError,
+  InvalidArgumentNameError,
 }

@@ -1,4 +1,4 @@
-import { stripIndent } from "common-tags"
+import { codeBlock } from "common-tags"
 
 interface SystemError {
 
@@ -15,45 +15,80 @@ interface SystemError {
 
 class ErrorReport {
 
+  // The error itself
   error: SystemError
 
-  constructor(error: SystemError) {
+  // The full input source that fired this error.
+  // Used to figure out contextual information, as
+  // the error itself will only contain the actual chunk of
+  // code that triggered the error.
+  source: string
+
+  // Optional file path to help users find where the error
+  file: string
+
+  constructor(error: SystemError, source: string, file: string = null) {
     this.error = error
+    this.source = source
+    this.file = file
   }
 
-  reportOn(sourceInput: string, file: string = null): string {
-    let position = this.error.position
-    let chunk = this.error.chunk
-    let baseType = this.error.baseType()
-    let errorType = this.error.errorType()
-    let description = this.error.description()
+  buildReport(): string {
+    let message = codeBlock`
+      [${this.baseType()}]${this.subType()}${this.filePath()}:
 
-    let sourcePrefix = sourceInput.substring(0, position)
-    let lines = sourcePrefix.split("\n")
-    let chunkPrefix = lines[lines.length - 1]
-    let chunkSuffix = sourceInput.substring(position + chunk.length).split("\n")[0]
-
-    let lineNumberSegment = `${lines.length}| `
-    let pointerIndent = " ".repeat(lineNumberSegment.length + chunkPrefix.length)
-    let pointer = "^".repeat(chunk.length)
-
-    let subType = errorType ? ` ${errorType}` : ""
-    let fileSegment = file ? ` in ${file}` : ""
-
-    let message = stripIndent`
-      [${baseType}]${subType}${fileSegment}:
-
-      ${lineNumberSegment}${chunkPrefix}${chunk.trim()}${chunkSuffix}
-      ${pointerIndent}${pointer}
+      ${this.renderOffendingLines()}
+      ${this.description()}
     `
-
-    if(description) {
-      message += `\n\n${description}\n`
-    }
 
     return message
   }
 
+  baseType() {
+    return this.error.baseType() || "System Error"
+  }
+
+  subType() {
+    let t = this.error.errorType()
+    return t ? ` ${t}` : ""
+  }
+
+  filePath() {
+    return this.file ? ` in ${this.file}` : ""
+  }
+
+  description() {
+    let d = this.error.description()
+    return d ? `\n${d}` : ""
+  }
+
+  renderOffendingLines() {
+    let preChunk = this.source.substring(0, this.error.position)
+    let chunkLines = this.error.chunk.trimRight().split("\n")
+    let startLine = preChunk.split("\n").length - 1
+    let endLine = startLine + chunkLines.length
+
+    let offending = ""
+    var lineNum = ""
+    var lineIndent = 0
+    let sourceLines = this.source.split("\n")
+
+    for(var i = startLine; i < endLine; i++) {
+      lineNum = `${i + 1}| `
+      offending += `${lineNum}${sourceLines[i]}\n`
+
+      if(lineNum.length > lineIndent) {
+        lineIndent = lineNum.length
+      }
+    }
+
+    let chunkLastLine = chunkLines[chunkLines.length - 1]
+    let chunkStart = sourceLines[endLine - 1].indexOf(chunkLastLine)
+    let pointerIndent = " ".repeat(lineIndent + chunkStart)
+    let pointer = "^".repeat(chunkLastLine.length)
+
+    return `${offending.trimRight()}\n${pointerIndent}${pointer}`
+  }
 }
 
 export default ErrorReport

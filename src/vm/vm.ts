@@ -39,8 +39,8 @@ export default class VM {
       let cleanFilePath = path.relative(process.cwd(), filePath)
 
       errors.forEach((error) => {
-        let report = new ErrorReport(error)
-        console.log(report.reportOn(script, cleanFilePath))
+        let report = new ErrorReport(error, script, cleanFilePath)
+        console.log(report.buildReport())
       })
     }
   }

@@ -2,14 +2,16 @@ import "mocha"
 import * as assert from "assert"
 import { stripIndent } from "common-tags"
 import { SyntaxError } from "@compiler/errors"
+import ErrorReport from "@vm/error_report"
 
-describe("Errors", () => {
+describe("ErrorReport", () => {
   it("builds a nice, readable error message", () => {
     let text = "Error starts here"
     let error = new SyntaxError(text)
     error.position = 0
 
-    let output = error.errorString(text)
+    let report = new ErrorReport(error)
+    let output = report.reportOn(text)
     let expected = stripIndent`
       [Syntax Error]:
 
@@ -30,7 +32,8 @@ describe("Errors", () => {
     let error = new SyntaxError("e f +")
     error.position = text.indexOf(error.chunk)
 
-    let output = error.errorString(text)
+    let report = new ErrorReport(error)
+    let output = report.reportOn(text)
     let expected = stripIndent`
       [Syntax Error]:
 
@@ -49,7 +52,8 @@ describe("Errors", () => {
     let error = new SyntaxError("e f +")
     error.position = text.indexOf(error.chunk)
 
-    let output = error.errorString(text)
+    let report = new ErrorReport(error)
+    let output = report.reportOn(text)
     let expected = stripIndent`
       [Syntax Error]:
 
@@ -65,7 +69,8 @@ describe("Errors", () => {
     let error = new SyntaxError(text)
     error.position = 0
 
-    let output = error.errorString(text, "my/test/file.lang")
+    let report = new ErrorReport(error)
+    let output = report.reportOn(text, "my/test/file.lang")
     let expected = stripIndent`
       [Syntax Error] in my/test/file.lang:
 
@@ -87,7 +92,8 @@ describe("Errors", () => {
     let error = new TestError(text)
     error.position = 0
 
-    let output = error.errorString(text)
+    let report = new ErrorReport(error)
+    let output = report.reportOn(text)
     let expected = stripIndent`
       [Syntax Error] My Test Error:
 
@@ -118,7 +124,8 @@ describe("Errors", () => {
     let error = new TestError(text)
     error.position = 0
 
-    let output = error.errorString(text)
+    let report = new ErrorReport(error)
+    let output = report.reportOn(text)
     let expected = stripIndent`
       [Syntax Error] Can't Understand This:
 
@@ -130,6 +137,30 @@ describe("Errors", () => {
 
         Example fix it code
     ` + "\n"
+
+    assert.equal(output, expected)
+  })
+
+  it("supports providing a different base error type", () => {
+    class TestError extends SyntaxError {
+      baseType(): string {
+        return "Runtime Error"
+      }
+    }
+
+    let text = "Error starts here"
+    let error = new TestError(text)
+    error.position = 0
+
+    let report = new ErrorReport(error)
+    let output = report.reportOn(text)
+
+    let expected = stripIndent`
+      [Runtime Error]:
+
+      1| Error starts here
+         ^^^^^^^^^^^^^^^^^
+    `
 
     assert.equal(output, expected)
   })

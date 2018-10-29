@@ -1,17 +1,24 @@
 import { stripIndent } from "common-tags"
 import { Token } from "@compiler/tokens"
 
+/**
+ * Define all errors related to lexing or parsing.
+ * Must match the LangError interface. See vm/error_report`
+ */
+
 class SyntaxError extends Error {
 
-  // The section of code that triggered the error
   chunk: string
 
-  // The raw position in the input
   position: number
 
   constructor(chunk: string) {
     super()
     this.chunk = chunk
+  }
+
+  baseType(): string {
+    return "Syntax Error"
   }
 
   errorType(): string {
@@ -20,35 +27,6 @@ class SyntaxError extends Error {
 
   description(): string {
     return null
-  }
-
-  // TODO: This should be it's own object, ErrorReporter or something like that.
-  errorString(sourceInput: string, file: string = null): string {
-    let sourcePrefix = sourceInput.substring(0, this.position)
-    let lines = sourcePrefix.split("\n")
-    let chunkPrefix = lines[lines.length - 1]
-    let chunkSuffix = sourceInput.substring(this.position + this.chunk.length).split("\n")[0]
-
-    let lineNumberSegment = `${lines.length}| `
-    let pointerIndent = " ".repeat(lineNumberSegment.length + chunkPrefix.length)
-    let pointer = "^".repeat(this.chunk.length)
-
-    let errorType = this.errorType() ? ` ${this.errorType()}` : ""
-    let fileSegment = file ? ` in ${file}` : ""
-
-    let message = stripIndent`
-      [Syntax Error]${errorType}${fileSegment}:
-
-      ${lineNumberSegment}${chunkPrefix}${this.chunk.trim()}${chunkSuffix}
-      ${pointerIndent}${pointer}
-    `
-
-    let description = this.description()
-    if(description) {
-      message += `\n\n${description}\n`
-    }
-
-    return message
   }
 }
 

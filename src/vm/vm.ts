@@ -5,6 +5,7 @@ import * as path from "path"
 import { IObject, NewObject } from "@vm/object"
 import { World } from "@vm/core"
 import Interpreter from "@vm/interpreter"
+import ErrorReport from "@vm/error_report"
 
 export default class VM {
 
@@ -38,11 +39,8 @@ export default class VM {
       let cleanFilePath = path.relative(process.cwd(), filePath)
 
       errors.forEach((error) => {
-        if("errorString" in error) {
-          console.log(error.errorString(script, cleanFilePath))
-        } else {
-          console.log(error)
-        }
+        let report = new ErrorReport(error)
+        console.log(report.reportOn(script, cleanFilePath))
       })
     }
   }

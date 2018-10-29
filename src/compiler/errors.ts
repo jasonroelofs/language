@@ -28,6 +28,10 @@ class SyntaxError extends Error {
   description(): string {
     return null
   }
+
+  reportOptions(): Object {
+    return {}
+  }
 }
 
 /**
@@ -49,6 +53,12 @@ class UnterminatedStringError extends SyntaxError {
         'Nested "Double" Quotes'
         "Nested 'Single' Quotes"
     `
+  }
+
+  reportOptions(): Object {
+    return {
+      markEndOfLine: true
+    }
   }
 }
 

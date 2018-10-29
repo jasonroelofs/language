@@ -193,6 +193,31 @@ describe("ErrorReport", () => {
     assert.equal(output, expected)
   })
 
+  it("lets the error specify to mark end-of-line", () => {
+    class TestError extends SyntaxError {
+      reportOptions(): Object {
+        return {
+          markEndOfLine: true
+        }
+      }
+    }
+
+    let text = "Error at the end"
+    let error = new TestError(text)
+    error.position = 0
+
+    let report = new ErrorReport(error, text)
+    let output = report.buildReport()
+    let expected = stripIndent`
+      [Syntax Error]:
+
+      1| Error at the end
+                         ^
+    `
+
+    assert.equal(output, expected)
+  })
+
   it("truncates code blocks whose end is far past the starting point of the error")
 
   it("ensures numbers stay lined up as they get big (10s and 100s)")

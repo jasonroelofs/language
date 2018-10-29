@@ -1,5 +1,14 @@
 import { codeBlock } from "common-tags"
 
+// Errors can provide options for the reporter to
+// further customize the output.
+interface ReportOptions {
+
+  // Put the error marker (^) at the end of the last line of the output.
+  markEndOfLine: boolean
+
+}
+
 interface SystemError {
 
   // The section of code that triggered the error
@@ -11,6 +20,10 @@ interface SystemError {
   baseType(): string
   errorType(): string
   description(): string
+
+  // See the `ReportOptions` interface for what this plain
+  // object should contain. All options are optional.
+  reportOptions(): Object
 }
 
 class ErrorReport {
@@ -27,10 +40,14 @@ class ErrorReport {
   // Optional file path to help users find where the error
   file: string
 
+  reportOptions: ReportOptions
+
   constructor(error: SystemError, source: string, file: string = null) {
     this.error = error
     this.source = source
     this.file = file
+
+    this.reportOptions = error.reportOptions() as ReportOptions
   }
 
   buildReport(): string {
@@ -84,8 +101,16 @@ class ErrorReport {
 
     let chunkLastLine = chunkLines[chunkLines.length - 1]
     let chunkStart = sourceLines[endLine - 1].indexOf(chunkLastLine)
-    let pointerIndent = " ".repeat(lineIndent + chunkStart)
-    let pointer = "^".repeat(chunkLastLine.length)
+    let pointerIndent: string // = " ".repeat(lineIndent + chunkStart)
+    let pointer: string  // = "^".repeat(chunkLastLine.length)
+
+    if(this.reportOptions.markEndOfLine) {
+      pointerIndent = " ".repeat(lineIndent + chunkStart + chunkLastLine.length)
+      pointer = "^"
+    } else {
+      pointerIndent = " ".repeat(lineIndent + chunkStart)
+      pointer = "^".repeat(chunkLastLine.length)
+    }
 
     return `${offending.trimRight()}\n${pointerIndent}${pointer}`
   }

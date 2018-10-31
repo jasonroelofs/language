@@ -2,6 +2,7 @@ import "mocha"
 import * as assert from "assert"
 import { stripIndent } from "common-tags"
 import { SyntaxError } from "@compiler/errors"
+import { Token, TokenType } from "@compiler/tokens"
 import ErrorReport from "@vm/error_report"
 
 describe("ErrorReport", () => {
@@ -213,6 +214,59 @@ describe("ErrorReport", () => {
 
       1| Error at the end
                          ^
+    `
+
+    assert.equal(output, expected)
+  })
+
+  it("supports errors that keep track of a start and end token", () => {
+    class TestError extends SyntaxError {
+      startToken: Token
+      endToken: Token
+
+      constructor(startToken, endToken) {
+        super(endToken.value)
+        this.position = endToken.pos
+
+        this.startToken = startToken
+        this.endToken = endToken
+      }
+      reportOptions(): Object {
+        return {
+          startChunk: this.startToken.value,
+          startChunkPosition: this.startToken.pos,
+          startDescription: "Block opened here",
+        }
+      }
+    }
+
+    let input = stripIndent`
+      block = { |a, b|
+        a + b
+        a + b
+        a + b
+        a + b
+      }
+    `
+
+    let error = new TestError(
+      { type: TokenType.OpenBlock, value: "{", pos: input.indexOf("{") },
+      { type: TokenType.CloseBlock, value: "}", pos: input.indexOf("}") },
+    )
+
+    let report = new ErrorReport(error, input)
+    let output = report.buildReport()
+    let expected = stripIndent`
+      [Syntax Error]:
+
+      1| block = { |a, b|
+                 ^ Block opened here
+      2|   a + b
+      3|   a + b
+      4|   a + b
+      5|   a + b
+      6| }
+         ^
     `
 
     assert.equal(output, expected)

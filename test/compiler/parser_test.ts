@@ -512,14 +512,18 @@ describe("Parser", () => {
     it("errors on unclosed grouping expressions", () => {
       let tests = [
         "(a + b",
-        "{ a + b ",
+        "{a + b",
       ]
 
       for(var test of tests) {
-        assertError(test, {
+        let error = assertError(test, {
           errorType: errors.UnmatchedClosingTagError,
-          position: 0
-        })
+          position: 6
+        }) as errors.UnmatchedClosingTagError
+
+        // We also have a startToken that points at the opening
+        // of the expression
+        assert.equal(error.startToken.pos, 0)
       }
     })
 
@@ -572,7 +576,7 @@ describe("Parser", () => {
       // [input, position, errorType]
       let tests = [
         // Unclosed
-        ["obj.message(", 11, errors.UnmatchedClosingTagError],
+        ["obj.message(", 12, errors.UnmatchedClosingTagError],
         // Missing keywords
         ["obj.message(1, 2)", 15, errors.MissingArgumentNameError],
         // Invalid token for keyword
@@ -605,6 +609,9 @@ describe("Parser", () => {
       assert.equal(errors.length, 1, `Parser should have thrown errors in ${input}`)
       assert(errors[0] instanceof errorType, `Wrong error type for '${input}' got: ${errors[0].errorType()}`)
       assert.equal(errors[0].position, position, `Wrong position for '${input}'`)
+
+      // Let tests do further checks against the error object
+      return errors[0]
     }
   })
 })

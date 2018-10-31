@@ -3,7 +3,7 @@ import { Token } from "@compiler/tokens"
 
 /**
  * Define all errors related to lexing or parsing.
- * Must match the LangError interface. See vm/error_report`
+ * Must match the SystemError interface. See vm/error_report`
  */
 
 class SyntaxError extends Error {
@@ -29,6 +29,8 @@ class SyntaxError extends Error {
     return null
   }
 
+  // A plain object of possible options for configuring this error's
+  // output. See ReportOptions in vm/error_report for details.
   reportOptions(): Object {
     return {}
   }
@@ -108,13 +110,24 @@ class UnmatchedClosingTagError extends ParseError {
   // The unmatched opening character
   tag: string
 
+  startToken: Token
+
   constructor(startToken: Token, endToken: Token, tag: string) {
-    super(startToken)
+    super(endToken)
+    this.startToken = startToken
     this.tag = tag
   }
 
   errorType(): string {
     return `Missing Closing '${this.tag}'`
+  }
+
+  reportOptions(): Object {
+    return {
+      startChunk: this.startToken.value,
+      startChunkPosition: this.startToken.pos,
+      startDescription: "Opened here"
+    }
   }
 }
 

@@ -7,6 +7,15 @@ interface ReportOptions {
   // Put the error marker (^) at the end of the last line of the output.
   markEndOfLine: boolean
 
+  // Some errors are easier to track down if we take note of the
+  // start of an expression or group as well as the end of the parsing
+  // where the error happened. In such situations, provide the following
+  // options to output a "error started here" segment.
+  // Please make sure all three are set.
+  startChunk: string
+  startChunkPosition: number
+  startDescription: string
+
 }
 
 interface SystemError {
@@ -80,39 +89,93 @@ class ErrorReport {
   }
 
   renderOffendingLines() {
-    let preChunk = this.source.substring(0, this.error.position)
-    let chunkLines = this.error.chunk.trimRight().split("\n")
-    let startLine = preChunk.split("\n").length - 1
-    let endLine = startLine + chunkLines.length
+    let importantLines = []
 
-    let offending = ""
-    var lineNum = ""
-    var lineIndent = 0
+    if(this.reportOptions.startChunk) {
+      importantLines.push({
+        chunk: this.reportOptions.startChunk,
+        position: this.reportOptions.startChunkPosition,
+        tagOn: this.reportOptions.startDescription
+      })
+    }
+
+    importantLines.push({
+      chunk: this.error.chunk,
+      position: this.error.position,
+    })
+
+    // We have raw input positions, need to figure out the matching
+    // line numbers these positions map to. This will set
+    // startLine and endLine on each record in importantLines.
+    // startLine and endLine are 0-based indexes for ease of later
+    // calculations. They will be converted to 1-based for the
+    // final output.
+    this.calculateLineNumbers(importantLines)
+
+    let startLine = importantLines[0].startLine
+    let endLine = importantLines[importantLines.length - 1].endLine
+
     let sourceLines = this.source.split("\n")
+    let lineNum = ""
+    let lineIndent = 0
+    let importantIndex = 0
+    let offending = ""
 
-    for(var i = startLine; i < endLine; i++) {
-      lineNum = `${i + 1}| `
-      offending += `${lineNum}${sourceLines[i]}\n`
+    let pointerIndent = ""
+    let pointer = ""
+
+    // Render out all of the important soruce code lines, including any
+    // interstitial information we want to include.
+    for(var line = startLine; line <= endLine; line++) {
+      lineNum = `${line + 1}| `
+      offending += `${lineNum}${sourceLines[line]}\n`
 
       if(lineNum.length > lineIndent) {
         lineIndent = lineNum.length
       }
+
+      let lineData = importantLines[importantIndex]
+      if(lineData && lineData != importantLines[importantLines.length - 1] && line == lineData.endLine) {
+        let pointerIndent = " ".repeat(lineIndent + lineData.markerStart)
+        let pointer = "^".repeat(lineData.markerLength)
+
+        let tagOn = importantLines[importantIndex].tagOn
+        if(tagOn) { tagOn = " " + tagOn }
+
+        offending += `${pointerIndent}${pointer}${tagOn || ""}\n`
+
+        importantIndex += 1
+      }
     }
 
-    let chunkLastLine = chunkLines[chunkLines.length - 1]
-    let chunkStart = sourceLines[endLine - 1].indexOf(chunkLastLine)
-    let pointerIndent: string // = " ".repeat(lineIndent + chunkStart)
-    let pointer: string  // = "^".repeat(chunkLastLine.length)
+    // Now we add the final end-report pointer
+    let finalLine = importantLines[importantLines.length - 1]
 
     if(this.reportOptions.markEndOfLine) {
-      pointerIndent = " ".repeat(lineIndent + chunkStart + chunkLastLine.length)
+      pointerIndent = " ".repeat(lineIndent + finalLine.markerStart + finalLine.markerLength)
       pointer = "^"
     } else {
-      pointerIndent = " ".repeat(lineIndent + chunkStart)
-      pointer = "^".repeat(chunkLastLine.length)
+      pointerIndent = " ".repeat(lineIndent + finalLine.markerStart)
+      pointer = "^".repeat(finalLine.markerLength)
     }
 
     return `${offending.trimRight()}\n${pointerIndent}${pointer}`
+  }
+
+  calculateLineNumbers(importantLines) {
+    let sourceLines = this.source.split("\n")
+
+    for(var line of importantLines) {
+      let preLine = this.source.substring(0, line.position)
+      let chunkLines = line.chunk.trimRight().split("\n")
+
+      line.startLine = preLine.split("\n").length - 1
+      line.endLine = line.startLine + (chunkLines.length - 1)
+
+      let chunkLastLine = chunkLines[chunkLines.length - 1]
+      line.markerStart = sourceLines[line.endLine].indexOf(chunkLastLine)
+      line.markerLength = chunkLastLine.length
+    }
   }
 }
 

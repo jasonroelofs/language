@@ -71,7 +71,7 @@ export default class Lexer {
     // Add one final End of Statement to the list as we're at the end of
     // the final statement of the program
     if(this.tokens.length > 0 && this.tokens[this.tokens.length - 1].type != TokenType.EOS) {
-      this.tokens.push({ type: TokenType.EOS, value: "" })
+      this.tokens.push({ type: TokenType.EOS, value: "", pos: this.currentPos })
     }
 
     return {

@@ -193,7 +193,7 @@ export default class Parser {
     let exp = this.parseExpression(Precedence.Lowest)
 
     if(!this.currTokenIs(TokenType.CloseParen)) {
-      throw new errors.UnmatchedClosingTagError(openingToken,  this.currToken(), ")")
+      throw new errors.UnmatchedClosingTagError(openingToken,  this.currOrPreviousToken(), ")")
     }
 
     // Move past the closing )
@@ -283,7 +283,7 @@ export default class Parser {
       }
 
       if(this.isEndOfStatement()) {
-        throw new errors.UnmatchedClosingTagError(pipeStart, this.currToken(), "|")
+        throw new errors.UnmatchedClosingTagError(pipeStart, this.currOrPreviousToken(), "|")
       }
 
       // Move past the last Pipe
@@ -296,7 +296,7 @@ export default class Parser {
     }
 
     if(!this.currTokenIs(TokenType.CloseBlock)) {
-      throw new errors.UnmatchedClosingTagError(startToken, this.currToken(), "}")
+      throw new errors.UnmatchedClosingTagError(startToken, this.currOrPreviousToken(), "}")
     }
 
     // Move past the closing '}'
@@ -402,7 +402,7 @@ export default class Parser {
     this.nextToken()
 
     if(this.isEndOfStatement()) {
-      throw new errors.UnmatchedClosingTagError(start, this.currToken(), ")")
+      throw new errors.UnmatchedClosingTagError(start, this.currOrPreviousToken(), ")")
     }
 
     this.checkForComments()
@@ -491,7 +491,7 @@ export default class Parser {
     }
 
     if(!this.currTokenIs(TokenType.CloseParen)) {
-      throw new errors.UnmatchedClosingTagError(start, this.currToken(), ")")
+      throw new errors.UnmatchedClosingTagError(start, this.currOrPreviousToken(), ")")
     }
 
     // Move past the close paren, we're done
@@ -510,6 +510,14 @@ export default class Parser {
 
   currTokenIs(expected: TokenType): boolean {
     return this.currToken() && this.currToken().type == expected
+  }
+
+  currOrPreviousToken(): Token {
+    if(this.currToken()) {
+      return this.currToken()
+    } else {
+      return this.tokens[this.index - 1]
+    }
   }
 
   peekToken(): Token {

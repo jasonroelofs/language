@@ -172,9 +172,16 @@ class ErrorReport {
       line.startLine = preLine.split("\n").length - 1
       line.endLine = line.startLine + (chunkLines.length - 1)
 
-      let chunkLastLine = chunkLines[chunkLines.length - 1]
-      line.markerStart = sourceLines[line.endLine].indexOf(chunkLastLine)
-      line.markerLength = chunkLastLine.length
+      if(line.chunk == "" || line.chunk == "\n") {
+        // The only way a chunk is one of these two values is if its an EOS marker,
+        // so we just put the marker at the end of the last line of output.
+        line.markerStart = sourceLines[line.endLine].length
+        line.markerLength = 1
+      } else {
+        let chunkLastLine = chunkLines[chunkLines.length - 1]
+        line.markerStart = sourceLines[line.endLine].indexOf(chunkLastLine)
+        line.markerLength = chunkLastLine.length
+      }
     }
   }
 }

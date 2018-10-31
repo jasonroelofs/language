@@ -246,12 +246,11 @@ describe("ErrorReport", () => {
         a + b
         a + b
         a + b
-      }
     `
 
     let error = new TestError(
       { type: TokenType.OpenBlock, value: "{", pos: input.indexOf("{") },
-      { type: TokenType.CloseBlock, value: "}", pos: input.indexOf("}") },
+      { type: TokenType.EOS, value: "", pos: input.length },
     )
 
     let report = new ErrorReport(error, input)
@@ -265,8 +264,7 @@ describe("ErrorReport", () => {
       3|   a + b
       4|   a + b
       5|   a + b
-      6| }
-         ^
+                ^
     `
 
     assert.equal(output, expected)

@@ -192,6 +192,12 @@ export default class Parser {
 
     let exp = this.parseExpression(Precedence.Lowest)
 
+    // Handle end-of-statements that may be new-lines before we find
+    // the closing )
+    if(this.isEndOfStatement()) {
+      this.nextToken()
+    }
+
     if(!this.currTokenIs(TokenType.CloseParen)) {
       throw new errors.UnmatchedClosingTagError(openingToken,  this.currOrPreviousToken(), ")")
     }

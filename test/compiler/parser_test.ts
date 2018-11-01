@@ -527,6 +527,18 @@ describe("Parser", () => {
       }
     })
 
+    it("errors properly on nested unclosed groups", () => {
+      let test = "(a + b * (c - d\n)"
+
+      let error = assertError(test, {
+        errorType: errors.UnmatchedClosingTagError,
+        position: 17,
+      }) as errors.UnmatchedClosingTagError
+
+      // We should find the first opening (
+      assert.equal(error.startToken.pos, 0, "Wrong startToken position")
+    })
+
     it("errors on incomplete binary operations", () => {
       // [input, position]
       let tests = [

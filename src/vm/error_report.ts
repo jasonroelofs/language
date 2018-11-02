@@ -120,18 +120,29 @@ class ErrorReport {
     let lineIndent = 0
     let importantIndex = 0
     let offending = ""
+    let numberWidth = endLine.toString().length + 2
 
     let pointerIndent = ""
     let pointer = ""
+    let padding = ""
+    let leftBar = ""
 
-    // Render out all of the important soruce code lines, including any
+    // Render out all of the important source code lines, including any
     // interstitial information we want to include.
-    for(var line = startLine; line <= endLine; line++) {
-      lineNum = `${line + 1}| `
-      offending += `${lineNum}${sourceLines[line]}\n`
+    for(var line of this.calcLinesToShow(startLine, endLine)) {
+      if(line == "SKIP") {
+        // Make sure the three dots line up with the right bar |
+        offending += this.safeRepeat(" ", numberWidth - 2) + "...\n"
+        continue
+      }
 
-      if(lineNum.length > lineIndent) {
-        lineIndent = lineNum.length
+      lineNum = (line + 1).toString()
+      padding = this.safeRepeat(" ", numberWidth - lineNum.length)
+      leftBar = `${padding}${lineNum}| `
+      offending += `${leftBar}${sourceLines[line]}\n`
+
+      if(leftBar.length > lineIndent) {
+        lineIndent = leftBar.length
       }
 
       let lineData = importantLines[importantIndex]
@@ -182,6 +193,40 @@ class ErrorReport {
         line.markerStart = sourceLines[line.endLine].indexOf(chunkLastLine)
         line.markerLength = chunkLastLine.length
       }
+    }
+  }
+
+  // String.repeat throws an error if count is negative.
+  // In our case if that happens we don't want the string at all
+  safeRepeat(str, count) {
+    if(count < 0) {
+      return ""
+    } else {
+      return str.repeat(count)
+    }
+  }
+
+  calcLinesToShow(startLine, endLine) {
+    // If the output is going to be too big, then set up
+    // the list of lines to include a skip so as to emphasize
+    // the important lines.
+    if(endLine - startLine >= 7) {
+      return [
+        startLine,
+        startLine + 1,
+        startLine + 2,
+        "SKIP",
+        endLine - 2,
+        endLine - 1,
+        endLine
+      ]
+    } else {
+      let list = []
+      for(var i = startLine; i <= endLine; i++) {
+        list.push(i)
+      }
+
+      return list
     }
   }
 }

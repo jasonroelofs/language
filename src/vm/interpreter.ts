@@ -16,14 +16,12 @@ import {
   AddSlot,
   toObject,
   Objekt,
+  Number,
+  String,
   Null,
   True,
   False,
 } from "@vm/object"
-import {
-  Number,
-  String,
-} from "@vm/core"
 
 export default class Interpreter {
 

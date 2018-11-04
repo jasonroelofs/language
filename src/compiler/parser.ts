@@ -69,6 +69,7 @@ export default class Parser {
       [TokenType.Number]: () => this.parseNumberLiteral(),
       [TokenType.String]: () => this.parseStringLiteral(),
       [TokenType.Identifier]: () => this.parseIdentifier(),
+      [TokenType.OpenSquare]: () => this.parseArrayLiteral(),
       [TokenType.OpenBlock]: () => this.parseBlock(),
       [TokenType.OpenParen]: () => this.parseGroupedExpression(),
       [TokenType.Pipe]: () => this.incompleteExpressionError(),
@@ -234,6 +235,56 @@ export default class Parser {
       default:
         return { type: NodeType.Identifier, value: token.value }
     }
+  }
+
+  parseArrayLiteral(): MessageSendNode {
+    // Move past the opening '['
+    let startToken = this.currToken()
+    this.nextToken()
+
+    let node = {
+      type: NodeType.MessageSend,
+      // TODO: hard-coding the Array name here and `new`. Possibly something less
+      // strict in the future?
+      receiver: { type: NodeType.Identifier, value: "Array" },
+      message: {
+        name: "new",
+        arguments: []
+      }
+    }
+
+    // We have to work with the keyword-requirement for message sends, and as
+    // message send names must be strings, we set up the call to be:
+    //
+    //  "0": value1, "1": value2, ...
+    //
+    let argCount = 0
+    while(this.currToken() && !this.currTokenIs(TokenType.CloseSquare)) {
+
+      node.message.arguments.push({
+        name: `${argCount}`,
+        value: this.parseExpression(Precedence.Lowest)
+      })
+      argCount += 1
+
+      if(!this.currTokenIs(TokenType.Comma) && !this.currTokenIs(TokenType.CloseSquare)) {
+        throw new errors.ExpectedTokenMissingError(this.currToken(), ", or ]")
+      }
+
+      // Move past our current comma or close square
+      if(this.currTokenIs(TokenType.Comma)) {
+        this.nextToken()
+      }
+    }
+
+    if(!this.currTokenIs(TokenType.CloseSquare)) {
+      throw new errors.UnmatchedClosingTagError(startToken, this.currOrPreviousToken(), "]")
+    }
+
+    // Move past the closing ']' and continue on.
+    this.nextToken()
+
+    return node
   }
 
   parseBlock(): BlockNode {

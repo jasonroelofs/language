@@ -388,6 +388,32 @@ describe("Lexer", () => {
     assert.equal(tokens[10].pos, 70, "Wrong position for nested")
   })
 
+  it("tokenizes other operators", () => {
+    let input = `
+      [1, 2, 3]
+      list[1]
+    `
+
+    let expected = [
+      { type: TokenType.OpenSquare, value: "[" },
+      { type: TokenType.Number, value: "1" },
+      { type: TokenType.Comma, value: "," },
+      { type: TokenType.Number, value: "2" },
+      { type: TokenType.Comma, value: "," },
+      { type: TokenType.Number, value: "3" },
+      { type: TokenType.CloseSquare, value: "]" },
+
+      { type: TokenType.Identifier, value: "list" },
+      { type: TokenType.OpenSquare, value: "[" },
+      { type: TokenType.Number, value: "1" },
+      { type: TokenType.CloseSquare, value: "]" },
+
+      { type: TokenType.EOS, value: "" },
+    ]
+
+    assertTokens(input, expected)
+  })
+
   describe("Error Handling", () => {
     it("errors on unterminated strings", () => {
       let tests = [
@@ -416,7 +442,6 @@ describe("Lexer", () => {
       // This set of tests will probably shrink as new tokens are allowed
       // in the lexer. But for now, these are errors!
       let tests = [
-        `[]`,
         `&&`,
         `$`,
       ]

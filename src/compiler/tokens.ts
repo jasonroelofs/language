@@ -6,6 +6,8 @@ export enum TokenType {
 
   OpenParen = "OPEN_PAREN",
   CloseParen = "CLOSE_PAREN",
+  OpenSquare = "OPEN_SQUARE",
+  CloseSquare = "CLOSE_SQUARE",
   OpenBlock = "OPEN_BLOCK",
   CloseBlock = "CLOSE_BLOCK",
   Comma = "COMMA",

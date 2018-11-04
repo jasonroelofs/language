@@ -154,6 +154,10 @@ export default class Lexer {
         return { type: TokenType.OpenParen, value: "(" }
       case ")":
         return { type: TokenType.CloseParen, value: ")" }
+      case "[":
+        return { type: TokenType.OpenSquare, value: "[" }
+      case "]":
+        return { type: TokenType.CloseSquare, value: "]" }
       case "{":
         return { type: TokenType.OpenBlock, value: "{" }
       case "}":

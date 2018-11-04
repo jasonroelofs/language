@@ -1,4 +1,5 @@
 import * as util from "util"
+import { isArray } from "@vm/js_core"
 
 /**
  * An internal-only type-checker on the objects we build in the typescript layer.
@@ -140,6 +141,8 @@ let False = NewObject(Objekt, false)
 let Number = NewObject(Objekt, 0)
 let String = NewObject(Objekt, "")
 
+let Array = NewObject(Objekt, [])
+
 /**
  * Mapping of the results of (typeof object) to our internal
  * object type representation.
@@ -168,6 +171,16 @@ function toObject(nativeValue: any): IObject {
     return NewObject(parentObject, nativeValue)
   }
 
+  if(isArray(nativeValue)) {
+    let array = []
+
+    nativeValue.forEach((entry) => {
+      array.push(toObject(entry))
+    })
+
+    return NewObject(Array, array)
+  }
+
   // Already an Object, pass it through
   if('objectId' in nativeValue) {
     return nativeValue
@@ -190,4 +203,5 @@ export {
   False,
   Number,
   String,
+  Array,
 }

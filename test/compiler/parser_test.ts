@@ -201,6 +201,69 @@ describe("Parser", () => {
     assert.deepEqual(expressions[0].node, expected, `Comparison failed for ''${test}''`)
   })
 
+  it("parses array literals into message sends", () => {
+    let tests = {
+      // [] is syntax sugar for Array.new()
+      "[]": {
+        type: NodeType.MessageSend,
+        receiver: { type: NodeType.Identifier, value: "Array" },
+        message: { name: "new", arguments: [] },
+      },
+      // Static initialization gets converted to Array.new arguments:
+      // Array.new("0": 1)
+      "[1]": {
+        type: NodeType.MessageSend,
+        receiver: { type: NodeType.Identifier, value: "Array" },
+        message: {
+          name: "new",
+          arguments: [
+            { name: "0", value: { type: NodeType.NumberLiteral, value: 1 }}
+          ]
+        },
+      },
+      // Multiple values become their own arguments to Array.new()
+      "[1, 2, 3]": {
+        type: NodeType.MessageSend,
+        receiver: { type: NodeType.Identifier, value: "Array" },
+        message: {
+          name: "new",
+          arguments: [
+            { name: "0", value: { type: NodeType.NumberLiteral, value: 1 }},
+            { name: "1", value: { type: NodeType.NumberLiteral, value: 2 }},
+            { name: "2", value: { type: NodeType.NumberLiteral, value: 3 }}
+          ]
+        },
+      },
+      // Ensure expressions are properly worked through inside of an array literal
+      "[1 + 2]": {
+        type: NodeType.MessageSend,
+        receiver: { type: NodeType.Identifier, value: "Array" },
+        message: {
+          name: "new",
+          arguments: [
+            {
+              name: "0",
+              value: {
+                type: NodeType.MessageSend,
+                receiver: { type: NodeType.NumberLiteral, value: 1 },
+                message: {
+                  name: "+",
+                  arguments: [
+                    { value: { type: NodeType.NumberLiteral, value: 2 }}
+                  ]
+                }
+              }
+            }
+          ]
+        },
+      },
+    }
+
+    for(var test in tests) {
+      assertExpression(test, tests[test])
+    }
+  })
+
   it("parses assignment", () => {
     let tests = {
       "a = 1" : {
@@ -630,13 +693,14 @@ describe("Parser", () => {
 
 function assertExpression(input, expected) {
   let lexer = new Lexer(input)
-  let {tokens, errors} = lexer.tokenize()
+  var {tokens, errors} = lexer.tokenize()
 
   assert.equal(errors.length, 0, util.format("Lexer returned some errors: %o", errors))
 
   let parser = new Parser(tokens)
-  let {expressions} = parser.parse()
+  var {expressions, errors} = parser.parse()
 
-  assert.equal(expressions.length, 1)
+  assert.equal(errors.length, 0, util.format("Parser returned some errors: %o", errors))
+  assert.equal(expressions.length, 1, "Wrong number of expressions returned")
   assert.deepEqual(expressions[0].node, expected, `Comparison failed for ''${input}''`)
 }

@@ -56,7 +56,13 @@ class ErrorReport {
     this.source = source
     this.file = file
 
-    this.reportOptions = error.reportOptions() as ReportOptions
+    if(typeof error.reportOptions === "function") {
+      this.reportOptions = error.reportOptions() as ReportOptions
+    } else {
+      // Re-raise this, let the system fully crash
+      // TODO When the system is fully fleshed out this should never happen.
+      throw error
+    }
   }
 
   buildReport(): string {

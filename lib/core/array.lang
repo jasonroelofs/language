@@ -1,0 +1,6 @@
+Array.addSlots(
+  # Return the number of elements in this array
+  length: {
+    BuiltIn.arrayLength(array: self)
+  }
+)

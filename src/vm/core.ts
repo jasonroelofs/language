@@ -1,6 +1,7 @@
 import {
   NewObject, toObject, IObject, Objekt,
-  Number, String, True, False, Null,
+  Number, String, Array,
+  True, False, Null,
   AddSlot, GetSlot,
 } from "@vm/object"
 
@@ -96,6 +97,34 @@ AddSlot(BuiltIn, "puts", builtInFunc(function(args) {
 }))
 
 /**
+ * Array.new(...)
+ *
+ * This builds up a new Array object with the given values.
+ * This message takes a list of the values to be added to this array
+ * at initialization.
+ *
+ *   Array.new("0": 1, "1": 2, ...)
+ *
+ * Expected to be used with static initialization syntax sugar:
+ *
+ *   [1, 2, ...]
+ *
+ */
+AddSlot(Array, "new", builtInFunc(function(args) {
+  let array = []
+
+  for(var slotName in args) {
+    array[slotName] = args[slotName]
+  }
+
+  return NewObject(Array, array)
+}))
+
+AddSlot(BuiltIn, "arrayLength", builtInFunc(function(args) {
+  return toObject(args["array"].data.length)
+}))
+
+/**
  * The World is the top-level, global object and context.
  * All main constants are defined here.
  * The World is alway accessible directly via the 'World' constant.
@@ -108,14 +137,16 @@ AddSlot(World, "BuiltIn", BuiltIn)
 AddSlot(World, "Object", Objekt)
 AddSlot(World, "Number", Number)
 AddSlot(World, "String", String)
+AddSlot(World, "Array",  Array)
 
 AddSlot(World, "True",   True)
 AddSlot(World, "False",  False)
 AddSlot(World, "Null",   Null)
 
+// If anything changes on our base objects, make sure they get
+// re-exported here.
 export {
   Objekt,
-  Number,
-  String,
   World,
+  Array,
 }

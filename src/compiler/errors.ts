@@ -66,7 +66,7 @@ class UnterminatedStringError extends SyntaxError {
 
 class UnknownTokenError extends SyntaxError {
   errorType(): string {
-    return "Unknown Token"
+    return `Unknown Token '${this.chunk}'`
   }
 }
 

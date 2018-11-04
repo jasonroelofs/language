@@ -194,13 +194,11 @@ export default class Lexer {
   }
 
   // Fall-through final token type if nothing else matches
-  // Grab everything up til the next whitespace.
-  // I honestly am not sure what will trigger this, but adding it
-  // just in case there's something that falls through the cracks.
-  // The Identifier regex seems to catch a lot of stuff.
+  // We will error only on the first character as it doesn't
+  // match the previous rules. The error reporting will provide
+  // context.
   unknownToken(chunk: string): Token {
-    let match = chunk.match(this.UNKNOWN_REGEX)
-    throw new UnknownTokenError(match[0])
+    throw new UnknownTokenError(chunk[0])
   }
 
   consume(token: Token) {
@@ -239,13 +237,16 @@ export default class Lexer {
   // * Any case
   // * Have underscores
   // * Start with an underscore
-  // * Cannot start with a number
   // * Cannot contain spaces
   // * Cannot contain dashes
   //
   // Taken and modified from Coffeescript
   //
-  IDENTIFIER_REGEX = /^[^\d\.](?:(?!\s)[\w\x7f-\uffff])*/
+  // This will technically match things like `123ident` but the lexer
+  // will first catch the `123` as a number for us so we don't need
+  // to worry about it at this point.
+  //
+  IDENTIFIER_REGEX = /^(?:(?!\s)[\u00BF-\u1FFF\u2C00-\uD7FF\w])+/
 
   // Operators
   SINGLE_OPERATORS = {
@@ -269,6 +270,4 @@ export default class Lexer {
   // Uses a double negative to find all other whitespace
   WHITESPACE_REGEX = /^([^\S\r\n])/
   WS_WITH_NEWLINES_REGEX = /^\s+/
-
-  UNKNOWN_REGEX = /^\S+/
 }

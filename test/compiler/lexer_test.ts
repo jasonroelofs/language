@@ -411,6 +411,28 @@ describe("Lexer", () => {
         assert.equal(errors[0].position, 0)
       }
     })
+
+    it("errors on unknown tokens", () => {
+      // This set of tests will probably shrink as new tokens are allowed
+      // in the lexer. But for now, these are errors!
+      let tests = [
+        `[]`,
+        `&&`,
+        `$`,
+      ]
+
+      for(var test of tests) {
+        let lexer = new Lexer(test)
+        let {tokens, errors} = lexer.tokenize()
+
+        assert.equal(tokens.length, 0, `Returned real tokens for ${test}`)
+        assert.equal(errors.length, 1, `Returned the wrong number of errors for ${test}`)
+
+        assert.equal(errors[0].errorType(), `Unknown Token '${test[0]}'`)
+
+        assert.equal(errors[0].position, 0)
+      }
+    })
   })
 })
 
@@ -418,8 +440,9 @@ function assertTokens(input, expected) {
   let lexer = new Lexer(input)
   let {tokens, errors} = lexer.tokenize()
 
-  // console.log("Expected: %o", expected)
-  // console.log("Got: %o", tokens)
+  //console.log("Expected: %o", expected)
+  //console.log("Got: %o", tokens)
+  //console.log("Errors: %o", errors)
   assert.equal(tokens.length, expected.length, "Wrong token lengths recorded")
   assert.equal(errors.length, 0)
 

@@ -694,6 +694,25 @@ describe("Parser", () => {
       }
     })
 
+    it("errors on invalid or incomplete static array syntax", () => {
+      // [input, position, errorType]
+      let tests = [
+        // Unclosed
+        ["[1 ", 3, errors.ExpectedTokenMissingError],
+        // Missing values
+        ["[,]", 1, errors.InvalidStartOfExpressionError],
+        // Invalid argument expression
+        ["[1 +]", 4, errors.IncompleteExpressionError],
+      ]
+
+      for(var test of tests) {
+        assertError(test[0], {
+          errorType: test[2],
+          position: test[1]
+        })
+      }
+    })
+
     function assertError(input, {errorType, position}) {
       let lexer = new Lexer(input)
       var {tokens, errors} = lexer.tokenize()

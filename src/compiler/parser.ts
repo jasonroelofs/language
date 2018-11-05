@@ -74,6 +74,7 @@ export default class Parser {
       [TokenType.OpenParen]: () => this.parseGroupedExpression(),
       [TokenType.Pipe]: () => this.incompleteExpressionError(),
       [TokenType.CloseParen]: () => this.incompleteExpressionError(),
+      [TokenType.CloseSquare]: () => this.incompleteExpressionError(),
     }
 
     this.infixParse = {
@@ -151,6 +152,7 @@ export default class Parser {
         this.nextToken()
       case TokenType.CloseParen:
       case TokenType.CloseBlock:
+      case TokenType.CloseSquare:
       case TokenType.Comma:
         break;
       case TokenType.Comment:
@@ -263,12 +265,12 @@ export default class Parser {
 
       node.message.arguments.push({
         name: `${argCount}`,
-        value: this.parseExpression(Precedence.Lowest)
+        value: this.parseStatement()
       })
       argCount += 1
 
       if(!this.currTokenIs(TokenType.Comma) && !this.currTokenIs(TokenType.CloseSquare)) {
-        throw new errors.ExpectedTokenMissingError(this.currToken(), ", or ]")
+        throw new errors.ExpectedTokenMissingError(this.currOrPreviousToken(), ", or ]")
       }
 
       // Move past our current comma or close square

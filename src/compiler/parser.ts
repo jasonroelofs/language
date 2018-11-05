@@ -447,6 +447,20 @@ export default class Parser {
   parseCallSite(left: Node): Node {
     let start = this.currToken()
 
+    // Check to see if we need to upgrade the `left` node to a MessageSend,
+    // as this could be an Identifier in the case of implicit `self` usage.
+    if(left.type == NodeType.Identifier) {
+      left.type = NodeType.MessageSend
+      left.receiver = { type: NodeType.Identifier, value: "self" }
+      left.message = {
+        name: left.value,
+        arguments: []
+      }
+
+      // Clean up the field we no longer need
+      delete left.value
+    }
+
     if(this.peekTokenIs(TokenType.CloseParen)) {
       // We have an empty param set `()` so no arguments added.
       // Skip our current token `(` and the close `)` to move forward.

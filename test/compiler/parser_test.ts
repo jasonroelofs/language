@@ -167,6 +167,28 @@ describe("Parser", () => {
           ]
         }
       },
+      // Implicit Self receiver
+      "message()": {
+        type: NodeType.MessageSend,
+        receiver: { type: NodeType.Identifier, value: "self" },
+        message: {
+          name: "message",
+          arguments: []
+        }
+      },
+      "message(a: 1)": {
+        type: NodeType.MessageSend,
+        receiver: { type: NodeType.Identifier, value: "self" },
+        message: {
+          name: "message",
+          arguments: [
+            {
+              name: "a",
+              value: { type: NodeType.NumberLiteral, value: 1 }
+            },
+          ]
+        }
+      }
     }
 
     for(var test in tests) {

@@ -97,12 +97,17 @@ export default class Parser {
   parse(): ParserResults {
     var expressions = []
     var errors = []
+    var stmt = null
 
     try {
       while (this.index < this.tokens.length) {
-        expressions.push({
-          node: this.parseStatement()
-        })
+        stmt = this.parseStatement()
+
+        if(!stmt) {
+          break
+        }
+
+        expressions.push({node: stmt})
       }
     } catch (error) {
       errors.push(error)
@@ -116,6 +121,11 @@ export default class Parser {
 
   parseStatement() {
     this.checkForComments()
+
+    // The file is all comments, abort this process
+    if(!this.currToken() || this.currTokenIs(TokenType.EOS)) {
+      return null
+    }
 
     let stmt = this.parseExpression(Precedence.Lowest)
 

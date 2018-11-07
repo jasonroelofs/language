@@ -571,6 +571,25 @@ describe("Parser", () => {
     assert.equal(expressions.length, 0)
   })
 
+  it("handles blocks that are nothing but comments", () => {
+    let test = `
+      a = {
+        # This is a bunch
+        # of commented out
+        # stuff I don't
+        # want running.
+      }
+    `
+
+    let lexer = new Lexer(test)
+    let {tokens} = lexer.tokenize()
+
+    let parser = new Parser(tokens)
+    let {expressions} = parser.parse()
+
+    assert.equal(expressions.length, 1)
+  })
+
   it("supports attaching comments to method arguments", () => {
     let test = `
       Object.new(

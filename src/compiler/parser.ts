@@ -359,6 +359,11 @@ export default class Parser {
       this.nextToken()
     }
 
+    // Catch if the block is itself nothing but comments.
+    // TODO: There's got to be a cleaner way of handling comment nodes that doesn't
+    // require injecting these checks in the right place.
+    this.checkForComments()
+
     // Block body
     while(this.currToken() && !this.currTokenIs(TokenType.CloseBlock)) {
       node.body.push({ node: this.parseStatement() })

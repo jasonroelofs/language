@@ -4,7 +4,12 @@ import * as path from "path"
 
 import { IObject, NewObject } from "@vm/object"
 import { World } from "@vm/core"
+
+import Lexer from "@compiler/lexer"
+import Parser from "@compiler/parser"
 import Interpreter from "@vm/interpreter"
+
+import { SyntaxError } from "@compiler/errors"
 import ErrorReport from "@vm/error_report"
 
 export default class VM {
@@ -32,22 +37,38 @@ export default class VM {
     this.eval(script.toString(), filePath)
   }
 
-  eval(script: string, filePath: string = null) {
-    try {
-      return this.interpreter.eval(script)
-    } catch(errors) {
-      let cleanFilePath = ""
+  eval(program: string, filePath: string = null): IObject {
+    let l = new Lexer(program)
+    var {tokens, errors} = l.tokenize()
 
-      if(filePath) {
-        cleanFilePath = path.relative(process.cwd(), filePath)
-      } else {
-        cleanFilePath = "[script]"
-      }
-
-      errors.forEach((error) => {
-        let report = new ErrorReport(error, script, cleanFilePath)
-        console.log(report.buildReport())
-      })
+    if(errors.length > 0) {
+      this.reportErrors(program, filePath, errors)
+      return
     }
+
+    let p = new Parser(tokens)
+    var {expressions, errors} = p.parse()
+
+    if(errors.length > 0) {
+      this.reportErrors(program, filePath, errors)
+      return
+    }
+
+    return this.interpreter.eval(expressions)
+  }
+
+  reportErrors(program: string, filePath: string, errors: SyntaxError[]) {
+    let cleanFilePath = ""
+
+    if(filePath) {
+      cleanFilePath = path.relative(process.cwd(), filePath)
+    } else {
+      cleanFilePath = "[script]"
+    }
+
+    errors.forEach((error) => {
+      let report = new ErrorReport(error, program, cleanFilePath)
+      console.log(report.buildReport())
+    })
   }
 }

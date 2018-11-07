@@ -1,6 +1,4 @@
 import * as util from "util"
-import Lexer from "@compiler/lexer"
-import Parser from "@compiler/parser"
 import {
   Node,
   BlockNode,
@@ -36,25 +34,7 @@ export default class Interpreter {
     this.newNestedSpace()
   }
 
-  eval(program: string): IObject {
-    let l = new Lexer(program)
-    var {tokens, errors} = l.tokenize()
-
-    if(errors.length > 0) {
-      throw errors
-    }
-
-    let p = new Parser(tokens)
-    var {expressions, errors} = p.parse()
-
-    if(errors.length > 0) {
-      throw errors
-    }
-
-    return this.evalExpressions(expressions)
-  }
-
-  evalExpressions(expressions: Array<Expression>): IObject {
+  eval(expressions: Array<Expression>): IObject {
     var ret = Null
 
     for(var expression of expressions) {
@@ -190,7 +170,7 @@ export default class Interpreter {
       }
     }
 
-    let result = this.evalExpressions(codeBody)
+    let result = this.eval(codeBody)
 
     this.popSpace()
 

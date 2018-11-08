@@ -112,8 +112,8 @@ describe("VM", () => {
       let result = vm.eval(test)
       let expected = tests[test]
 
-      assert.equal(SendMessage(result, "body").data.length, expected.bodyLength)
-      assert.equal(SendMessage(result, "parameters").data.length, expected.paramLength)
+      assert.equal(SendMessage(result, toObject("body")).data.length, expected.bodyLength)
+      assert.equal(SendMessage(result, toObject("parameters")).data.length, expected.paramLength)
     }
   })
 

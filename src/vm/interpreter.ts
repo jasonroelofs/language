@@ -55,7 +55,7 @@ export default class Interpreter {
         return varValue
 
       case NodeType.Identifier:
-        return SendMessage(this.currentSpace, node.value)
+        return SendMessage(this.currentSpace, toObject(node.value))
 
       case NodeType.NumberLiteral:
         return NewObject(Number, node.value)
@@ -83,8 +83,8 @@ export default class Interpreter {
 
   evalBlockLiteral(node: BlockNode): IObject {
     let block = NewObject(Objekt)
-    AddSlot(block, "body", NewObject(Objekt, node.body))
-    AddSlot(block, "parameters", NewObject(Objekt, node.parameters))
+    AddSlot(block, toObject("body"), NewObject(Objekt, node.body))
+    AddSlot(block, toObject("parameters"), NewObject(Objekt, node.parameters))
 
     block.codeBlock = true
 
@@ -110,7 +110,7 @@ export default class Interpreter {
     }
 
     // Not a code block, figure out what's at this location
-    let slotValue = SendMessage(receiver, message)
+    let slotValue = SendMessage(receiver, toObject(message))
 
     if(slotValue.codeBlock) {
       if(slotValue.builtIn) {
@@ -139,8 +139,8 @@ export default class Interpreter {
   }
 
   evalCodeBlock(receiver: IObject, codeBlock: IObject, args: ArgumentNode[]): IObject {
-    let codeBody = SendMessage(codeBlock, "body").data
-    let parameters = SendMessage(codeBlock, "parameters").data
+    let codeBody = SendMessage(codeBlock, toObject("body")).data
+    let parameters = SendMessage(codeBlock, toObject("parameters")).data
 
     let blockSpace = this.newNestedSpace()
 

@@ -75,40 +75,47 @@ function NewObject(parent: IObject, data = null): IObject {
  * send the message to the object. This will work its way up the parent tree
  * looking for the object that responds to this message, returning the result
  */
-function SendMessage(receiver: IObject, messageName: string | IObject): IObject {
+function SendMessage(receiver: IObject, messageName: IObject): IObject {
   // TODO Ensure this is a String
-  let message = toObject(messageName).data
+  let message = messageName.data
 
-  if (receiver.slots.has(message)) {
-    return receiver.slots.get(message)
-  } else if (receiver.parents.length == 0) {
-    // TODO: No slot error of some sort
-    return Null
+  let hasSlot = findWithSlot(receiver, message)
+
+  if(hasSlot) {
+    return hasSlot.slots.get(message)
   } else {
-    let fromParent = Null
-
-    for(var parent of receiver.parents) {
-      fromParent = SendMessage(parent, message)
-
-      if(fromParent != Null) {
-        break
-      }
-    }
-
-    return fromParent
+    throw new errors.SlotNotFoundError("") // receiver, messageName)
   }
+}
+
+function findWithSlot(obj: IObject, message: string): IObject {
+  if(obj.slots.has(message)) {
+    return obj
+  }
+
+  let parentObj = null
+
+  for(var parent of obj.parents) {
+    parentObj = findWithSlot(parent, message)
+
+    if(parentObj) {
+      return parentObj
+    }
+  }
+
+  return null
 }
 
 /**
  * Apply a slot to the given Object.
  * Name of the slot needs to be a String. The value can be any object.
  */
-function AddSlot(receiver: IObject, message: string | IObject, value: IObject, comments: IObject = Null) {
+function AddSlot(receiver: IObject, message: IObject, value: IObject, comments: IObject = Null) {
   let metaSlot = NewObject(Slot)
   metaSlot.slots.set("value", value)
   metaSlot.slots.set("comments", comments)
 
-  let key = toObject(message).data
+  let key = message.data
   receiver.slots.set(key, value)
   receiver.metaSlots.set(key, metaSlot)
 }
@@ -116,9 +123,9 @@ function AddSlot(receiver: IObject, message: string | IObject, value: IObject, c
 /**
  * Return the internal Slot object that represents the value of a given slot.
  */
-function GetSlot(receiver: IObject, slotName: string | IObject): IObject {
+function GetSlot(receiver: IObject, slotName: IObject): IObject {
   // TODO: No such slot error?
-  return receiver.metaSlots.get(toObject(slotName).data) || Null
+  return receiver.metaSlots.get(slotName.data) || Null
 }
 
 /**

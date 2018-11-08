@@ -45,9 +45,9 @@ describe("Object", () => {
   it("sends messages to objects", () => {
     let one = toObject(1)
     let obj = NewObject(Objekt)
-    AddSlot(obj, "one", one)
+    AddSlot(obj, toObject("one"), one)
 
-    let result = SendMessage(obj, "one")
+    let result = SendMessage(obj, toObject("one"))
 
     assert.equal(result, one)
   })
@@ -59,10 +59,10 @@ describe("Object", () => {
     let child1 = NewObject(parent)
     let child2 = NewObject(parent)
 
-    AddSlot(parent, "test", str)
+    AddSlot(parent, toObject("test"), str)
 
-    assert.equal(SendMessage(child2, "test"), str)
-    assert.equal(SendMessage(child1, "test"), str)
+    assert.equal(SendMessage(child2, toObject("test")), str)
+    assert.equal(SendMessage(child1, toObject("test")), str)
   })
 
   it("iterates through all parents to find the first matching slot, depth-first", () => {
@@ -71,42 +71,42 @@ describe("Object", () => {
     let gp1 = NewObject(Objekt)
     let p1 = NewObject(gp1)
 
-    AddSlot(gp1, "one", toObject(1))
+    AddSlot(gp1, toObject("one"), toObject(1))
 
     let gp2 = NewObject(Objekt)
-    AddSlot(gp2, "two", toObject(2))
+    AddSlot(gp2, toObject("two"), toObject(2))
     let p2 = NewObject(gp2)
-    AddSlot(p2, "three", toObject(3))
+    AddSlot(p2, toObject("three"), toObject(3))
 
     obj.parents.push(p1)
     obj.parents.push(p2)
 
     // First grand-parent
-    assert.equal(SendMessage(obj, "one").data, 1)
+    assert.equal(SendMessage(obj, toObject("one")).data, 1)
     // Second parent
-    assert.equal(SendMessage(obj, "two").data, 2)
+    assert.equal(SendMessage(obj, toObject("two")).data, 2)
     // Second grandparent
-    assert.equal(SendMessage(obj, "three").data, 3)
+    assert.equal(SendMessage(obj, toObject("three")).data, 3)
   })
 
   it("allows getting the Slot meta-object", () => {
     let str = toObject("testing")
     let five = toObject(5)
-    AddSlot(str, "count", five)
+    AddSlot(str, toObject("count"), five)
 
-    let slot = GetSlot(str, "count")
+    let slot = GetSlot(str, toObject("count"))
 
-    assert.equal(SendMessage(slot, "value"), five)
+    assert.equal(SendMessage(slot, toObject("value")), five)
   })
 
   it("supports adding comments to the slot meta-object", () => {
     let str = toObject("testing")
     let five = toObject(5)
     let comment = toObject("The number of characters that might be in this string")
-    AddSlot(str, "count", five, comment)
+    AddSlot(str, toObject("count"), five, comment)
 
-    let slot = GetSlot(str, "count")
+    let slot = GetSlot(str, toObject("count"))
 
-    assert.equal(SendMessage(slot, "comments"), comment)
+    assert.equal(SendMessage(slot, toObject("comments")), comment)
   })
 })

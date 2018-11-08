@@ -1,3 +1,5 @@
+import { Token } from "@compiler/tokens"
+
 export enum NodeType {
   NumberLiteral = "NumberLiteral",
   StringLiteral = "StringLiteral",
@@ -16,6 +18,7 @@ export enum NodeType {
 
 export interface Node {
   type: NodeType
+  token: Token
   comment?: string
   [propName: string]: any
 }
@@ -35,6 +38,7 @@ export interface MessageSendNode extends Node {
 
 export interface MessageNode {
   name: string
+  token: Token
   arguments: ArgumentNode[]
 }
 

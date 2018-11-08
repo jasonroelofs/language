@@ -220,7 +220,7 @@ describe("Parser", () => {
     let {expressions} = parser.parse()
 
     assert.equal(expressions.length, 2)
-    assert.deepEqual(expressions[0].node, expected, `Comparison failed for ''${test}''`)
+    assert.deepEqual(removeStrayKeys(expressions[0].node), expected, `Comparison failed for ''${test}''`)
   })
 
   it("parses array literals into message sends", () => {
@@ -316,10 +316,10 @@ describe("Parser", () => {
     for(var op of operators) {
       tests[`1 ${op} 2`] = {
         type: NodeType.MessageSend,
-        receiver: { type: NodeType.NumberLiteral, value: "1" },
+        receiver: { type: NodeType.NumberLiteral, value: 1 },
         message: {
           name: op,
-          arguments: [{ value: { type: NodeType.NumberLiteral, value: "2" } }]
+          arguments: [{ value: { type: NodeType.NumberLiteral, value: 2 } }]
         }
       }
     }
@@ -336,30 +336,30 @@ describe("Parser", () => {
         type: NodeType.MessageSend,
         receiver: {
           type: NodeType.MessageSend,
-          receiver: { type: NodeType.NumberLiteral, value: "1" },
+          receiver: { type: NodeType.NumberLiteral, value: 1 },
           message: {
             name: "+",
-            arguments: [{ value: { type: NodeType.NumberLiteral, value: "2" } }],
+            arguments: [{ value: { type: NodeType.NumberLiteral, value: 2 } }],
           }
         },
         message: {
           name: "-",
-          arguments: [{ value: { type: NodeType.NumberLiteral, value: "3" } }]
+          arguments: [{ value: { type: NodeType.NumberLiteral, value: 3 } }]
         }
       },
       "1 + 2 * 3": {
         // Operator precedence
         // 1.+(2.*(3))
         type: NodeType.MessageSend,
-        receiver: { type: NodeType.NumberLiteral, value: "1" },
+        receiver: { type: NodeType.NumberLiteral, value: 1 },
         message: {
           name: "+",
           arguments: [{ value: {
             type: NodeType.MessageSend,
-            receiver: { type: NodeType.NumberLiteral, value: "2" },
+            receiver: { type: NodeType.NumberLiteral, value: 2 },
             message: {
               name: "*",
-              arguments: [{ value: { type: NodeType.NumberLiteral, value: "3" } }]
+              arguments: [{ value: { type: NodeType.NumberLiteral, value: 3 } }]
             }
           }}]
         }
@@ -373,10 +373,10 @@ describe("Parser", () => {
         receiver: {
           // 1 * 2
           type: NodeType.MessageSend,
-          receiver: { type: NodeType.NumberLiteral, value: "1" },
+          receiver: { type: NodeType.NumberLiteral, value: 1 },
           message: {
             name: "*",
-            arguments: [{ value: { type: NodeType.NumberLiteral, value: "2" } }]
+            arguments: [{ value: { type: NodeType.NumberLiteral, value: 2 } }]
           }
         },
         message: {
@@ -384,10 +384,10 @@ describe("Parser", () => {
           arguments: [{ value: {
             // 3 / 4
             type: NodeType.MessageSend,
-            receiver: { type: NodeType.NumberLiteral, value: "3" },
+            receiver: { type: NodeType.NumberLiteral, value: 3 },
             message: {
               name: "/",
-              arguments: [{ value: { type: NodeType.NumberLiteral, value: "4"} }]
+              arguments: [{ value: { type: NodeType.NumberLiteral, value: 4} }]
             }
           }}]
         }
@@ -398,10 +398,10 @@ describe("Parser", () => {
         receiver: {
           // 1 + 2
           type: NodeType.MessageSend,
-          receiver: { type: NodeType.NumberLiteral, value: "1" },
+          receiver: { type: NodeType.NumberLiteral, value: 1 },
           message: {
             name: "+",
-            arguments: [{ value: { type: NodeType.NumberLiteral, value: "2" } }]
+            arguments: [{ value: { type: NodeType.NumberLiteral, value: 2 } }]
           }
         },
         message: {
@@ -409,10 +409,10 @@ describe("Parser", () => {
           arguments: [{ value: {
             // 3 / 4
             type: NodeType.MessageSend,
-            receiver: { type: NodeType.NumberLiteral, value: "3" },
+            receiver: { type: NodeType.NumberLiteral, value: 3 },
             message: {
               name: "-",
-              arguments: [{ value: { type: NodeType.NumberLiteral, value: "4"} }]
+              arguments: [{ value: { type: NodeType.NumberLiteral, value: 4} }]
             }
           }}]
         }
@@ -431,7 +431,7 @@ describe("Parser", () => {
         type: NodeType.Block,
         parameters: [],
         body: [
-          { node: { type: NodeType.NumberLiteral, value: "1" } }
+          { node: { type: NodeType.NumberLiteral, value: 1 } }
         ]
       },
       // Block with one parameter
@@ -465,15 +465,15 @@ describe("Parser", () => {
           {
             type: NodeType.Parameter,
             name: "a",
-            default: { type: NodeType.NumberLiteral, value: "1" }
+            default: { type: NodeType.NumberLiteral, value: 1 }
           },
           {
             type: NodeType.Parameter,
             name: "b",
             default: {
               type: NodeType.MessageSend,
-              receiver: { type: NodeType.NumberLiteral, value: "2" },
-              message: { name: "+", arguments: [{ value: { type: NodeType.NumberLiteral, value: "4" } }] }
+              receiver: { type: NodeType.NumberLiteral, value: 2 },
+              message: { name: "+", arguments: [{ value: { type: NodeType.NumberLiteral, value: 4 } }] }
             }
           },
           {
@@ -522,22 +522,22 @@ describe("Parser", () => {
     assert.equal(expressions.length, 4)
 
     assert.deepEqual(
-      expressions[0].node,
+      removeStrayKeys(expressions[0].node),
       { type: NodeType.Identifier, value: "a", comment: "Attach to the next expression" }
     )
 
     assert.deepEqual(
-      expressions[1].node,
+      removeStrayKeys(expressions[1].node),
       { type: NodeType.Identifier, value: "b" }
     )
 
     assert.deepEqual(
-      expressions[2].node,
+      removeStrayKeys(expressions[2].node),
       { type: NodeType.Identifier, value: "c", comment: "Multi-line\nComments\nare re-combined" }
     )
 
     assert.deepEqual(
-      expressions[3].node,
+      removeStrayKeys(expressions[3].node),
       {
         type: NodeType.Assignment,
         name: "d",
@@ -779,5 +779,43 @@ function assertExpression(input, expected) {
 
   assert.equal(errors.length, 0, util.format("Parser returned some errors: %o", errors))
   assert.equal(expressions.length, 1, "Wrong number of expressions returned")
-  assert.deepEqual(expressions[0].node, expected, `Comparison failed for ''${input}''`)
+
+  assert.deepEqual(removeStrayKeys(expressions[0].node), expected, `Comparison failed for ''${input}''`)
+}
+
+// There are some things that get added to AST nodes that we don't want to deal with
+// testing against, like `token`, as it would drastically clutter up an already hard-to-follow
+// suite of tests. This function removes those regardless of how deep the node is.
+// This function modifies the object directly but also returns the object for chaining purposes.
+//
+// Copied and modified from https://gist.github.com/aurbano/383e691368780e7f5c98
+function removeStrayKeys(obj) {
+  removeKeys(obj, ['token'])
+  return obj
+}
+
+function removeKeys(obj, keys){
+  var index;
+  for (var prop in obj) {
+    // important check that this is objects own property
+    // not from prototype prop inherited
+    if(obj.hasOwnProperty(prop)){
+      switch(typeof(obj[prop])){
+        case 'string':
+          index = keys.indexOf(prop)
+          if(index > -1){
+            delete obj[prop]
+          }
+          break;
+        case 'object':
+          index = keys.indexOf(prop)
+          if(index > -1){
+            delete obj[prop];
+          } else {
+            removeKeys(obj[prop], keys)
+          }
+          break
+      }
+    }
+  }
 }

@@ -224,13 +224,13 @@ export default class Parser {
   parseNumberLiteral(): NumberNode {
     let token = this.currToken()
     this.nextToken()
-    return { type: NodeType.NumberLiteral, value: parseFloat(token.value) }
+    return { type: NodeType.NumberLiteral, value: parseFloat(token.value), token: token }
   }
 
   parseStringLiteral(): StringNode {
     let token = this.currToken()
     this.nextToken()
-    return { type: NodeType.StringLiteral, value: token.value }
+    return { type: NodeType.StringLiteral, value: token.value, token: token }
   }
 
   parseIdentifier(): Node {
@@ -239,13 +239,13 @@ export default class Parser {
 
     switch(token.value) {
       case "true":
-        return { type: NodeType.BooleanLiteral, value: true }
+        return { type: NodeType.BooleanLiteral, value: true, token: token }
       case "false":
-        return { type: NodeType.BooleanLiteral, value: false }
+        return { type: NodeType.BooleanLiteral, value: false, token: token }
       case "null":
-        return { type: NodeType.NullLiteral }
+        return { type: NodeType.NullLiteral, token: token }
       default:
-        return { type: NodeType.Identifier, value: token.value }
+        return { type: NodeType.Identifier, value: token.value, token: token }
     }
   }
 
@@ -256,11 +256,13 @@ export default class Parser {
 
     let node = {
       type: NodeType.MessageSend,
+      token: startToken,
       // TODO: hard-coding the Array name here and `new`. Possibly something less
       // strict in the future?
-      receiver: { type: NodeType.Identifier, value: "Array" },
+      receiver: { type: NodeType.Identifier, token: startToken, value: "Array" },
       message: {
         name: "new",
+        token: startToken,
         arguments: []
       }
     }
@@ -304,7 +306,7 @@ export default class Parser {
     let startToken = this.currToken()
     this.nextToken()
 
-    let node: BlockNode = { type: NodeType.Block, parameters: [], body: [] }
+    let node: BlockNode = { type: NodeType.Block, parameters: [], body: [], token: startToken }
 
     // Block parameters
     if(this.currTokenIs(TokenType.Pipe)) {
@@ -321,6 +323,7 @@ export default class Parser {
         param = {
           type: NodeType.Parameter,
           name: this.currToken().value,
+          token: this.currToken(),
           default: null
         }
 
@@ -380,11 +383,13 @@ export default class Parser {
   }
 
   parseMessageSend(left: Node): MessageSendNode {
+    let token = this.currToken()
     // Move pass the "."
     this.nextToken()
 
     return {
       type: NodeType.MessageSend,
+      token: token,
       receiver: left,
       message: this.parseMessage()
     }
@@ -400,6 +405,7 @@ export default class Parser {
     // node's arguments list accordingly.
     return {
       name: token.value,
+      token: token,
       arguments: []
     }
   }
@@ -413,6 +419,7 @@ export default class Parser {
     // and used later.
     let assignment = {
       type: NodeType.Assignment,
+      token: token,
       name: left.value,
       right: null,
     }
@@ -447,9 +454,11 @@ export default class Parser {
 
     return {
       type: NodeType.MessageSend,
+      token: token,
       receiver: left,
       message: {
         name: token.value,
+        token: token,
         arguments: [{
           value: this.parseExpression(precedence)
         }]
@@ -541,6 +550,7 @@ export default class Parser {
       }
 
       let argNode = {
+        token: this.currToken(),
         name: this.currToken().value
       }
 

@@ -151,27 +151,36 @@ export default class Interpreter {
     let codeBody = SendMessage(codeBlock, toObject("body")).data
     let parameters = SendMessage(codeBlock, toObject("parameters")).data
 
-    // As we're now executing a block in the context of an owning object
-    // aka it's a block assigned to an object's slot and not a direct block call,
-    // we set the current object to `self`
-    let blockSpace = this.newNestedSpace(receiver)
-
     // Check for plain first argument and fix it up to match the name
     // of the first parameter
     if(args.length > 0 && args[0].name == null) {
       args[0].name = parameters[0].name
     }
 
+    let evaldArgs = []
+
+    // Check that arguments match expected parameters and evaluate all
+    // provided arguments or default parameter values in the current Space
     for(var param of parameters) {
       let arg = args.find((a) => { return a.name == param.name })
 
       if(arg) {
-        AddSlot(blockSpace, toObject(param.name), this.evalNode(arg.value), toObject(arg.comment))
+        evaldArgs.push([toObject(param.name), this.evalNode(arg.value), toObject(arg.comment)])
       } else if(param.default) {
-        AddSlot(blockSpace, toObject(param.name), this.evalNode(param.default))
+        evaldArgs.push([toObject(param.name), this.evalNode(param.default)])
       } else {
         throw new Error(`Unmatched required parameter '${param.name}'`)
       }
+    }
+
+    // Set up our new execution context (a nested Space) for this block call.
+    // This will set `self` to either the Space or the actual receiver of this
+    // message. Then we set the values of all arguments also as slot values before
+    // evaluating the block itself.
+    let blockSpace = this.newNestedSpace(receiver)
+
+    for(var argValue of evaldArgs) {
+      AddSlot.call(null, blockSpace, ...argValue)
     }
 
     let result = this.eval(codeBody)

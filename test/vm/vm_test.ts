@@ -160,6 +160,24 @@ describe("VM", () => {
     }
   })
 
+  it("evaluates block parameters before dropping into the block's own context", () => {
+    let vm = new VM()
+
+    // This is an interesting scoping case. What I'm testing here is that `objId` is pulled
+    // from the current execution space (implicit self) *before* the system creates a new
+    // execution space for calling into `add`.
+    // When this is done in the wrong order, we get an error that `objId` can't be found.
+    // This also passes as an intro test to ensuring that we have method closures when passing
+    // around method objects like this.
+    let result = vm.eval(`
+      Object.addSlot("pass", as: { |cb| cb })
+      objId = Object.objectId
+      Object.pass(objId())
+    `)
+
+    assert.equal(result.data, Objekt.objectId)
+  })
+
   it("evaluates direct message calls on objects", () => {
     let vm = new VM()
 

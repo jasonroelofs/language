@@ -3,4 +3,11 @@ import VM from "@vm/vm"
 let file = process.argv[process.argv.length - 1]
 
 let vm = new VM()
-vm.loadFile(file)
+try {
+  vm.loadFile(file)
+} catch {
+  // The VM reports any errors and re-throws them for now
+  // Catch and throw away so we don't get weird stack traces
+  // Need to figure out a better pattern for where and when
+  // to report on errors.
+}

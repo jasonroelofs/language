@@ -1,4 +1,5 @@
 import * as util from "util"
+import * as errors from "@vm/errors"
 import { isArray } from "@vm/js_core"
 
 /**
@@ -73,7 +74,9 @@ function NewObject(parent: IObject, data = null): IObject {
 /**
  * Given an object, a message name, a set of arguments,
  * send the message to the object. This will work its way up the parent tree
- * looking for the object that responds to this message, returning the result
+ * looking for the object that responds to this message, returning the result.
+ * This can return the Javascript `null`. In this case there was no such slot
+ * found in the parent tree. This then lets the caller handle this case itself.
  */
 function SendMessage(receiver: IObject, messageName: IObject): IObject {
   // TODO Ensure this is a String
@@ -84,7 +87,7 @@ function SendMessage(receiver: IObject, messageName: IObject): IObject {
   if(hasSlot) {
     return hasSlot.slots.get(message)
   } else {
-    throw new errors.SlotNotFoundError("") // receiver, messageName)
+    return null
   }
 }
 
@@ -132,32 +135,23 @@ function GetSlot(receiver: IObject, slotName: IObject): IObject {
  * The base of all objects. Should not ever be used directly.
  * Provides the slots for Object, through which everything else should build off of.
  */
-let ObjectBase = NewObject(null)
+var ObjectBase = NewObject(null)      // 0
 
 // Sorry, this can't be "Object" in javascript land. That name is already taken
 // and will cause weird problems if we try to reuse it.
 // This will be properly renamed back to "Object" when in the language.
-let Objekt = NewObject(ObjectBase)
+var Objekt = NewObject(ObjectBase)    // 1
 
-let Slot = NewObject(Objekt)
+var Slot = NewObject(Objekt)          // 2
 
-let Null = NewObject(Objekt, null)
-let True = NewObject(Objekt, true)
-let False = NewObject(Objekt, false)
+var Null = NewObject(Objekt, null)    // 3
+var True = NewObject(Objekt, true)    // 4
+var False = NewObject(Objekt, false)  // 5
 
-let Number = NewObject(Objekt, 0)
-let String = NewObject(Objekt, "")
+var Number = NewObject(Objekt, 0)     // 6
+var String = NewObject(Objekt, "")    // 7
 
-let Array = NewObject(Objekt, [])
-
-/**
- * Mapping of the results of (typeof object) to our internal
- * object type representation.
- */
-const typeMapping = {
-  "number": Number,
-  "string": String,
-}
+var Array = NewObject(Objekt, [])     // 8
 
 function toObject(nativeValue: any): IObject {
   if(nativeValue === true) {
@@ -172,10 +166,12 @@ function toObject(nativeValue: any): IObject {
     return Null
   }
 
-  let parentObject = typeMapping[typeof nativeValue]
+  if((typeof nativeValue) == "number") {
+    return NewObject(Number, nativeValue)
+  }
 
-  if(parentObject) {
-    return NewObject(parentObject, nativeValue)
+  if((typeof nativeValue) == "string") {
+    return NewObject(String, nativeValue)
   }
 
   if(isArray(nativeValue)) {

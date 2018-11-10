@@ -1,6 +1,8 @@
 import "mocha"
 import * as assert from "assert"
+import * as util from "util"
 import VM from "@vm/vm"
+import * as errors from "@vm/errors"
 import { IObject, toObject, SendMessage, True, False, Null } from "@vm/object"
 import { Objekt, World } from "@vm/core"
 
@@ -209,11 +211,68 @@ describe("VM", () => {
 
     assert.equal(result, False)
   })
+
+  describe("Error Handling", () => {
+    it("errors on failed slot lookup", () => {
+      let vm = new VM()
+      var error
+
+      try {
+        vm.eval(`World.unknownSlot`)
+      } catch(e) {
+        error = e
+      }
+
+      assertErrorType(error, errors.SlotNotFoundError)
+
+      assert.equal(error.chunk, ".")
+      assert.equal(error.position, 5)
+    })
+
+    it("errors on invalid message block invocation", () => {
+      let vm = new VM()
+      var error
+
+      try {
+        vm.eval(`a = Object.new(m: 1); a.m()`)
+      } catch(e) {
+        error = e
+      }
+
+      assertErrorType(error, errors.NotABlockError)
+
+      assert.equal(error.chunk, "(")
+      assert.equal(error.position, 25)
+    })
+
+    it("errors on invalid block invocation", () => {
+      let vm = new VM()
+      var error
+
+      try {
+        vm.eval(`a = 1; a.call()`)
+      } catch(e) {
+        error = e
+      }
+
+      assertErrorType(error, errors.NotABlockError)
+
+      assert.equal(error.chunk, "(")
+      assert.equal(error.position, 13)
+    })
+
+    function assertErrorType(result: errors.RuntimeError, errorClass) {
+      assert(result instanceof errorClass,
+             util.format("Result %o was not an instance of %o", result, errorClass))
+    }
+  })
 })
 
 function assertObjectEval(input: string, expected: IObject) {
   let vm = new VM()
   let result = vm.eval(input)
+
+  assert(result, `We didn't a result back for ''${input}'', check for errors?`)
 
   assert.equal(result.parents.length, expected.parents.length)
   assert.equal(result.parents[0], expected.parents[0])

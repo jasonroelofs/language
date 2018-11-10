@@ -3,7 +3,7 @@ import * as assert from "assert"
 import { stripIndent } from "common-tags"
 import { SyntaxError } from "@compiler/errors"
 import { Token, TokenType } from "@compiler/tokens"
-import ErrorReport from "@vm/error_report"
+import { ErrorReport } from "@vm/error_report"
 
 describe("ErrorReport", () => {
   it("builds a nice, readable error message", () => {

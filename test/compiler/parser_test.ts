@@ -3,7 +3,7 @@ import * as assert from "assert"
 import * as util from "util"
 import Lexer from "@compiler/lexer"
 import Parser from "@compiler/parser"
-import { NodeType, Node } from "@compiler/ast"
+import { NodeType, Node, ArgumentNode } from "@compiler/ast"
 import * as errors from "@compiler/errors"
 
 describe("Parser", () => {
@@ -59,136 +59,121 @@ describe("Parser", () => {
 
   it("parses message sends", () => {
     let tests = {
-      // Sending a message, no parameters
-      "obj.message()" : {
-        type: NodeType.MessageSend,
+      // Sending a plain message
+      "obj.message" : messageSendNode({
         receiver: { type: NodeType.Identifier, value: "obj" },
-        message: {
-          name: "message",
-          arguments: [],
-        },
-      },
-      // Parens are optional when no parameters
-      "obj.message" : {
-        type: NodeType.MessageSend,
+        message: "message",
+        args: []
+      }),
+
+      // Sending a message, expecting and calling a block
+      // This is syntax sugar for: `obj.message.call()`
+      "obj.message()" : blockCallNode({
         receiver: { type: NodeType.Identifier, value: "obj" },
-        message: {
-          name: "message",
-          arguments: [],
-        },
-      },
-      "obj.message(1)": {
-        type: NodeType.MessageSend,
+        message: "message",
+        args: []
+      }),
+
+      // But if we are explicitly using "call", that's alright too
+      "block.call()": messageSendNode({
+        receiver: { type: NodeType.Identifier, value: "block" },
+        message: "call",
+        args: []
+      }),
+
+      "obj.message(1)": blockCallNode({
         receiver: { type: NodeType.Identifier, value: "obj" },
-        message: {
-          name: "message",
-          arguments: [
-            { value: { type: NodeType.NumberLiteral, value: 1 } }
-          ]
-        },
-      },
+        message: "message",
+        args: [{ value: { type: NodeType.NumberLiteral, value: 1 } }]
+      }),
+
       // Expressions can be arguments
-      "obj.message(a + b)": {
-        type: NodeType.MessageSend,
+      "obj.message(a + b)": blockCallNode({
         receiver: { type: NodeType.Identifier, value: "obj" },
-        message: {
-          name: "message",
-          arguments: [
-            { value: {
-              type: NodeType.MessageSend,
+        message: "message",
+        args: [
+          { value: blockCallNode({
               receiver: { type: NodeType.Identifier, value: "a" },
-              message: {
-                name: "+",
-                arguments: [{ value: { type: NodeType.Identifier, value: "b" } }]
-              }
-            }}
-          ]
-        },
-      },
+              message: "+",
+              args: [{ value: { type: NodeType.Identifier, value: "b" } }]
+            })
+          }
+        ]
+      }),
+
       // > 1 parameter, must be keywords
-      "obj.message(a1: a1, a2: a.b)": {
-        type: NodeType.MessageSend,
+      "obj.message(a1: a1, a2: a.b)": blockCallNode({
         receiver: { type: NodeType.Identifier, value: "obj" },
-        message: {
-          name: "message",
-          arguments: [
-            {
-              name: "a1",
-              value: { type: NodeType.Identifier, value: "a1" }
-            },
-            {
-              name: "a2",
-              value: {
-                type: NodeType.MessageSend,
-                receiver: { type: NodeType.Identifier, value: "a" },
-                message: { name: "b", arguments: [] },
-              }
-            }
-          ]
-        }
-      },
+        message: "message",
+        args: [
+          {
+            name: "a1",
+            value: { type: NodeType.Identifier, value: "a1" }
+          },
+          {
+            name: "a2",
+            value: messageSendNode({
+              receiver: { type: NodeType.Identifier, value: "a" },
+              message: "b",
+              args: []
+            }),
+          }
+        ]
+      }),
+
       // > 1 parameter, but first parameter can still be unnamed
-      "obj.message(a1, a2: a.b)": {
-        type: NodeType.MessageSend,
+      "obj.message(a1, a2: a.b)": blockCallNode({
         receiver: { type: NodeType.Identifier, value: "obj" },
-        message: {
-          name: "message",
-          arguments: [
-            {
-              value: { type: NodeType.Identifier, value: "a1" }
-            },
-            {
-              name: "a2",
-              value: {
-                type: NodeType.MessageSend,
-                receiver: { type: NodeType.Identifier, value: "a" },
-                message: { name: "b", arguments: [] },
-              }
-            }
-          ]
-        }
-      },
+        message: "message",
+        args: [
+          {
+            value: { type: NodeType.Identifier, value: "a1" }
+          },
+          {
+            name: "a2",
+            value: messageSendNode({
+              receiver: { type: NodeType.Identifier, value: "a" },
+              message: "b",
+              args: []
+            }),
+          }
+        ]
+      }),
+
       // Keys can also be strings, for situations where the key wouldn't make
       // a legit identifier.
-      [`obj.message("a": a, "b": b)`]: {
-        type: NodeType.MessageSend,
+      [`obj.message("a": a, "b": b)`]: blockCallNode({
         receiver: { type: NodeType.Identifier, value: "obj" },
-        message: {
-          name: "message",
-          arguments: [
-            {
-              name: "a",
-              value: { type: NodeType.Identifier, value: "a" }
-            },
-            {
-              name: "b",
-              value: { type: NodeType.Identifier, value: "b" }
-            }
-          ]
-        }
-      },
+        message: "message",
+        args: [
+          {
+            name: "a",
+            value: { type: NodeType.Identifier, value: "a" }
+          },
+          {
+            name: "b",
+            value: { type: NodeType.Identifier, value: "b" }
+          }
+        ]
+      }),
+
       // Implicit Self receiver
-      "message()": {
-        type: NodeType.MessageSend,
+      "message()": blockCallNode({
         receiver: { type: NodeType.Identifier, value: "self" },
-        message: {
-          name: "message",
-          arguments: []
-        }
-      },
-      "message(a: 1)": {
-        type: NodeType.MessageSend,
+        message: "message",
+        args: []
+      }),
+
+      "message(a: 1)": blockCallNode({
         receiver: { type: NodeType.Identifier, value: "self" },
-        message: {
-          name: "message",
-          arguments: [
-            {
-              name: "a",
-              value: { type: NodeType.NumberLiteral, value: 1 }
-            },
-          ]
-        }
-      }
+        message: "message",
+        args: [
+          {
+            name: "a",
+            value: { type: NodeType.NumberLiteral, value: 1 }
+          },
+        ]
+      })
     }
 
     for(var test in tests) {
@@ -201,17 +186,14 @@ describe("Parser", () => {
     // The `b` at the end helped trigger a parser error that this
     // test proves is fixed.
     let test = "a.call(\n{},\nc: {}\n)\nb"
-    let expected = {
-      type: NodeType.MessageSend,
+    let expected = messageSendNode({
       receiver: { type: NodeType.Identifier, value: "a" },
-      message: {
-        name: "call",
-        arguments: [
-          { value: { type: NodeType.Block, parameters: [], body: [] } },
-          { name: "c", value: { type: NodeType.Block, parameters: [], body: [] } },
-        ]
-      }
-    }
+      message: "call",
+      args: [
+        { value: { type: NodeType.Block, parameters: [], body: [] } },
+        { name: "c", value: { type: NodeType.Block, parameters: [], body: [] } },
+      ]
+    })
 
     let lexer = new Lexer(test)
     let {tokens} = lexer.tokenize()
@@ -226,59 +208,50 @@ describe("Parser", () => {
   it("parses array literals into message sends", () => {
     let tests = {
       // [] is syntax sugar for Array.new()
-      "[]": {
-        type: NodeType.MessageSend,
+      "[]": blockCallNode({
         receiver: { type: NodeType.Identifier, value: "Array" },
-        message: { name: "new", arguments: [] },
-      },
+        message: "new",
+        args: []
+      }),
+
       // Static initialization gets converted to Array.new arguments:
       // Array.new("0": 1)
-      "[1]": {
-        type: NodeType.MessageSend,
+      "[1]": blockCallNode({
         receiver: { type: NodeType.Identifier, value: "Array" },
-        message: {
-          name: "new",
-          arguments: [
-            { name: "0", value: { type: NodeType.NumberLiteral, value: 1 }}
-          ]
-        },
-      },
+        message: "new",
+        args: [
+          { name: "0", value: { type: NodeType.NumberLiteral, value: 1 }}
+        ]
+      }),
+
       // Multiple values become their own arguments to Array.new()
-      "[1, 2, 3]": {
-        type: NodeType.MessageSend,
+      "[1, 2, 3]": blockCallNode({
         receiver: { type: NodeType.Identifier, value: "Array" },
-        message: {
-          name: "new",
-          arguments: [
-            { name: "0", value: { type: NodeType.NumberLiteral, value: 1 }},
-            { name: "1", value: { type: NodeType.NumberLiteral, value: 2 }},
-            { name: "2", value: { type: NodeType.NumberLiteral, value: 3 }}
-          ]
-        },
-      },
+        message: "new",
+        args: [
+          { name: "0", value: { type: NodeType.NumberLiteral, value: 1 }},
+          { name: "1", value: { type: NodeType.NumberLiteral, value: 2 }},
+          { name: "2", value: { type: NodeType.NumberLiteral, value: 3 }}
+        ]
+      }),
+
       // Ensure expressions are properly worked through inside of an array literal
-      "[1 + 2]": {
-        type: NodeType.MessageSend,
+      "[1 + 2]": blockCallNode({
         receiver: { type: NodeType.Identifier, value: "Array" },
-        message: {
-          name: "new",
-          arguments: [
-            {
-              name: "0",
-              value: {
-                type: NodeType.MessageSend,
-                receiver: { type: NodeType.NumberLiteral, value: 1 },
-                message: {
-                  name: "+",
-                  arguments: [
-                    { value: { type: NodeType.NumberLiteral, value: 2 }}
-                  ]
-                }
-              }
-            }
-          ]
-        },
-      },
+        message: "new",
+        args: [
+          {
+            name: "0",
+            value: blockCallNode({
+              receiver: { type: NodeType.NumberLiteral, value: 1 },
+              message: "+",
+              args: [
+                { value: { type: NodeType.NumberLiteral, value: 2 }}
+              ]
+            })
+          }
+        ]
+      }),
     }
 
     for(var test in tests) {
@@ -314,14 +287,11 @@ describe("Parser", () => {
     var tests = {}
 
     for(var op of operators) {
-      tests[`1 ${op} 2`] = {
-        type: NodeType.MessageSend,
+      tests[`1 ${op} 2`] = blockCallNode({
         receiver: { type: NodeType.NumberLiteral, value: 1 },
-        message: {
-          name: op,
-          arguments: [{ value: { type: NodeType.NumberLiteral, value: 2 } }]
-        }
-      }
+        message: op,
+        args: [{ value: { type: NodeType.NumberLiteral, value: 2 } }]
+      })
     }
 
     for(var test in tests) {
@@ -331,92 +301,34 @@ describe("Parser", () => {
 
   it("parses complex infix expressions", () => {
     let tests = {
-      "1 + 2 - 3": {
-        // (1.+(2)).-(3))
-        type: NodeType.MessageSend,
-        receiver: {
-          type: NodeType.MessageSend,
-          receiver: { type: NodeType.NumberLiteral, value: 1 },
-          message: {
-            name: "+",
-            arguments: [{ value: { type: NodeType.NumberLiteral, value: 2 } }],
-          }
-        },
-        message: {
-          name: "-",
-          arguments: [{ value: { type: NodeType.NumberLiteral, value: 3 } }]
-        }
-      },
-      "1 + 2 * 3": {
-        // Operator precedence
-        // 1.+(2.*(3))
-        type: NodeType.MessageSend,
-        receiver: { type: NodeType.NumberLiteral, value: 1 },
-        message: {
-          name: "+",
-          arguments: [{ value: {
-            type: NodeType.MessageSend,
-            receiver: { type: NodeType.NumberLiteral, value: 2 },
-            message: {
-              name: "*",
-              arguments: [{ value: { type: NodeType.NumberLiteral, value: 3 } }]
-            }
-          }}]
-        }
-      },
-      "1 * 2 + 3 / 4": {
-        // Operator precedence
-        // (1.*(2)).+(3./(4))
+      // (1.+(2)).-(3))
+      "1 + 2 - 3": blockCallNode({
+        receiver: infixNumberNode(1, "+", 2),
+        message: "-",
+        args: [{ value: { type: NodeType.NumberLiteral, value: 3 } }]
+      }),
 
-        // left * right
-        type: NodeType.MessageSend,
-        receiver: {
-          // 1 * 2
-          type: NodeType.MessageSend,
-          receiver: { type: NodeType.NumberLiteral, value: 1 },
-          message: {
-            name: "*",
-            arguments: [{ value: { type: NodeType.NumberLiteral, value: 2 } }]
-          }
-        },
-        message: {
-          name: "+",
-          arguments: [{ value: {
-            // 3 / 4
-            type: NodeType.MessageSend,
-            receiver: { type: NodeType.NumberLiteral, value: 3 },
-            message: {
-              name: "/",
-              arguments: [{ value: { type: NodeType.NumberLiteral, value: 4} }]
-            }
-          }}]
-        }
-      },
-      "(1 + 2) * (3 - 4)": {
-        // Forced grouping of expressions
-        type: NodeType.MessageSend,
-        receiver: {
-          // 1 + 2
-          type: NodeType.MessageSend,
-          receiver: { type: NodeType.NumberLiteral, value: 1 },
-          message: {
-            name: "+",
-            arguments: [{ value: { type: NodeType.NumberLiteral, value: 2 } }]
-          }
-        },
-        message: {
-          name: "*",
-          arguments: [{ value: {
-            // 3 / 4
-            type: NodeType.MessageSend,
-            receiver: { type: NodeType.NumberLiteral, value: 3 },
-            message: {
-              name: "-",
-              arguments: [{ value: { type: NodeType.NumberLiteral, value: 4} }]
-            }
-          }}]
-        }
-      }
+      // Operator precedence
+      // 1.+(2.*(3))
+      "1 + 2 * 3": blockCallNode({
+        receiver: { type: NodeType.NumberLiteral, value: 1 },
+        message: "+",
+        args: [{ value: infixNumberNode(2, "*", 3) }]
+      }),
+
+      // Operator precedence
+      // (1.*(2)).+(3./(4))
+      "1 * 2 + 3 / 4": blockCallNode({
+        receiver: infixNumberNode(1, "*", 2),
+        message: "+",
+        args: [{ value: infixNumberNode(3, "/", 4) }]
+      }),
+
+      "(1 + 2) * (3 - 4)": blockCallNode({
+        receiver: infixNumberNode(1, "+", 2),
+        message: "*",
+        args: [{ value: infixNumberNode(3, "-", 4) }]
+      })
     }
 
     for(var test in tests) {
@@ -470,20 +382,12 @@ describe("Parser", () => {
           {
             type: NodeType.Parameter,
             name: "b",
-            default: {
-              type: NodeType.MessageSend,
-              receiver: { type: NodeType.NumberLiteral, value: 2 },
-              message: { name: "+", arguments: [{ value: { type: NodeType.NumberLiteral, value: 4 } }] }
-            }
+            default: infixNumberNode(2, "+", 4)
           },
           {
             type: NodeType.Parameter,
             name: "c",
-            default: {
-              type: NodeType.MessageSend,
-              receiver: { type: NodeType.Identifier, value: "a" },
-              message: { name: "+", arguments: [{ value: { type: NodeType.Identifier, value: "b" } }] }
-            }
+            default: infixNode(NodeType.Identifier, "a", "+", "b")
           },
         ],
         body: [
@@ -541,14 +445,11 @@ describe("Parser", () => {
       {
         type: NodeType.Assignment,
         name: "d",
-        right: {
-          type: NodeType.MessageSend,
+        right: blockCallNode({
           receiver: { type: NodeType.Identifier, value: "Object" },
-          message: {
-            name: "new",
-            arguments: []
-          }
-        },
+          message: "new",
+          args: []
+        }),
         comment: "Attach me to d"
       }
     )
@@ -767,6 +668,41 @@ describe("Parser", () => {
     }
   })
 })
+
+function infixNumberNode(left, op, right) {
+  return infixNode(NodeType.NumberLiteral, left, op, right)
+}
+
+function infixNode(nodeType, left, op, right) {
+  return blockCallNode({
+    receiver: { type: nodeType, value: left },
+    message: op,
+    args: [{ value: { type: nodeType, value: right } }]
+  })
+}
+
+function blockCallNode({receiver, message, args}) {
+  return {
+    type: NodeType.MessageSend,
+    receiver: messageSendNode({ receiver: receiver, message: message, args: [] }),
+    message: {
+      name: "call",
+      context: receiver,
+      arguments: args
+    }
+  }
+}
+
+function messageSendNode({receiver, message, args}) {
+  return {
+    type: NodeType.MessageSend,
+    receiver: receiver,
+    message: {
+      name: message,
+      arguments: args,
+    }
+  }
+}
 
 function assertExpression(input, expected) {
   let lexer = new Lexer(input)

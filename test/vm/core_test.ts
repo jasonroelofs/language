@@ -72,6 +72,7 @@ describe("Array", () => {
 
 function assertExpression(input, expected) {
   let vm = new VM()
+
   let result = vm.eval(input)
 
   if((typeof result) != "object" || !("objectId" in result)) {

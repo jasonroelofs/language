@@ -1,6 +1,7 @@
 import * as fs from "fs"
 import * as glob from "fast-glob"
 import * as path from "path"
+import * as util from "util"
 
 import { IObject, NewObject } from "@vm/object"
 import { World } from "@vm/core"
@@ -9,8 +10,8 @@ import Lexer from "@compiler/lexer"
 import Parser from "@compiler/parser"
 import Interpreter from "@vm/interpreter"
 
-import { SyntaxError } from "@compiler/errors"
-import ErrorReport from "@vm/error_report"
+import * as errors from "@vm/errors"
+import { SystemError, ErrorReport } from "@vm/error_report"
 
 export default class VM {
 
@@ -34,6 +35,7 @@ export default class VM {
 
   loadFile(filePath: string) {
     let script = fs.readFileSync(filePath)
+    //console.log("Loading file %o", filePath)
     this.eval(script.toString(), filePath)
   }
 
@@ -42,7 +44,7 @@ export default class VM {
     var {tokens, errors} = l.tokenize()
 
     if(errors.length > 0) {
-      this.reportErrors(program, filePath, errors)
+      this.reportError(program, filePath, errors[0])
       return
     }
 
@@ -50,14 +52,19 @@ export default class VM {
     var {expressions, errors} = p.parse()
 
     if(errors.length > 0) {
-      this.reportErrors(program, filePath, errors)
+      this.reportError(program, filePath, errors[0])
       return
     }
 
-    return this.interpreter.eval(expressions)
+    try {
+      return this.interpreter.eval(expressions)
+    } catch(error) {
+      this.reportError(program, filePath, error)
+      throw error
+    }
   }
 
-  reportErrors(program: string, filePath: string, errors: SyntaxError[]) {
+  reportError(program: string, filePath: string, error: SystemError) {
     let cleanFilePath = ""
 
     if(filePath) {
@@ -66,9 +73,7 @@ export default class VM {
       cleanFilePath = "[script]"
     }
 
-    errors.forEach((error) => {
-      let report = new ErrorReport(error, program, cleanFilePath)
-      console.log(report.buildReport())
-    })
+    let report = new ErrorReport(error, program, cleanFilePath)
+    console.log(report.buildReport())
   }
 }

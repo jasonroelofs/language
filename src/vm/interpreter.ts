@@ -7,6 +7,7 @@ import {
   NodeType,
   Expression
 } from "@compiler/ast"
+import * as errors from "@vm/errors"
 import {
   IObject,
   NewObject,
@@ -51,11 +52,18 @@ export default class Interpreter {
       case NodeType.Assignment:
         let varName = node.name
         let varValue = this.evalNode(node.right)
-        AddSlot(this.currentSpace, varName, varValue, toObject(node.comment))
+        AddSlot(this.currentSpace, toObject(varName), varValue, toObject(node.comment))
         return varValue
 
       case NodeType.Identifier:
-        return SendMessage(this.currentSpace, toObject(node.value))
+        let slotName = toObject(node.value)
+        let found = SendMessage(this.currentSpace, slotName)
+
+        if(found == null) {
+          throw new errors.SlotNotFoundError(node, slotName)
+        }
+
+        return found
 
       case NodeType.NumberLiteral:
         return NewObject(Number, node.value)
@@ -93,27 +101,21 @@ export default class Interpreter {
 
   evalMessageSend(node: MessageSendNode): IObject {
     let receiver = this.evalNode(node.receiver)
-    let message = node.message.name
+    let message = toObject(node.message.name)
     let args = node.message.arguments
 
-    // TODO figure out how other like languages do this.
-    //
-    // We need a way to trigger evaluation of a block's AST through a message passing
-    // structure, but it's kind of a chicken-and-egg problem.
-    // I would like the `call` message to simply return the object itself then we can
-    // just check the codeBlock flag.
-    //
-    // So hard-coding a look for a node marked as a code block
-    // and the "call" message.
-    if(receiver.codeBlock && message == "call") {
-      return this.evalCodeBlock(null, receiver, args)
-    }
+    if(node.message.name == "call") {
+      if(!receiver.codeBlock) {
+        throw new errors.NotABlockError(node)
+      }
 
-    // Not a code block, figure out what's at this location
-    let slotValue = SendMessage(receiver, toObject(message))
+      let context = null
 
-    if(slotValue.codeBlock) {
-      if(slotValue.builtIn) {
+      if(node.message.context) {
+        context = this.evalNode(node.message.context)
+      }
+
+      if(receiver.builtIn) {
         // We're a built-in, call it via javascript
         let toFunc = {}
         let meta = {}
@@ -129,10 +131,17 @@ export default class Interpreter {
           meta[argName] = args[idx]
         }
 
-        return slotValue.data.call(receiver, toFunc, meta)
-      } else {
-        return this.evalCodeBlock(receiver, slotValue, args)
+        return receiver.data.call(context, toFunc, meta)
       }
+
+      return this.evalCodeBlock(context, receiver, args)
+    }
+
+    // Not executing a code block, return the raw value of this node
+    let slotValue = SendMessage(receiver, message)
+
+    if(slotValue == null) {
+      throw new errors.SlotNotFoundError(node, message)
     }
 
     return slotValue
@@ -142,15 +151,10 @@ export default class Interpreter {
     let codeBody = SendMessage(codeBlock, toObject("body")).data
     let parameters = SendMessage(codeBlock, toObject("parameters")).data
 
-    let blockSpace = this.newNestedSpace()
-
     // As we're now executing a block in the context of an owning object
     // aka it's a block assigned to an object's slot and not a direct block call,
     // we set the current object to `self`
-    // TODO: "self" should be intern'd
-    if(receiver) {
-      AddSlot(blockSpace, toObject("self"), receiver)
-    }
+    let blockSpace = this.newNestedSpace(receiver)
 
     // Check for plain first argument and fix it up to match the name
     // of the first parameter
@@ -177,9 +181,13 @@ export default class Interpreter {
     return result
   }
 
-  newNestedSpace(): IObject {
+  newNestedSpace(selfObj = null): IObject {
     let newSpace = NewObject(this.currentSpace)
+    let self = selfObj || newSpace
+
     this.currentSpace = newSpace
+    AddSlot(newSpace, toObject("self"), self)
+
     return newSpace
   }
 

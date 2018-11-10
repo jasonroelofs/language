@@ -237,4 +237,7 @@ class ErrorReport {
   }
 }
 
-export default ErrorReport
+export {
+  SystemError,
+  ErrorReport,
+}

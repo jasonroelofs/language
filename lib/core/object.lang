@@ -7,15 +7,14 @@ Object.addSlots(
 
   # Object comparison. Objects are equal if their objectIds are equal.
   "==": { |other|
-    self.objectId == other.objectId
+    self.objectId() == other.objectId()
   },
 
   "!=": { |other|
     # TODO: support negation via `!`
-    (self.objectId == other.objectId).do(
+    (self.objectId() == other.objectId()).do(
       ifTrue: { false },
       ifFalse: { true },
     )
   }
-
 )

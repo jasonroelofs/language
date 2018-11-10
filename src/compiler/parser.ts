@@ -249,6 +249,9 @@ export default class Parser {
     }
   }
 
+  //
+  // Array literals are syntax sugar for Array.new(...)
+  //
   parseArrayLiteral(): MessageSendNode {
     // Move past the opening '['
     let startToken = this.currToken()
@@ -267,6 +270,8 @@ export default class Parser {
       }
     }
 
+    let arrayEntries = []
+
     // We have to work with the keyword-requirement for message sends, and as
     // message send names must be strings, we set up the call to be:
     //
@@ -275,7 +280,7 @@ export default class Parser {
     let argCount = 0
     while(this.currToken() && !this.currTokenIs(TokenType.CloseSquare)) {
 
-      node.message.arguments.push({
+      arrayEntries.push({
         name: `${argCount}`,
         value: this.parseStatement()
       })
@@ -298,7 +303,19 @@ export default class Parser {
     // Move past the closing ']' and continue on.
     this.nextToken()
 
-    return node
+    // And make sure we wrap up Array.new() to actually be
+    // Array.new.call()
+    return {
+      type: NodeType.MessageSend,
+      token: startToken,
+      receiver: node,
+      message: {
+        name: "call",
+        token: startToken,
+        context: node.receiver,
+        arguments: arrayEntries
+      }
+    }
   }
 
   parseBlock(): BlockNode {
@@ -455,10 +472,20 @@ export default class Parser {
     return {
       type: NodeType.MessageSend,
       token: token,
-      receiver: left,
-      message: {
-        name: token.value,
+      receiver: {
+        type: NodeType.MessageSend,
+        receiver: left,
         token: token,
+        message: {
+          name: token.value,
+          token: token,
+          arguments: []
+        }
+      },
+      message: {
+        name: "call",
+        token: token,
+        context: left,
         arguments: [{
           value: this.parseExpression(precedence)
         }]
@@ -487,12 +514,40 @@ export default class Parser {
       delete left.value
     }
 
+    // Syntax sugar time!
+    // We are expecting to have a block after a message send, e.g. `obj.message()`
+    // To ensure that `obj.blockMessage` and `obj.valueMessage` work the same, we treat
+    // the addition of `()` as another actual message send to a block. This means that
+    // `obj.message()` is actually implemented as `obj.message.call()`
+    // With special handling to make sure we don't lock ourselves in an infinite loop
+    // if the message already is explicitly `call`.
+    let callMsg = null
+
+    if(left.message.name == "call") {
+      callMsg = left
+    } else {
+      callMsg = {
+        type: NodeType.MessageSend,
+        receiver: left,
+        message: {
+          name: "call",
+          // Not sure if this is the right way to do this but we need to be able
+          // to know if a block is being called directly or in the context of
+          // an object that owns it. This will dictate what `self` is.
+          context: left.receiver,
+          arguments: []
+        }
+      }
+    }
+
+    callMsg.token = start
+
     if(this.peekTokenIs(TokenType.CloseParen)) {
       // We have an empty param set `()` so no arguments added.
       // Skip our current token `(` and the close `)` to move forward.
       this.nextToken()
       this.nextToken()
-      return left
+      return callMsg
     }
 
     // Move past the OpenParen
@@ -514,14 +569,14 @@ export default class Parser {
       // Throw away any comments, there's nothing really to attach to
       this.clearCurrentComments()
 
-      left.message.arguments.push({
+      callMsg.message.arguments.push({
         value: this.parseExpression(Precedence.Lowest)
       })
 
       // No more arguments, move on
       if(this.currTokenIs(TokenType.CloseParen)) {
         this.nextToken()
-        return left
+        return callMsg
       }
 
       // Prepare for more arguments!
@@ -573,7 +628,7 @@ export default class Parser {
 
       argNode['value'] = this.parseStatement()
 
-      left.message.arguments.push(argNode)
+      callMsg.message.arguments.push(argNode)
 
       // Skip past our comma if it exists
       if(this.currTokenIs(TokenType.Comma)) {
@@ -595,7 +650,7 @@ export default class Parser {
     // Move past the close paren, we're done
     this.nextToken()
 
-    return left
+    return callMsg
   }
 
   incompleteExpressionError() {

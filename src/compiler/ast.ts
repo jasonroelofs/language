@@ -39,7 +39,6 @@ export interface MessageSendNode extends Node {
 export interface MessageNode {
   name: string
   token: Token
-  context?: Node
   arguments: ArgumentNode[]
 }
 

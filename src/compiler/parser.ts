@@ -312,7 +312,6 @@ export default class Parser {
       message: {
         name: "call",
         token: startToken,
-        context: node.receiver,
         arguments: arrayEntries
       }
     }
@@ -485,7 +484,6 @@ export default class Parser {
       message: {
         name: "call",
         token: token,
-        context: left,
         arguments: [{
           value: this.parseExpression(precedence)
         }]
@@ -531,10 +529,6 @@ export default class Parser {
         receiver: left,
         message: {
           name: "call",
-          // Not sure if this is the right way to do this but we need to be able
-          // to know if a block is being called directly or in the context of
-          // an object that owns it. This will dictate what `self` is.
-          context: left.receiver,
           arguments: []
         }
       }

@@ -687,7 +687,6 @@ function blockCallNode({receiver, message, args}) {
     receiver: messageSendNode({ receiver: receiver, message: message, args: [] }),
     message: {
       name: "call",
-      context: receiver,
       arguments: args
     }
   }

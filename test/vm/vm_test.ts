@@ -160,22 +160,27 @@ describe("VM", () => {
     }
   })
 
-  it("evaluates block parameters before dropping into the block's own context", () => {
+  it("blocks are closures", () => {
     let vm = new VM()
+    var result
 
-    // This is an interesting scoping case. What I'm testing here is that `objId` is pulled
-    // from the current execution space (implicit self) *before* the system creates a new
-    // execution space for calling into `add`.
-    // When this is done in the wrong order, we get an error that `objId` can't be found.
-    // This also passes as an intro test to ensuring that we have method closures when passing
-    // around method objects like this.
-    let result = vm.eval(`
-      Object.addSlot("pass", as: { |cb| cb })
-      objId = Object.objectId
-      Object.pass(objId())
-    `)
+    // Attached blocks link back to the owning object
+    // TODO: This is the only test here that still fails.
+    // This may need to re-visit the `context` setup such that when a method block is pulled
+    // from an object, before it's evaluated, we set `owner` or `context` on the method object itself
+    // and pull that on execution.
+    // Cause this needs to work like this. It's what people expect and it's how I want the test framework
+    // to function.
+    result = vm.eval("objectId = Object.objectId; objectId()")
+    assert.equal(result.data, Objekt.objectId, "Did not keep the owning object for `self`")
 
-    assert.equal(result.data, Objekt.objectId)
+    // Instances of other objects close properly around parent methods
+    result = vm.eval("obj = Object.new; obj.objectId()")
+    assert.notEqual(result.data, Objekt.objectId, "Did not scope `self` to the calling object")
+
+    // Higher order functions all work
+    result = vm.eval("add = { |x| { |y| x + y } }; add2 = add(2); add2(3)")
+    assert.equal(result.data, 5, "Higher order function didn't work")
   })
 
   it("evaluates direct message calls on objects", () => {

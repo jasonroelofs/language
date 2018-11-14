@@ -31,8 +31,9 @@ export default class Interpreter {
   }
 
   ready() {
-    // Initialize our own execution space and we are ready to go
-    this.newNestedSpace()
+    // Initialize our initial execution space and we are ready to go
+    this.currentSpace = NewObject(this.currentSpace)
+    AddSlot(this.currentSpace, toObject("self"), this.currentSpace)
   }
 
   eval(expressions: Array<Expression>): IObject {
@@ -47,8 +48,6 @@ export default class Interpreter {
 
   evalNode(node: Node): IObject {
     switch(node.type) {
-      // TODO: Update the parser to convert assignment to a MessageSend
-      // so we can drop this branch entirely.
       case NodeType.Assignment:
         let varName = node.name
         let varValue = this.evalNode(node.right)
@@ -61,6 +60,10 @@ export default class Interpreter {
 
         if(found == null) {
           throw new errors.SlotNotFoundError(node, slotName)
+        }
+
+        if(found.codeBlock) {
+          return this.newActivationRecord(found)
         }
 
         return found
@@ -93,6 +96,7 @@ export default class Interpreter {
     let block = NewObject(Objekt)
     AddSlot(block, toObject("body"), NewObject(Objekt, node.body))
     AddSlot(block, toObject("parameters"), NewObject(Objekt, node.parameters))
+    AddSlot(block, toObject("scope"), this.currentSpace)
 
     block.codeBlock = true
 
@@ -109,17 +113,17 @@ export default class Interpreter {
         throw new errors.NotABlockError(node)
       }
 
-      let context = null
+      // We're an activation record wrapping the actual code block to execute
+      // Unwrap this and pull out the intended receiver object.
+      let block = SendMessage(receiver, toObject("block"))
+      let context = SendMessage(receiver, toObject("receiver"))
+      let result
 
-      if(node.message.context) {
-        context = this.evalNode(node.message.context)
-      }
-
-      if(receiver.builtIn) {
-        // We're a built-in, call it via javascript
+      if(block.builtIn) {
+        // We're a built-in, call it directly
         let toFunc = {}
         let meta = {}
-        var argName: string
+        let argName: string
 
         for(var idx in args) {
           // TODO: For things like addSlot, if the first parameter doesn't have a name,
@@ -131,10 +135,12 @@ export default class Interpreter {
           meta[argName] = args[idx]
         }
 
-        return receiver.data.call(context, toFunc, meta)
+        result = block.data.call(context, toFunc, meta)
+      } else {
+        result = this.evalCodeBlock(context, block, args)
       }
 
-      return this.evalCodeBlock(context, receiver, args)
+      return result
     }
 
     // Not executing a code block, return the raw value of this node
@@ -144,12 +150,17 @@ export default class Interpreter {
       throw new errors.SlotNotFoundError(node, message)
     }
 
+    if(slotValue.codeBlock) {
+      return this.newActivationRecord(slotValue, receiver)
+    }
+
     return slotValue
   }
 
   evalCodeBlock(receiver: IObject, codeBlock: IObject, args: ArgumentNode[]): IObject {
     let codeBody = SendMessage(codeBlock, toObject("body")).data
     let parameters = SendMessage(codeBlock, toObject("parameters")).data
+    let scope = SendMessage(codeBlock, toObject("scope"))
 
     // Check for plain first argument and fix it up to match the name
     // of the first parameter
@@ -173,34 +184,50 @@ export default class Interpreter {
       }
     }
 
-    // Set up our new execution context (a nested Space) for this block call.
-    // This will set `self` to either the Space or the actual receiver of this
-    // message. Then we set the values of all arguments also as slot values before
-    // evaluating the block itself.
-    let blockSpace = this.newNestedSpace(receiver)
+    // Set up our own execution space for this block call to the scope
+    // that was stored when the block was defined.
+    // To make sure the stored scope it's itself corrupted by the block execution
+    // we wrap that scope in a new object for this execution.
+    let previousSpace = this.currentSpace
+    this.currentSpace = NewObject(scope)
+
+    // If this block is owned by an explicit object, we need to make sure
+    // that `self` is set appropriately to that object. Otherwise `self` should
+    // be the block's execution space (or should it be the block itself?)
+    if(receiver) {
+      AddSlot(this.currentSpace, toObject("self"), receiver)
+    }
 
     for(var argValue of evaldArgs) {
-      AddSlot.call(null, blockSpace, ...argValue)
+      AddSlot.call(null, this.currentSpace, ...argValue)
     }
 
     let result = this.eval(codeBody)
 
-    this.popSpace()
+    // "Pop" back to the previous scope to keep things clean
+    this.currentSpace = previousSpace
 
     return result
   }
 
-  newNestedSpace(selfObj = null): IObject {
-    let newSpace = NewObject(this.currentSpace)
-    let self = selfObj || newSpace
+  // We've accessed a block, around which we need to build an ActivationRecord that will
+  // keep track of the object receiving this message for proper setting of `self`.
+  // `receiver` can be Null, in which `self` will not be set (e.g. it's a standalone block).
+  newActivationRecord(codeBlock: IObject, receiver: IObject = null): IObject {
+    // Are we already an activation record?
+    if(codeBlock.slots.has("block")) {
+      return codeBlock
+    }
 
-    this.currentSpace = newSpace
-    AddSlot(newSpace, toObject("self"), self)
+    let activation = NewObject(Objekt)
+    activation.codeBlock = true
 
-    return newSpace
-  }
+    AddSlot(activation, toObject("block"), codeBlock)
 
-  popSpace() {
-    this.currentSpace = this.currentSpace.parents[0]
+    if(receiver) {
+      AddSlot(activation, toObject("receiver"), receiver)
+    }
+
+    return activation
   }
 }

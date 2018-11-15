@@ -185,12 +185,12 @@ describe("VM", () => {
     var result
 
     // Attached blocks link back to the owning object
-    result = vm.eval("objectId = Object.objectId; objectId()")
-    assert.equal(result.data, Objekt.objectId, "Did not keep the owning object for `self`")
+    result = vm.eval("str = Object.toString; str()")
+    assert.equal(result.data, "Object")
 
     // Instances of other objects close properly around parent methods
-    result = vm.eval("obj = Object.new; obj.objectId()")
-    assert.notEqual(result.data, Objekt.objectId, "Did not scope `self` to the calling object")
+    result = vm.eval("obj = Object.new; obj.toString()")
+    assert.equal(result.data, "obj")
 
     // Higher order functions all work
     result = vm.eval("add = { |x| { |y| x + y } }; add2 = add(2); add2(3)")

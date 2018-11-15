@@ -16,5 +16,9 @@ Object.addSlots(
       ifTrue: { false },
       ifFalse: { true },
     )
+  },
+
+  toString: {
+    BuiltIn.getObjectName(object: self)
   }
 )

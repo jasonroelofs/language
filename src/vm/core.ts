@@ -59,7 +59,7 @@ AddSlot(Objekt, toObject("objectId"), builtInFunc(function() {
 /**
  * Container object for all built-in methods we will be exposing to the user
  */
-let BuiltIn = NewObject(Objekt)
+let BuiltIn = NewObject(Objekt, null, {objectName: "BuiltIn"})
 
 AddSlot(BuiltIn, toObject("numberOp"), builtInFunc(function(args) {
   let left = args["left"]
@@ -90,6 +90,11 @@ AddSlot(BuiltIn, toObject("numberOp"), builtInFunc(function(args) {
     default:
       throw new Error(`Unknown operand on numbers '${op}'`)
   }
+}))
+
+AddSlot(BuiltIn, toObject("numberToString"), builtInFunc(function(args) {
+  let num = args["number"]
+  return toObject("" + num.data)
 }))
 
 AddSlot(BuiltIn, toObject("puts"), builtInFunc(function(args) {
@@ -129,7 +134,7 @@ AddSlot(BuiltIn, toObject("arrayLength"), builtInFunc(function(args) {
  * All main constants are defined here.
  * The World is alway accessible directly via the 'World' constant.
  */
-let World = NewObject(Objekt)
+let World = NewObject(Objekt, null, {objectName: "World"})
 AddSlot(World, toObject("World"), World)
 
 AddSlot(World, toObject("BuiltIn"), BuiltIn)

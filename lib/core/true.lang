@@ -2,5 +2,9 @@ True.addSlots(
   # The `do` message on True will always execute the `ifTrue` block.
   do: { |ifTrue: {}, ifFalse: {}|
     ifTrue.call()
+  },
+
+  toString: {
+    "true"
   }
 )

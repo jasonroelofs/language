@@ -37,10 +37,16 @@ interface IObject {
   toString(): string
 }
 
+interface ObjectAttrs {
+  // What's the user-visible name of this object?
+  // At run-time, set on assignment. In the core, set via this option to NewObject.
+  objectName?: string
+}
+
 /**
- * All objects should be serializable into a string format for easy
- * debugging. This is the base form of toString that any object will use
- * if the `toString` message isn't otherwise defined.
+ * Internal toString implementation of objects in Javascript land.
+ * In the language, objects will have a toString message defined to return
+ * the string representation of themselves.
  */
 let baseToString = function() {
   if(this.data != undefined && this.data != null) {
@@ -48,7 +54,13 @@ let baseToString = function() {
   } else if(this === Null) {
     return "null"
   } else {
-    return this
+    let objName = SendMessage(this, toObject("objectName"))
+    if(objName) {
+      return objName.data
+    } else {
+      // This blasts the whole structure which can be very verbose.
+      return this
+    }
   }
 }
 
@@ -58,8 +70,8 @@ let baseToString = function() {
  * to the Javascript value of a given object, e.g. a number (1) or a string ("").
  */
 var objectIdSeq = 0; // TODO Not multi-interpreter or thread safe at all :D
-function NewObject(parent: IObject, data = null): IObject {
-  return {
+function NewObject(parent: IObject, data = null, attrs: ObjectAttrs = null): IObject {
+  let obj = {
     parents: (parent ? [parent] : []),
     slots: new Map(),
     metaSlots: new Map(),
@@ -69,6 +81,12 @@ function NewObject(parent: IObject, data = null): IObject {
     builtIn: false,
     toString: baseToString,
   }
+
+  if(attrs && attrs.objectName) {
+    AddSlot(obj, toObject("objectName"), toObject(attrs.objectName))
+  }
+
+  return obj
 }
 
 /**
@@ -124,6 +142,13 @@ function AddSlot(receiver: IObject, message: IObject, value: IObject, comments: 
 }
 
 /**
+ * Remove a slot entirely from this object.
+ */
+function RemoveSlot(receiver: IObject, message: IObject) {
+  receiver.slots.delete(message.data)
+}
+
+/**
  * Return the internal Slot object that represents the value of a given slot.
  */
 function GetSlot(receiver: IObject, slotName: IObject): IObject {
@@ -135,23 +160,23 @@ function GetSlot(receiver: IObject, slotName: IObject): IObject {
  * The base of all objects. Should not ever be used directly.
  * Provides the slots for Object, through which everything else should build off of.
  */
-var ObjectBase = NewObject(null)      // 0
+var ObjectBase = NewObject(null)                                    // 0
 
 // Sorry, this can't be "Object" in javascript land. That name is already taken
 // and will cause weird problems if we try to reuse it.
 // This will be properly renamed back to "Object" when in the language.
-var Objekt = NewObject(ObjectBase)    // 1
+var Objekt = NewObject(ObjectBase, null, {objectName: "Object"})    // 1
 
-var Slot = NewObject(Objekt)          // 2
+var Slot = NewObject(Objekt, null, {objectName: "Slot"})            // 2
 
-var Null = NewObject(Objekt, null)    // 3
-var True = NewObject(Objekt, true)    // 4
-var False = NewObject(Objekt, false)  // 5
+var Null = NewObject(Objekt, null, {objectName: "Null"})            // 3
+var True = NewObject(Objekt, true, {objectName: "True"})            // 4
+var False = NewObject(Objekt, false, {objectName: "False"})         // 5
 
-var Number = NewObject(Objekt, 0)     // 6
-var String = NewObject(Objekt, "")    // 7
+var Number = NewObject(Objekt, 0, {objectName: "Number"})           // 6
+var String = NewObject(Objekt, "", {objectName: "String"})          // 7
 
-var Array = NewObject(Objekt, [])     // 8
+var Array = NewObject(Objekt, [], {objectName: "Array"})            // 8
 
 function toObject(nativeValue: any): IObject {
   if(nativeValue === true) {
@@ -197,6 +222,7 @@ export {
   NewObject,
   SendMessage,
   AddSlot,
+  RemoveSlot,
   GetSlot,
   toObject,
   Objekt,

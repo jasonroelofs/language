@@ -37,5 +37,9 @@ Number.addSlots(
 
   "!=": { |other|
     BuiltIn.numberOp(left: self, op: "!=", right: other)
+  },
+
+  toString: {
+    BuiltIn.numberToString(number: self)
   }
 )

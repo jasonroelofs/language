@@ -119,6 +119,26 @@ describe("VM", () => {
     }
   })
 
+  it("assigns object names based on the assignment variable", () => {
+    let tests = {
+      "World.objectName": "World",
+      "Object.objectName": "Object",
+      "a = 1; a.objectName": "a",
+      "dog = Object.new(); dog.objectName": "dog",
+      // Make sure that multiple assignment to the same static value
+      // gets its own name (e.g. we aren't overwriting Number.objectName).
+      "a = 1; b = 1; a.objectName": "a"
+    }
+
+    let vm = new VM()
+    for(var test in tests) {
+      let result = vm.eval(test)
+      let expected = tests[test]
+
+      assert.equal(result.data, expected)
+    }
+  })
+
   it("evaluates blocks", () => {
     let tests = {
       "a = { 1 }; a.call()": toObject(1),
@@ -165,12 +185,6 @@ describe("VM", () => {
     var result
 
     // Attached blocks link back to the owning object
-    // TODO: This is the only test here that still fails.
-    // This may need to re-visit the `context` setup such that when a method block is pulled
-    // from an object, before it's evaluated, we set `owner` or `context` on the method object itself
-    // and pull that on execution.
-    // Cause this needs to work like this. It's what people expect and it's how I want the test framework
-    // to function.
     result = vm.eval("objectId = Object.objectId; objectId()")
     assert.equal(result.data, Objekt.objectId, "Did not keep the owning object for `self`")
 
@@ -229,6 +243,7 @@ describe("VM", () => {
 
   it("loads the core and standard libraries into the World", () => {
     let vm = new VM()
+
     // Have to use a name that's defined only in the core/stdlib for this to pass
     let result = vm.eval(`World.getSlot("IO") == null`)
 

@@ -57,9 +57,10 @@ export default class Interpreter {
   evalNode(node: Node): IObject {
     switch(node.type) {
       case NodeType.Assignment:
-        let varName = node.name
+        let varName = toObject(node.name)
         let varValue = this.evalNode(node.right)
-        AddSlot(this.currentSpace, toObject(varName), varValue, toObject(node.comment))
+        AddSlot(varValue, toObject("objectName"), varName)
+        AddSlot(this.currentSpace, varName, varValue, toObject(node.comment))
         return varValue
 
       case NodeType.Identifier:

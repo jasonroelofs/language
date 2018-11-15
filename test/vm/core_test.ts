@@ -21,6 +21,14 @@ describe("Object", () => {
   })
 })
 
+describe("True / False / Null", () => {
+  it("supports toString on these built-ins", () => {
+    assertExpression("true.toString()", toObject("true"))
+    assertExpression("false.toString()", toObject("false"))
+    assertExpression("null.toString()", toObject("null"))
+  })
+})
+
 describe("Number", () => {
   it("exposes basic arithmetic operations", () => {
     let tests = {
@@ -39,6 +47,12 @@ describe("Number", () => {
     assert.equal(toObject(2).toString(), "2")
     assert.equal(toObject(5.5).toString(), "5.5")
     assert.equal(toObject(-3).toString(), "-3")
+  })
+
+  it("allows toString usage in the language", () => {
+    assertExpression("1.toString()", toObject("1"))
+    assertExpression("1.5.toString()", toObject("1.5"))
+    assertExpression("-3.toString()", toObject("-3"))
   })
 })
 

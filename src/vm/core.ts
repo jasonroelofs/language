@@ -9,7 +9,11 @@ import {
 // Our core set of built-ins
 //
 
-function builtInFunc(func): IObject {
+type BuiltInFunction = (...args: any[]) => IObject
+
+// Define a Javascript function to properly expose it
+// to the language runtime as an executable block.
+function builtInFunc(func: BuiltInFunction): IObject {
   let value = NewObject(Objekt, func)
   value.codeBlock = true
   value.builtIn = true
@@ -21,15 +25,17 @@ function builtInFunc(func): IObject {
  * Create and return a new object with the current object as the first
  * parent, and all provided slots added to the new object.
  */
-AddSlot(Objekt, toObject("new"), builtInFunc(function(args, meta = {}) {
+AddSlot(Objekt, toObject("new"), builtInFunc(function(args, meta = {}): IObject {
   let obj = NewObject(this)
   addSlots(obj, args, meta)
 
   return obj
 }))
 
-AddSlot(Objekt, toObject("addSlots"), builtInFunc(function(args, meta = {}) {
+AddSlot(Objekt, toObject("addSlots"), builtInFunc(function(args, meta = {}): IObject {
   addSlots(this, args, meta)
+
+  return Null
 }))
 
 function addSlots(obj: IObject, args, meta = {}) {
@@ -41,18 +47,20 @@ function addSlots(obj: IObject, args, meta = {}) {
   }
 }
 
-AddSlot(Objekt, toObject("addSlot"), builtInFunc(function(args) {
+AddSlot(Objekt, toObject("addSlot"), builtInFunc(function(args): IObject {
   let slotName = args["0"]
   let slotValue = args["as"]
   AddSlot(this, slotName, slotValue)
+
+  return Null
 }))
 
-AddSlot(Objekt, toObject("getSlot"), builtInFunc(function(args) {
+AddSlot(Objekt, toObject("getSlot"), builtInFunc(function(args): IObject {
   let slotName = args["0"]
   return GetSlot(this, slotName)
 }))
 
-AddSlot(Objekt, toObject("objectId"), builtInFunc(function() {
+AddSlot(Objekt, toObject("objectId"), builtInFunc(function(): IObject {
   return toObject(this.objectId)
 }))
 
@@ -61,7 +69,7 @@ AddSlot(Objekt, toObject("objectId"), builtInFunc(function() {
  */
 let BuiltIn = NewObject(Objekt, null, {objectName: "BuiltIn"})
 
-AddSlot(BuiltIn, toObject("numberOp"), builtInFunc(function(args) {
+AddSlot(BuiltIn, toObject("numberOp"), builtInFunc(function(args): IObject {
   let left = args["left"]
   let op = args["op"]
   let right = args["right"]
@@ -92,13 +100,14 @@ AddSlot(BuiltIn, toObject("numberOp"), builtInFunc(function(args) {
   }
 }))
 
-AddSlot(BuiltIn, toObject("numberToString"), builtInFunc(function(args) {
+AddSlot(BuiltIn, toObject("numberToString"), builtInFunc(function(args): IObject {
   let num = args["number"]
   return toObject("" + num.data)
 }))
 
-AddSlot(BuiltIn, toObject("puts"), builtInFunc(function(args) {
+AddSlot(BuiltIn, toObject("puts"), builtInFunc(function(args): IObject {
   console.log(args["message"].toString())
+  return Null
 }))
 
 /**
@@ -115,7 +124,7 @@ AddSlot(BuiltIn, toObject("puts"), builtInFunc(function(args) {
  *   [1, 2, ...]
  *
  */
-AddSlot(Array, toObject("new"), builtInFunc(function(args) {
+AddSlot(Array, toObject("new"), builtInFunc(function(args): IObject {
   let array = []
 
   for(var slotName in args) {
@@ -125,7 +134,7 @@ AddSlot(Array, toObject("new"), builtInFunc(function(args) {
   return NewObject(Array, array)
 }))
 
-AddSlot(BuiltIn, toObject("arrayLength"), builtInFunc(function(args) {
+AddSlot(BuiltIn, toObject("arrayLength"), builtInFunc(function(args): IObject {
   return toObject(args["array"].data.length)
 }))
 

@@ -1,0 +1,16 @@
+# A Block is a self-contained section of code designated by
+# curly brackets `{ ... }`. They can contain parameters which are
+# defined with pipes: `{ |a, b| ... }`.
+Block = Object.new(
+  # The body of a Block is the parsed AST of the block's code
+  body: null,
+
+  # A Block's parameters are always defined by the parameter's
+  # name as well as an optional default value.
+  # This is always an Array
+  parameters: [],
+
+  # The scope is the Space that was active when this Block was
+  # created. This is used to make sure that Blocks are closures.
+  scope: null
+)

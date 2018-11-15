@@ -1,0 +1,13 @@
+# An ActivationRecord is created whenever a block is requested, either
+# as a direct lookup or via message send. This record keeps track of the
+# receiver of the message to ensure that whenever this record's block is
+# executed, we have the right value for `self`.
+ActivationRecord = Object.new(
+
+  # The underlying Block itself
+  block: null,
+
+  # The expected value of `self` for this execution.
+  # This can be null in the case of stand-alone, local blocks.
+  receiver: null,
+)

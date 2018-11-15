@@ -26,6 +26,9 @@ export default class Interpreter {
 
   currentSpace: IObject
 
+  Block: IObject
+  ActivationRecord: IObject
+
   constructor(baseSpace: IObject) {
     this.currentSpace = baseSpace
   }
@@ -34,6 +37,11 @@ export default class Interpreter {
     // Initialize our initial execution space and we are ready to go
     this.currentSpace = NewObject(this.currentSpace)
     AddSlot(this.currentSpace, toObject("self"), this.currentSpace)
+
+    // Grab a hold of some objects that we make use of that are defined
+    // in the core lib
+    this.Block = SendMessage(this.currentSpace, toObject("Block"))
+    this.ActivationRecord = SendMessage(this.currentSpace, toObject("ActivationRecord"))
   }
 
   eval(expressions: Array<Expression>): IObject {
@@ -93,7 +101,7 @@ export default class Interpreter {
   }
 
   evalBlockLiteral(node: BlockNode): IObject {
-    let block = NewObject(Objekt)
+    let block = NewObject(this.Block)
     AddSlot(block, toObject("body"), NewObject(Objekt, node.body))
     AddSlot(block, toObject("parameters"), NewObject(Objekt, node.parameters))
     AddSlot(block, toObject("scope"), this.currentSpace)
@@ -219,7 +227,7 @@ export default class Interpreter {
       return codeBlock
     }
 
-    let activation = NewObject(Objekt)
+    let activation = NewObject(this.ActivationRecord)
     activation.codeBlock = true
 
     AddSlot(activation, toObject("block"), codeBlock)

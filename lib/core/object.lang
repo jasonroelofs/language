@@ -2,7 +2,7 @@ Object.addSlots(
   # All objects except False and Null are what we call "truthy".
   # When the `do` message is sent, objects will always execute the `ifTrue` block.
   do: { |ifTrue: {}, ifFalse: {}|
-    ifTrue.call()
+    ifTrue()
   },
 
   # Object comparison. Objects are equal if their objectIds are equal.

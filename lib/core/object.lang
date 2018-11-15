@@ -11,14 +11,13 @@ Object.addSlots(
   },
 
   "!=": { |other|
-    # TODO: support negation via `!`
-    (self.objectId() == other.objectId()).do(
-      ifTrue: { false },
-      ifFalse: { true },
-    )
+    # TODO: Re-implement in terms of == above.
+    # Need negation with `!`
+    self.objectId() != other.objectId()
   },
 
+  # Return a string that represents this object
   toString: {
-    BuiltIn.getObjectName(object: self)
-  }
+    self.objectName
+  },
 )

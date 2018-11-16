@@ -16,6 +16,8 @@
     "postbuild": "cp -r lib/ dist/lib",
     "pretest": "npm run build",
     "test": "mocha dist/**/*_test.js",
+    "predebug": "npm run build",
+    "debug": "mocha --inspect-brk",
     "precli": "npm run build",
     "cli": "node dist/bin/lang-cli.js",
     "prespec": "npm run build",

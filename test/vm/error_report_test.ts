@@ -82,6 +82,23 @@ describe("ErrorReport", () => {
     assert.equal(output, expected)
   })
 
+  it("tries to find the right location if similar text exists on the same line", () => {
+    let text = "a = 1; a.error"
+    let error = new SyntaxError("a")
+    error.position = 7
+
+    let report = new ErrorReport(error, text, "my/test/file.lang")
+    let output = report.buildReport()
+    let expected = stripIndent`
+      [Syntax Error] in my/test/file.lang:
+
+        1| a = 1; a.error
+                  ^
+    `
+
+    assert.equal(output, expected)
+  })
+
   it("lets subclasses provide different error message names", () => {
     class TestError extends SyntaxError {
       errorType(): string {

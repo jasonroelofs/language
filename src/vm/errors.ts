@@ -1,5 +1,5 @@
 import { Token } from "@compiler/tokens"
-import { Node } from "@compiler/ast"
+import { Node, MessageNode } from "@compiler/ast"
 import { IObject } from "@vm/object"
 
 /**
@@ -43,7 +43,7 @@ class RuntimeError extends Error {
 class SlotNotFoundError extends RuntimeError {
   message: string
 
-  constructor(node: Node, message: IObject) {
+  constructor(node: Node | MessageNode, message: IObject) {
     super(node.token)
     this.message = message.data
   }
@@ -55,7 +55,7 @@ class SlotNotFoundError extends RuntimeError {
 
 class NotABlockError extends RuntimeError {
 
-  constructor(node: Node) {
+  constructor(node: Node | MessageNode) {
     super(node.token)
   }
 

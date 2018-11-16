@@ -185,8 +185,9 @@ class ErrorReport {
     for(var line of importantLines) {
       let preLine = this.source.substring(0, line.position)
       let chunkLines = line.chunk.trimRight().split("\n")
+      let preLineSplit = preLine.split("\n")
 
-      line.startLine = preLine.split("\n").length - 1
+      line.startLine = preLineSplit.length - 1
       line.endLine = line.startLine + (chunkLines.length - 1)
 
       if(line.chunk == "" || line.chunk == "\n") {
@@ -196,7 +197,18 @@ class ErrorReport {
         line.markerLength = 1
       } else {
         let chunkLastLine = chunkLines[chunkLines.length - 1]
-        line.markerStart = sourceLines[line.endLine].indexOf(chunkLastLine)
+        let lineStartPos = 0
+
+        // Find the raw source position of the beginning of the line this
+        // chunk is on so we can then find out the real position of the
+        // error string, ensuring the right location for our error marker.
+        preLineSplit.slice(0, -1).forEach((line) => {
+          // Add one for the new-line marker, as that counts in the raw position
+          // as `split` does not include the character we split on
+          lineStartPos += line.length + 1
+        })
+
+        line.markerStart = line.position - lineStartPos
         line.markerLength = chunkLastLine.length
       }
     }

@@ -255,16 +255,23 @@ describe("VM", () => {
       let vm = new VM()
       var error
 
-      try {
-        vm.eval(`World.unknownSlot`)
-      } catch(e) {
-        error = e
+      let tests = {
+        "World.unknownSlot": ["unknownSlot", 6],
+        "missing": ["missing", 0]
       }
 
-      assertErrorType(error, errors.SlotNotFoundError)
+      for(var test in tests) {
+        try {
+          vm.eval(test)
+        } catch(e) {
+          error = e
+        }
 
-      assert.equal(error.chunk, ".")
-      assert.equal(error.position, 5)
+        assertErrorType(error, errors.SlotNotFoundError)
+
+        assert.equal(error.chunk, tests[test][0], `Wrong chunk, expected ${tests[test][0]} got ${error.chunk}`)
+        assert.equal(error.position, tests[test][1], `Wrong position, expected ${tests[test][1]} got ${error.position}`)
+      }
     })
 
     it("errors on invalid message block invocation", () => {
@@ -279,8 +286,8 @@ describe("VM", () => {
 
       assertErrorType(error, errors.NotABlockError)
 
-      assert.equal(error.chunk, "(")
-      assert.equal(error.position, 25)
+      assert.equal(error.chunk, "m")
+      assert.equal(error.position, 24)
     })
 
     it("errors on invalid block invocation", () => {
@@ -295,8 +302,8 @@ describe("VM", () => {
 
       assertErrorType(error, errors.NotABlockError)
 
-      assert.equal(error.chunk, "(")
-      assert.equal(error.position, 13)
+      assert.equal(error.chunk, "a")
+      assert.equal(error.position, 7)
     })
 
     function assertErrorType(result: errors.RuntimeError, errorClass) {

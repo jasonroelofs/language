@@ -119,7 +119,7 @@ export default class Interpreter {
 
     if(node.message.name == "call") {
       if(!receiver.codeBlock) {
-        throw new errors.NotABlockError(node)
+        throw new errors.NotABlockError(node.receiver.message || node.receiver)
       }
 
       // We're an activation record wrapping the actual code block to execute
@@ -156,7 +156,7 @@ export default class Interpreter {
     let slotValue = SendMessage(receiver, message)
 
     if(slotValue == null) {
-      throw new errors.SlotNotFoundError(node, message)
+      throw new errors.SlotNotFoundError(node.message, message)
     }
 
     if(slotValue.codeBlock) {

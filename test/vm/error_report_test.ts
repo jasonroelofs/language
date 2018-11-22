@@ -8,10 +8,9 @@ import { ErrorReport } from "@vm/error_report"
 describe("ErrorReport", () => {
   it("builds a nice, readable error message", () => {
     let text = "Error starts here"
-    let error = new SyntaxError(text)
-    error.position = 0
+    let error = new SyntaxError(stringToken(text))
 
-    let report = new ErrorReport(error, text)
+    let report = new ErrorReport(error, fileMap(null, text))
     let output = report.buildReport()
     let expected = stripIndent`
       [Syntax Error]:
@@ -30,10 +29,11 @@ describe("ErrorReport", () => {
       c + d
       e f +
     `
-    let error = new SyntaxError("e f +")
-    error.position = text.indexOf(error.chunk)
+    let chunk = "e f +"
+    let pos = text.indexOf(chunk)
+    let error = new SyntaxError(stringToken(chunk, pos))
 
-    let report = new ErrorReport(error, text)
+    let report = new ErrorReport(error, fileMap(null, text))
     let output = report.buildReport()
     let expected = stripIndent`
       [Syntax Error]:
@@ -50,10 +50,11 @@ describe("ErrorReport", () => {
       a + b; b + c
       c + d; e f +
     `
-    let error = new SyntaxError("e f +")
-    error.position = text.indexOf(error.chunk)
+    let chunk = "e f +"
+    let pos = text.indexOf(chunk)
+    let error = new SyntaxError(stringToken(chunk, pos))
 
-    let report = new ErrorReport(error, text)
+    let report = new ErrorReport(error, fileMap(null, text))
     let output = report.buildReport()
     let expected = stripIndent`
       [Syntax Error]:
@@ -67,10 +68,9 @@ describe("ErrorReport", () => {
 
   it("can include current file name information", () => {
     let text = "Error starts here"
-    let error = new SyntaxError(text)
-    error.position = 0
+    let error = new SyntaxError(stringToken(text, 0, "my/test/file.lang"))
 
-    let report = new ErrorReport(error, text, "my/test/file.lang")
+    let report = new ErrorReport(error, fileMap("my/test/file.lang", text))
     let output = report.buildReport()
     let expected = stripIndent`
       [Syntax Error] in my/test/file.lang:
@@ -84,10 +84,9 @@ describe("ErrorReport", () => {
 
   it("tries to find the right location if similar text exists on the same line", () => {
     let text = "a = 1; a.error"
-    let error = new SyntaxError("a")
-    error.position = 7
+    let error = new SyntaxError(stringToken("a", 7, "my/test/file.lang"))
 
-    let report = new ErrorReport(error, text, "my/test/file.lang")
+    let report = new ErrorReport(error, fileMap("my/test/file.lang", text))
     let output = report.buildReport()
     let expected = stripIndent`
       [Syntax Error] in my/test/file.lang:
@@ -107,10 +106,9 @@ describe("ErrorReport", () => {
     }
 
     let text = "Error starts here"
-    let error = new TestError(text)
-    error.position = 0
+    let error = new TestError(stringToken(text))
 
-    let report = new ErrorReport(error, text)
+    let report = new ErrorReport(error, fileMap(null, text))
     let output = report.buildReport()
     let expected = stripIndent`
       [Syntax Error] My Test Error:
@@ -139,10 +137,9 @@ describe("ErrorReport", () => {
     }
 
     let text = "Error starts here"
-    let error = new TestError(text)
-    error.position = 0
+    let error = new TestError(stringToken(text))
 
-    let report = new ErrorReport(error, text)
+    let report = new ErrorReport(error, fileMap(null, text))
     let output = report.buildReport()
     let expected = stripIndent`
       [Syntax Error] Can't Understand This:
@@ -167,10 +164,9 @@ describe("ErrorReport", () => {
     }
 
     let text = "Error starts here"
-    let error = new TestError(text)
-    error.position = 0
+    let error = new TestError(stringToken(text))
 
-    let report = new ErrorReport(error, text)
+    let report = new ErrorReport(error, fileMap(null, text))
     let output = report.buildReport()
 
     let expected = stripIndent`
@@ -192,10 +188,9 @@ describe("ErrorReport", () => {
           and multi-line
     ` + "\n" // Emulate trailing newlines, we want to throw these away
 
-    let error = new SyntaxError(input)
-    error.position = 0
+    let error = new SyntaxError(stringToken(input))
 
-    let report = new ErrorReport(error, input)
+    let report = new ErrorReport(error, fileMap(null, input))
     let output = report.buildReport()
     let expected = stripIndent`
       [Syntax Error]:
@@ -221,10 +216,9 @@ describe("ErrorReport", () => {
     }
 
     let text = "Error at the end"
-    let error = new TestError(text)
-    error.position = 0
+    let error = new TestError(stringToken(text))
 
-    let report = new ErrorReport(error, text)
+    let report = new ErrorReport(error, fileMap(null, text))
     let output = report.buildReport()
     let expected = stripIndent`
       [Syntax Error]:
@@ -241,7 +235,7 @@ describe("ErrorReport", () => {
     endToken: Token
 
     constructor(startToken, endToken) {
-      super(endToken.value)
+      super(endToken)
       this.position = endToken.pos
 
       this.startToken = startToken
@@ -266,14 +260,14 @@ describe("ErrorReport", () => {
     `
 
     let error = new MultiTokenError(
-      { type: TokenType.OpenBlock, value: "{", pos: input.indexOf("{") },
-      { type: TokenType.EOS, value: "", pos: input.length },
+      { type: TokenType.OpenBlock, value: "{", pos: input.indexOf("{"), file: "[test]" },
+      { type: TokenType.EOS, value: "", pos: input.length, file: "[test]" },
     )
 
-    let report = new ErrorReport(error, input)
+    let report = new ErrorReport(error, fileMap("[test]", input))
     let output = report.buildReport()
     let expected = stripIndent`
-      [Syntax Error]:
+      [Syntax Error] in [test]:
 
         1| block = { |a, b|
                    ^ Block opened here
@@ -293,11 +287,11 @@ describe("ErrorReport", () => {
     input = input.trimRight()
 
     let error = new MultiTokenError(
-      { type: TokenType.OpenBlock, value: "{", pos: input.indexOf("{") },
-      { type: TokenType.EOS, value: "", pos: input.length },
+      { type: TokenType.OpenBlock, value: "{", pos: input.indexOf("{"), file: "[test]" },
+      { type: TokenType.EOS, value: "", pos: input.length, file: "[test]" },
     )
 
-    let report = new ErrorReport(error, input)
+    let report = new ErrorReport(error, fileMap("[test]", input))
     let output = report.buildReport()
 
     // We also test here that numbers are right-aligned with each other
@@ -307,7 +301,7 @@ describe("ErrorReport", () => {
     // span this kind of distance and one space doesn't make them look bad.
     // When all numbers are within 1 lenght of each other it all works great.
     let expected = stripIndent`
-      [Syntax Error]:
+      [Syntax Error] in [test]:
 
          1| block = { |a, b|
                     ^ Block opened here
@@ -322,4 +316,12 @@ describe("ErrorReport", () => {
 
     assert.equal(output, expected)
   })
+
+  function stringToken(chunk: string, pos: number = 0, file: string = null): Token {
+    return { type: TokenType.String, value: chunk, pos: pos, file: file }
+  }
+
+  function fileMap(filePath, content) {
+    return new Map<string, string>([[filePath, content]])
+  }
 })

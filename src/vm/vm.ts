@@ -17,7 +17,14 @@ export default class VM {
 
   interpreter: Interpreter
 
+  // Keep track of the files we load and their sources
+  // Keyed on file path which is always the full path
+  // to the file in question.
+  loadedFiles: Map<string, string>
+
   constructor() {
+    this.loadedFiles = new Map<string, string>()
+
     this.interpreter = new Interpreter(World)
 
     this.loadCoreLib()
@@ -40,11 +47,20 @@ export default class VM {
   }
 
   eval(program: string, filePath: string = null): IObject {
-    let l = new Lexer(program)
+
+    // This can happen through integrations or a REPL,
+    // make sure there's something we can link back to for raw source input.
+    if(!filePath) {
+      filePath = "[script]"
+    }
+
+    this.loadedFiles.set(filePath, program)
+
+    let l = new Lexer(program, {filePath: filePath})
     var {tokens, errors} = l.tokenize()
 
     if(errors.length > 0) {
-      this.reportError(program, filePath, errors[0])
+      this.reportError(errors[0])
       return
     }
 
@@ -52,28 +68,20 @@ export default class VM {
     var {expressions, errors} = p.parse()
 
     if(errors.length > 0) {
-      this.reportError(program, filePath, errors[0])
+      this.reportError(errors[0])
       return
     }
 
     try {
       return this.interpreter.eval(expressions)
     } catch(error) {
-      this.reportError(program, filePath, error)
+      this.reportError(error)
       throw error
     }
   }
 
-  reportError(program: string, filePath: string, error: SystemError) {
-    let cleanFilePath = ""
-
-    if(filePath) {
-      cleanFilePath = path.relative(process.cwd(), filePath)
-    } else {
-      cleanFilePath = "[script]"
-    }
-
-    let report = new ErrorReport(error, program, cleanFilePath)
+  reportError(error: SystemError) {
+    let report = new ErrorReport(error, this.loadedFiles)
     console.log(report.buildReport())
   }
 }

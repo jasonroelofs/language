@@ -5,6 +5,9 @@ import { codeBlock } from "common-tags"
 interface ReportOptions {
 
   // Put the error marker (^) at the end of the last line of the output.
+  // This is useful when trying to show the user that there should be more
+  // code after what's been given. Otherwise will put the marker underneath
+  // the most relevant chunk of code.
   markEndOfLine: boolean
 
   // Some errors are easier to track down if we take note of the
@@ -26,6 +29,10 @@ interface SystemError {
   // The raw position in the input
   position: number
 
+  // The full file path of the source that triggered
+  // this error.
+  file: string
+
   baseType(): string
   errorType(): string
   description(): string
@@ -40,21 +47,28 @@ class ErrorReport {
   // The error itself
   error: SystemError
 
+  // A mapping of filePath -> source that includes the list
+  // of all files loaded into the system.
+  // Used to pull apart the right source for the Token we're reporting on
+  loadedFiles: Map<string, string>
+
   // The full input source that fired this error.
   // Used to figure out contextual information, as
   // the error itself will only contain the actual chunk of
   // code that triggered the error.
   source: string
 
-  // Optional file path to help users find where the error
+  // The full file path of the source that triggered
+  // this error.
   file: string
 
   reportOptions: ReportOptions
 
-  constructor(error: SystemError, source: string, file: string = null) {
+  constructor(error: SystemError, loadedFiles: Map<string, string>) {
     this.error = error
-    this.source = source
-    this.file = file
+    this.loadedFiles = loadedFiles
+    this.file = this.error.file
+    this.source = this.loadedFiles.get(this.file)
 
     if(typeof error.reportOptions === "function") {
       this.reportOptions = error.reportOptions() as ReportOptions

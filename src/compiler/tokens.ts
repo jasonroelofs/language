@@ -45,6 +45,10 @@ export interface Token {
   // 0-based character position of this token's beginning
   // in the input string
   pos?: number
+
+  // The file path to the source file from which we
+  // created this token in the Lexer
+  file?: string
 }
 
 export function tokenLength(token: Token) {

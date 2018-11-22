@@ -462,7 +462,7 @@ describe("Lexer", () => {
 })
 
 function assertTokens(input, expected) {
-  let lexer = new Lexer(input)
+  let lexer = new Lexer(input, {filePath: "[test file]"})
   let {tokens, errors} = lexer.tokenize()
 
   //console.log("Expected: %o", expected)
@@ -474,5 +474,6 @@ function assertTokens(input, expected) {
   for(var i = 0; i < tokens.length; i++) {
     assert.equal(tokens[i].type, expected[i].type, `Wrong type on index ${i}`)
     assert.equal(tokens[i].value, expected[i].value, `Wrong value on index ${i}`)
+    assert.equal(tokens[i].file, "[test file]", `Did not store the source file path on ${i}`)
   }
 }

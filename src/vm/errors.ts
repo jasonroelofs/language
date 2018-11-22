@@ -9,15 +9,21 @@ import { IObject } from "@vm/object"
  */
 class RuntimeError extends Error {
 
+  token: Token
+
   chunk: string
 
   position: number
 
+  file: string
+
   constructor(token: Token) {
     super()
 
+    this.token = token
     this.chunk = token.value
     this.position = token.pos
+    this.file = token.file
   }
 
   baseType(): string {

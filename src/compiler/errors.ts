@@ -8,13 +8,20 @@ import { Token } from "@compiler/tokens"
 
 class SyntaxError extends Error {
 
+  token: Token
+
   chunk: string
 
   position: number
 
-  constructor(chunk: string) {
+  file: string
+
+  constructor(token: Token) {
     super()
-    this.chunk = chunk
+    this.token = token
+    this.chunk = token.value
+    this.position = token.pos || 0
+    this.file = token.file
   }
 
   baseType(): string {
@@ -74,15 +81,7 @@ class UnknownTokenError extends SyntaxError {
  * Parsing errors
  */
 
-class ParseError extends SyntaxError {
-  token: Token
-
-  constructor(token: Token) {
-    super(token.value)
-    this.token = token
-    this.position = token.pos || 0
-  }
-}
+class ParseError extends SyntaxError {}
 
 class InvalidStartOfExpressionError extends ParseError {
   errorType(): string {

@@ -6,17 +6,24 @@ interface LexerResults {
   errors: Array<SyntaxError>
 }
 
+interface LexerOptions {
+  // Path to the file that gave us the input we're parsing.
+  filePath?: string
+}
+
 export default class Lexer {
 
   input: string
   currentPos: number
+  filePath: string
 
   tokens: Array<Token>
   errors: Array<SyntaxError>
 
-  constructor(input: string) {
+  constructor(input: string, opts: LexerOptions = {}) {
     this.input = input
     this.currentPos = 0
+    this.filePath = opts.filePath
 
     this.tokens = []
     this.errors = []
@@ -50,6 +57,7 @@ export default class Lexer {
       }
 
       token.pos = this.currentPos
+      token.file = this.filePath
 
       this.consume(token)
       this.tokens.push(token)
@@ -60,6 +68,7 @@ export default class Lexer {
       let eol = this.endOfStatementToken(this.input.substring(this.currentPos), token)
       if(eol) {
         eol.pos = this.currentPos
+        eol.file = this.filePath
         this.tokens.push(eol)
         this.currentPos += tokenLength(eol)
       }
@@ -71,7 +80,7 @@ export default class Lexer {
     // Add one final End of Statement to the list as we're at the end of
     // the final statement of the program
     if(this.tokens.length > 0 && this.tokens[this.tokens.length - 1].type != TokenType.EOS) {
-      this.tokens.push({ type: TokenType.EOS, value: "", pos: this.currentPos })
+      this.tokens.push({ type: TokenType.EOS, value: "", pos: this.currentPos, file: this.filePath })
     }
 
     return {
@@ -142,7 +151,7 @@ export default class Lexer {
         }
       }
 
-      throw new UnterminatedStringError(chunk)
+      throw new UnterminatedStringError({ type: TokenType.String, value: chunk })
     } else {
       return null
     }
@@ -202,7 +211,7 @@ export default class Lexer {
   // match the previous rules. The error reporting will provide
   // context.
   unknownToken(chunk: string): Token {
-    throw new UnknownTokenError(chunk[0])
+    throw new UnknownTokenError({ type: TokenType.String, value: chunk[0] })
   }
 
   consume(token: Token) {

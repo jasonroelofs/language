@@ -403,12 +403,14 @@ describe("Lexer", () => {
       { type: TokenType.Number, value: "3" },
       { type: TokenType.CloseSquare, value: "]" },
 
+      { type: TokenType.EOS, value: "\n" },
+
       { type: TokenType.Identifier, value: "list" },
       { type: TokenType.OpenSquare, value: "[" },
       { type: TokenType.Number, value: "1" },
       { type: TokenType.CloseSquare, value: "]" },
 
-      { type: TokenType.EOS, value: "" },
+      { type: TokenType.EOS, value: "\n" },
     ]
 
     assertTokens(input, expected)

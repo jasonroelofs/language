@@ -106,6 +106,7 @@ export default class Lexer {
       switch(lastToken.type) {
         case TokenType.CloseParen:
         case TokenType.CloseBlock:
+        case TokenType.CloseSquare:
         case TokenType.Number:
         case TokenType.String:
         case TokenType.Identifier:

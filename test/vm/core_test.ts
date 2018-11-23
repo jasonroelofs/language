@@ -60,6 +60,10 @@ describe("String", () => {
   it("supports toString to get the Javascript value", () => {
     assert.equal(toObject("Hello").toString(), "Hello")
   })
+
+  it("supports string concatenation", () => {
+    assertExpression(`"Hello " + "World"`, toObject("Hello World"))
+  })
 })
 
 describe("Array", () => {

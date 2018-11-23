@@ -105,6 +105,19 @@ AddSlot(BuiltIn, toObject("numberToString"), builtInFunc(function(args): IObject
   return toObject("" + num.data)
 }))
 
+AddSlot(BuiltIn, toObject("stringOp"), builtInFunc(function(args): IObject {
+  let left = args["left"]
+  let op = args["op"]
+  let right = args["right"]
+
+  switch(op.data) {
+    case "+":
+      return toObject(left.data + right.data)
+    default:
+      throw new Error(`Unknown operand on strings '${op}'`)
+  }
+}))
+
 AddSlot(BuiltIn, toObject("puts"), builtInFunc(function(args): IObject {
   console.log(args["message"].toString())
   return Null

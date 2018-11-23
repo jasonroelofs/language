@@ -1,4 +1,11 @@
 String.addSlots(
+  # Concatenate multiple strings together into one string.
+  # Calls `toString` on the concatenating object to ensure all values
+  # are strings and can be combined.
+  "+": { |other|
+    BuiltIn.stringOp(left: self, op: "+", right: other.toString())
+  },
+
   toString: {
     self
   }

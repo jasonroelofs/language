@@ -86,6 +86,17 @@ describe("Array", () => {
     assert.equal(after.data[1].data, 2)
     assert.equal(after.data[2].data, 3)
   })
+
+  it("allows pushing and popping values", () => {
+    let tests = {
+      "a = []; a.push(1); a.length()": toObject(1),
+      "[1].pop()": toObject(1)
+    }
+
+    for(var test in tests) {
+      assertExpression(test, tests[test])
+    }
+  })
 })
 
 function assertExpression(input, expected) {

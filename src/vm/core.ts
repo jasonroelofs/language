@@ -108,6 +108,10 @@ AddSlot(BuiltIn, toObject("numberToString"), builtInFunc(function(args): IObject
   return toObject("" + num.data)
 }))
 
+/**
+ * String BuiltIns
+ */
+
 AddSlot(BuiltIn, toObject("stringOp"), builtInFunc(function(args): IObject {
   let left = args["left"]
   let op = args["op"]
@@ -121,10 +125,18 @@ AddSlot(BuiltIn, toObject("stringOp"), builtInFunc(function(args): IObject {
   }
 }))
 
+/**
+ * Other BuiltIns
+ */
+
 AddSlot(BuiltIn, toObject("puts"), builtInFunc(function(args): IObject {
   console.log(args["message"].toString())
   return Null
 }))
+
+/**
+ * Array BuiltIns
+ */
 
 /**
  * Array.new(...)
@@ -153,6 +165,21 @@ AddSlot(Array, toObject("new"), builtInFunc(function(args): IObject {
 AddSlot(BuiltIn, toObject("arrayLength"), builtInFunc(function(args): IObject {
   return toObject(args["array"].data.length)
 }))
+
+AddSlot(BuiltIn, toObject("arrayPush"), builtInFunc(function(args): IObject {
+  let array = args["array"]
+  array.data.push(args["object"])
+  return array
+}))
+
+AddSlot(BuiltIn, toObject("arrayPop"), builtInFunc(function(args): IObject {
+  let array = args["array"]
+  return array.data.pop() || Null
+}))
+
+/**
+ * Debugging BuiltIns
+ */
 
 /**
  * DEBUGGING

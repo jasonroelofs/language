@@ -1,4 +1,15 @@
 Array.addSlots(
+  # Append a value to the end of the array
+  push: { |object|
+    BuiltIn.arrayPush(array: self, object: object)
+  },
+
+  # Remove and return the last entry in the array.
+  # Returns Null if the array is empty.
+  pop: {
+    BuiltIn.arrayPop(array: self)
+  }
+
   # Return the number of elements in this array
   length: {
     BuiltIn.arrayLength(array: self)

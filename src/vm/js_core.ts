@@ -8,3 +8,7 @@
 export function isArray(obj) {
   return Array.isArray(obj)
 }
+
+export function arrayFrom(obj) {
+  return Array.from(obj)
+}

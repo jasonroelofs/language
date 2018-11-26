@@ -114,13 +114,13 @@ function findWithSlot(obj: IObject, message: string): IObject {
     return obj
   }
 
-  let parentObj = null
+  let parentSlot = null
 
   for(var parent of obj.parents) {
-    parentObj = findWithSlot(parent, message)
+    parentSlot = findWithSlot(parent, message)
 
-    if(parentObj) {
-      return parentObj
+    if(parentSlot) {
+      return parentSlot
     }
   }
 

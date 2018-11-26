@@ -3,7 +3,10 @@ import {
   Number, String, Array,
   True, False, Null,
   AddSlot, GetSlot,
+  SendMessage,
 } from "@vm/object"
+
+import { arrayFrom } from "@vm/js_core"
 
 //
 // Our core set of built-ins
@@ -152,11 +155,39 @@ AddSlot(BuiltIn, toObject("arrayLength"), builtInFunc(function(args): IObject {
 }))
 
 /**
+ * DEBUGGING
+ *  Should probably remove later
+ *  Print a reverse-indented trace of the current scope stack
+ */
+AddSlot(BuiltIn, toObject("debugObjectSlots"), builtInFunc(function(args): IObject {
+  let startSpace = args["object"]
+  let space = startSpace
+  let depth = 0
+  let buffer = ""
+  let slotsStr = ""
+
+  while(space) {
+    buffer = "-".repeat(depth)
+    slotsStr = arrayFrom(space.slots.keys()).join(", ")
+    console.log("%s %s [%o]", buffer, space, slotsStr)
+
+    if(space === World) {
+      break
+    }
+
+    depth += 1
+    space = space.parents[0]
+  }
+
+  return Null
+}))
+
+/**
  * The World is the top-level, global object and context.
  * All main constants are defined here.
  * The World is alway accessible directly via the 'World' constant.
  */
-let World = NewObject(Objekt, null, {objectName: "World"})
+var World = NewObject(Objekt, null, {objectName: "World"})
 AddSlot(World, toObject("World"), World)
 
 AddSlot(World, toObject("BuiltIn"), BuiltIn)

@@ -35,8 +35,7 @@ export default class Interpreter {
 
   ready() {
     // Initialize our initial execution space and we are ready to go
-    this.currentSpace = NewObject(this.currentSpace)
-    AddSlot(this.currentSpace, toObject("self"), this.currentSpace)
+    this.pushSpace(this.currentSpace)
 
     // Grab a hold of some objects that we make use of that are defined
     // in the core lib
@@ -113,13 +112,20 @@ export default class Interpreter {
   }
 
   evalMessageSend(node: MessageSendNode): IObject {
-    let receiver = this.evalNode(node.receiver)
+    let receiver: IObject
+
+    if(node.receiver) {
+      receiver = this.evalNode(node.receiver)
+    } else {
+      receiver = this.currentSpace
+    }
+
     let message = toObject(node.message.name)
     let args = node.message.arguments
 
     if(node.message.name == "call") {
       if(!receiver.codeBlock) {
-        throw new errors.NotABlockError(node.receiver.message || node.receiver)
+        throw new errors.NotABlockError(node.receiver)
       }
 
       // We're an activation record wrapping the actual code block to execute
@@ -197,8 +203,7 @@ export default class Interpreter {
     // that was stored when the block was defined.
     // To make sure the stored scope it's itself corrupted by the block execution
     // we wrap that scope in a new object for this execution.
-    let previousSpace = this.currentSpace
-    this.currentSpace = NewObject(scope)
+    let previousSpace = this.pushSpace(scope)
 
     // If this block is owned by an explicit object, we need to make sure
     // that `self` is set appropriately to that object. Otherwise `self` should
@@ -238,5 +243,19 @@ export default class Interpreter {
     }
 
     return activation
+  }
+
+  // Push a new Space onto the stack, building it off of
+  // the passed in object.
+  // Returns the previous currentSpace for restoration.
+  // Changes `this.currentSpace`
+  pushSpace(newSpace: IObject): IObject {
+    let previousSpace = this.currentSpace
+
+    this.currentSpace = NewObject(newSpace)
+    AddSlot(this.currentSpace, toObject("self"), this.currentSpace)
+    AddSlot(this.currentSpace, toObject("objectName"), toObject(`Space (${this.currentSpace.objectId})`))
+
+    return previousSpace
   }
 }

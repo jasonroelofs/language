@@ -168,6 +168,9 @@ describe("VM", () => {
       // be able to match the first parameter, and let further params be keyworded
       // to make it easy to add params later if you need more specificity.
       "a = { |x, y: 2| x * y }; a.call(5) + a.call(10, y: 10)": toObject(110),
+
+      // Blocks can be executed with just parens and without the explicit .call
+      "a = { 1 }; a()": toObject(1),
     }
 
     let vm = new VM()
@@ -189,8 +192,12 @@ describe("VM", () => {
     assert.equal(result.data, "Object")
 
     // Instances of other objects close properly around parent methods
-    result = vm.eval("obj = Object.new; obj.toString()")
+    result = vm.eval("obj = Object.new(); obj.toString()")
     assert.equal(result.data, "obj")
+
+    // Passing activation records as parameters works
+    result = vm.eval("str = Object.toString; block = {|cb| cb()}; block(str)")
+    assert.equal(result.data, "Object")
 
     // Higher order functions all work
     result = vm.eval("add = { |x| { |y| x + y } }; add2 = add(2); add2(3)")
@@ -294,8 +301,21 @@ describe("VM", () => {
       let vm = new VM()
       var error
 
+      // Explicit .call
       try {
         vm.eval(`a = 1; a.call()`)
+      } catch(e) {
+        error = e
+      }
+
+      assertErrorType(error, errors.NotABlockError)
+
+      assert.equal(error.chunk, "a")
+      assert.equal(error.position, 7)
+
+      // Implicit version
+      try {
+        vm.eval(`a = 1; a()`)
       } catch(e) {
         error = e
       }

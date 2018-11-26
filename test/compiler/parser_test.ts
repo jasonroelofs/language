@@ -157,15 +157,15 @@ describe("Parser", () => {
         ]
       }),
 
-      // Implicit Self receiver
+      // No receiver will trigger the interpreter to treat it as `self`
       "message()": blockCallNode({
-        receiver: { type: NodeType.Identifier, value: "self" },
+        receiver: null,
         message: "message",
         args: []
       }),
 
       "message(a: 1)": blockCallNode({
-        receiver: { type: NodeType.Identifier, value: "self" },
+        receiver: null,
         message: "message",
         args: [
           {

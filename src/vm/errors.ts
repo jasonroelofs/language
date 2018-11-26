@@ -1,5 +1,5 @@
-import { Token } from "@compiler/tokens"
-import { Node, MessageNode } from "@compiler/ast"
+import { Token, TokenType } from "@compiler/tokens"
+import { Node, NodeType, MessageNode, MessageSendNode } from "@compiler/ast"
 import { IObject } from "@vm/object"
 
 /**
@@ -61,8 +61,16 @@ class SlotNotFoundError extends RuntimeError {
 
 class NotABlockError extends RuntimeError {
 
-  constructor(node: Node | MessageNode) {
-    super(node.token)
+  constructor(node: Node | MessageSendNode) {
+    let infoNode
+
+    if(node.token.type == TokenType.Dot) {
+      infoNode = node.message
+    } else {
+      infoNode = node
+    }
+
+    super(infoNode.token)
   }
 
   errorType(): string {

@@ -32,7 +32,7 @@ export interface StringNode extends Node {
 }
 
 export interface MessageSendNode extends Node {
-  receiver: Node,
+  receiver?: Node,
   message: MessageNode
 }
 

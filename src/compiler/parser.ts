@@ -500,9 +500,11 @@ export default class Parser {
 
     // Check to see if we need to upgrade the `left` node to a MessageSend,
     // as this could be an Identifier in the case of implicit `self` usage.
+    // However the AST will mark the `receiver` as null and let the interpreter
+    // figure out how to do the right lookup.
     if(left.type == NodeType.Identifier) {
       left.type = NodeType.MessageSend
-      left.receiver = { type: NodeType.Identifier, value: "self" }
+      left.receiver = null
       left.message = {
         name: left.value,
         arguments: []

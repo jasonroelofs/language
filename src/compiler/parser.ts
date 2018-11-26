@@ -384,13 +384,21 @@ export default class Parser {
     this.checkForComments()
 
     // Block body
-    while(this.currToken() && !this.currTokenIs(TokenType.CloseBlock)) {
+    while(this.currToken()) {
+      this.checkForComments()
+
+      if(this.currTokenIs(TokenType.CloseBlock)) {
+        break
+      }
+
       node.body.push({ node: this.parseStatement() })
     }
 
     if(!this.currTokenIs(TokenType.CloseBlock)) {
       throw new errors.UnmatchedClosingTagError(startToken, this.currOrPreviousToken(), "}")
     }
+
+    this.checkForComments()
 
     // Move past the closing '}'
     this.nextToken()

@@ -72,10 +72,16 @@ export default class VM {
       return
     }
 
+    // console.log(util.inspect(expressions, {depth: null}))
+
     try {
       return this.interpreter.eval(expressions)
     } catch(error) {
-      this.reportError(error)
+      // Are we one of the SystemError type or something else?
+      if('chunk' in error) {
+        this.reportError(error)
+      }
+
       throw error
     }
   }

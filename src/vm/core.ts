@@ -162,6 +162,24 @@ AddSlot(Array, toObject("new"), builtInFunc(function(args): IObject {
   return NewObject(Array, array)
 }))
 
+AddSlot(BuiltIn, toObject("arrayGet"), builtInFunc(function(args): IObject {
+  let array = args["array"]
+  let index = args["index"]
+
+  // TODO index needs to be a Number
+  return array.data[index.data]
+}))
+
+AddSlot(BuiltIn, toObject("arraySet"), builtInFunc(function(args): IObject {
+  let array = args["array"]
+  let index = args["index"]
+  let value = args["to"]
+
+  // TODO index needs to be a Number
+  array.data[index.data] = value
+  return value
+}))
+
 AddSlot(BuiltIn, toObject("arrayEach"), builtInFunc(function(args, meta = {}, vm): IObject {
   let array = args["array"]
   // Block as passed in from the language is actually an ActivationRecord

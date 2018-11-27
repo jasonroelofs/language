@@ -259,6 +259,33 @@ describe("Parser", () => {
     }
   })
 
+  it("parses array access and setting into message sends", () => {
+    let tests = {
+      // Index access is syntax sugar for the `[]` message
+      "array[0]": blockCallNode({
+        receiver: { type: NodeType.Identifier, value: "array" },
+        message: "[]",
+        args: [
+          { name: "index", value: { type: NodeType.NumberLiteral, value: 0 } }
+        ]
+      }),
+
+      // Likewise setting a value on an index is syntax sugar for `[]=`
+      "array[0] = 1": blockCallNode({
+        receiver: { type: NodeType.Identifier, value: "array" },
+        message: "[]=",
+        args: [
+          { name: "index", value: { type: NodeType.NumberLiteral, value: 0 } },
+          { name: "to", value: { type: NodeType.NumberLiteral, value: 1 } },
+        ]
+      }),
+    }
+
+    for(var test in tests) {
+      assertExpression(test, tests[test])
+    }
+  })
+
   it("parses assignment", () => {
     let tests = {
       "a = 1" : {

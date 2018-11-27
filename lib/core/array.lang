@@ -1,4 +1,17 @@
 Array.addSlots(
+
+  # Access the value at the given 0-based index
+  # Callable with the syntax: array[index]
+  "[]": { |index|
+    BuiltIn.arrayGet(array: self, index: index)
+  },
+
+  # Set a value in this array at the given index
+  # Callable with the syntax: array[index] = to
+  "[]=": { |index, to|
+    BuiltIn.arraySet(array: self, index: index, to: to)
+  }
+
   # Iterate over each entry in the array, evaluating the passed-in block
   # for every element.
   each: { |block|

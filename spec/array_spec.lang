@@ -1,0 +1,35 @@
+# import("test")
+
+Test.describe("Array", as: { |test|
+  test("get", is: { |assert|
+    a = [1, 2, 3]
+    assert(a[0] == 1)
+    assert(a[1] == 2)
+    assert(a[2] == 3)
+  })
+
+  test("set", is: { |assert|
+    a = []
+    a[0] = 1
+    a[1] = 2
+
+    assert(a.length() == 2)
+    assert(a[0] == 1)
+    assert(a[1] == 2)
+  })
+
+  test("length", is: { |assert|
+    a = [1,2,3]
+    assert(a.length() == 3)
+  })
+
+  test("push", is: { |assert|
+    a = []
+    a.push(1)
+    a.push(2)
+
+    assert(a.length() == 2)
+    assert(a[0] == 1)
+    assert(a[1] == 2)
+  })
+})

@@ -40,6 +40,7 @@ let Precedences = {
   [TokenType.Equal]: Precedence.Equals,
   [TokenType.NotEqual]: Precedence.Equals,
   [TokenType.OpenParen]: Precedence.Index,
+  [TokenType.OpenSquare]: Precedence.Index,
 }
 
 interface ParserResults {
@@ -91,6 +92,7 @@ export default class Parser {
       [TokenType.Equal]: (left) => this.parseInfixExpression(left),
       [TokenType.NotEqual]: (left) => this.parseInfixExpression(left),
       [TokenType.OpenParen]: (left) => this.parseCallSite(left),
+      [TokenType.OpenSquare]: (left) => this.parseIndexGet(left),
     }
   }
 
@@ -305,16 +307,7 @@ export default class Parser {
 
     // And make sure we wrap up Array.new() to actually be
     // Array.new.call()
-    return {
-      type: NodeType.MessageSend,
-      token: startToken,
-      receiver: node,
-      message: {
-        name: "call",
-        token: startToken,
-        arguments: arrayEntries
-      }
-    }
+    return this.wrapWithCall(startToken, node, arrayEntries)
   }
 
   parseBlock(): BlockNode {
@@ -434,9 +427,29 @@ export default class Parser {
     }
   }
 
-  parseAssignment(left: Node): AssignmentNode {
+  parseAssignment(left: Node): AssignmentNode | MessageSendNode {
     let token = this.currToken()
     this.nextToken()
+
+    // TODO: I have no idea if this is a good idea or not but I'm going with it
+    // Hopefully I can eventually have a macro system set up that lets us define
+    // these kind of syntax conversions in the language itself.
+    // Check to see if the left is an Array Assignment (message to `get`) and turn
+    // this instead into a MessageSend to `Array.set.call(...)`.
+    if(left.type == NodeType.MessageSend &&
+      left.message.name == "call" &&
+      left.receiver.message.name == "[]" &&
+      left.message.arguments.length == 1 &&
+      left.message.arguments[0].name == "index") {
+
+      left.receiver.message.name = "[]="
+      left.message.arguments.push({
+        name: "to",
+        value: this.parseExpression(Precedence.Lowest)
+      })
+
+      return (left as MessageSendNode)
+    }
 
     // TODO: Make sure that left is an Identifier
     // so that we are always assigning to something that can be looked up
@@ -476,27 +489,18 @@ export default class Parser {
       throw new errors.IncompleteExpressionError(token)
     }
 
-    return {
+    let baseMessage = {
       type: NodeType.MessageSend,
+      receiver: left,
       token: token,
-      receiver: {
-        type: NodeType.MessageSend,
-        receiver: left,
-        token: token,
-        message: {
-          name: token.value,
-          token: token,
-          arguments: []
-        }
-      },
       message: {
-        name: "call",
+        name: token.value,
         token: token,
-        arguments: [{
-          value: this.parseExpression(precedence)
-        }]
+        arguments: []
       }
     }
+
+    return this.wrapWithCall(token, baseMessage, [{ value: this.parseExpression(precedence) }])
   }
 
   /**
@@ -655,6 +659,49 @@ export default class Parser {
     this.nextToken()
 
     return callMsg
+  }
+
+  // Parse Array[index] into a message send for Array.[].call(index: index)
+  parseIndexGet(left: Node): MessageSendNode {
+    let start = this.currToken()
+
+    // Move to the index segment
+    this.nextToken()
+
+    // Eval the index request
+    let indexExpr = this.parseExpression(Precedence.Lowest)
+
+    if(!this.currTokenIs(TokenType.CloseSquare)) {
+      throw new errors.UnmatchedClosingTagError(start, this.currOrPreviousToken(), "]")
+    }
+
+    // Move past the closing square and built the results
+    this.nextToken()
+
+    let getNode = {
+      type: NodeType.MessageSend,
+      receiver: left,
+      token: start,
+      message: {
+        name: "[]",
+        arguments: []
+      }
+    }
+
+    return this.wrapWithCall(start, getNode, [{ name: "index", value: indexExpr }])
+  }
+
+  wrapWithCall(token: Token, receiver: Node, args): MessageSendNode {
+    return {
+      type: NodeType.MessageSend,
+      token: token,
+      receiver: receiver,
+      message: {
+        name: "call",
+        token: token,
+        arguments: args
+      }
+    }
   }
 
   incompleteExpressionError() {

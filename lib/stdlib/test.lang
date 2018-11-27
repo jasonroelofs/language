@@ -1,0 +1,52 @@
+#
+# Test Framework!
+#
+
+Test = Object.new(
+  suites: []
+
+  # All tests start with a `describe` block, which defines a test suite.
+  # describe should be given a string `name` for the suite
+  # and a block in `as` in which tests will be defined.
+  describe: { |name, as|
+    suite = Suite.new(name: name)
+    as.call(suite.test)
+    suites.push(suite)
+
+    # TODO: The actual running of tests should happen in a different object
+    # Need something here because we have nothing else at this time.
+    suite.run()
+  },
+)
+
+Suite = Object.new(
+  tests: [],
+
+  # Define an individual test.
+  # If no block is given, this test is marked as "pending".
+  test: { |name, is: null|
+    tests.push(Unit.new(name: name, test: is))
+  },
+
+  run: {
+    IO.puts("Test suite run!")
+    tests.each({ |test|
+      test.run()
+    })
+  }
+)
+
+Unit = Object.new(
+  name: null,
+
+  test: null,
+
+  assert: { |expr, message: null|
+    IO.puts(expr)
+  },
+
+  run: {
+    IO.puts(name)
+    test.call(self.assert)
+  }
+)

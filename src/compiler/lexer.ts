@@ -52,6 +52,7 @@ export default class Lexer {
           this.unknownToken(chunk)
       } catch(error) {
         error.position = this.currentPos
+        error.file = this.filePath
         this.errors.push(error)
         break
       }

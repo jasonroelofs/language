@@ -28,6 +28,10 @@ export default class VM {
     this.interpreter = new Interpreter(World)
 
     this.loadCoreLib()
+
+    // Eventually want this to be a package system
+    // and explicit imports but that's for a future time
+    this.loadStdLib()
   }
 
   loadCoreLib() {
@@ -40,9 +44,17 @@ export default class VM {
     this.interpreter.ready()
   }
 
+  loadStdLib() {
+    let stdlibDir = path.resolve(__dirname + "/../../lib/stdlib");
+    let entries = glob.sync([`${stdlibDir}/**/*.lang`]).forEach((file) => {
+      let path = (typeof(file) == "string") ? file : file.path
+      this.loadFile(path)
+    })
+  }
+
   loadFile(filePath: string) {
     let script = fs.readFileSync(filePath)
-    //console.log("Loading file %o", filePath)
+    // console.log("Loading file %o", filePath)
     this.eval(script.toString(), filePath)
   }
 

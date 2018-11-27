@@ -13,6 +13,7 @@ import {
   NewObject,
   SendMessage,
   AddSlot,
+  FindSpaceWithSlot,
   toObject,
   Objekt,
   Number,
@@ -59,7 +60,10 @@ export default class Interpreter {
         let varName = toObject(node.name)
         let varValue = this.evalNode(node.right)
         AddSlot(varValue, toObject("objectName"), varName)
-        AddSlot(this.currentSpace, varName, varValue, toObject(node.comment))
+
+        let owningSpace = FindSpaceWithSlot(this.currentSpace, varName)
+        AddSlot(owningSpace, varName, varValue, toObject(node.comment))
+
         return varValue
 
       case NodeType.Identifier:

@@ -109,6 +109,15 @@ function SendMessage(receiver: IObject, messageName: IObject): IObject {
   }
 }
 
+/**
+ * For a given slot name and an object to begin the search, find the object
+ * or its parent that has the requested slot. If no slot exists in the stack
+ * then the original search object is returned
+ */
+function FindSpaceWithSlot(obj: IObject, slotName: IObject): IObject {
+  return findWithSlot(obj, slotName.data) || obj
+}
+
 function findWithSlot(obj: IObject, message: string): IObject {
   if(obj.slots.has(message)) {
     return obj
@@ -224,6 +233,7 @@ export {
   AddSlot,
   RemoveSlot,
   GetSlot,
+  FindSpaceWithSlot,
   toObject,
   Objekt,
   Slot,

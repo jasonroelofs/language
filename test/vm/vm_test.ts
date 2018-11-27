@@ -57,6 +57,24 @@ describe("VM", () => {
     }
   })
 
+  it("implements Ruby-esque scope lookup and re-assignment", () => {
+    // What makes the most sense to me and what I think is the least surprising
+    // is when a variable is referenced that's defined in an outer scope, to default
+    // to accessing and updating that outer variable.
+    // This is how Ruby scoping works, but is not how Python scoping works. In Python
+    // I would need to say `global a` in the `b` block to enable such access.
+    // Thus I call this "Ruby-esque"
+    let tests = {
+      "a = 1; b = { a = a + 1 }; b(); b(); b(); a": toObject(4),
+      // depth doesn't matter
+      "a = 1; { a = 2; { a = 3; { a = 4; { a = 5 }() }() }() }(); a": toObject(5),
+    }
+
+    for(var test in tests) {
+      assertObjectEval(test, tests[test])
+    }
+  })
+
   it("evaluates known math operators", () => {
     let tests = {
       // Direct usage

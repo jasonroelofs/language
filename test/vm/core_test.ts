@@ -106,13 +106,6 @@ describe("Array", () => {
       accum
     `
 
-    // TODO: This test fails because `accum` gets created as a local
-    // slot to each block invocation and does not update the value of the
-    // `accum` in the outer scope.
-    // Update our Assignment handling to look for existing names in the current scope,
-    // and then update *that* scope's version of `accum` first before setting it
-    // to the local scope.
-
     assertExpression(test, toObject(6))
   })
 })

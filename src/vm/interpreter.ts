@@ -67,7 +67,11 @@ export default class Interpreter {
         let found = SendMessage(this.currentSpace, slotName)
 
         if(found == null) {
-          throw new errors.SlotNotFoundError(node, slotName)
+          found = SendMessage(SendMessage(this.currentSpace, toObject("self")), slotName)
+
+          if(found == null) {
+            throw new errors.SlotNotFoundError(node, slotName)
+          }
         }
 
         if(found.codeBlock) {
@@ -112,12 +116,10 @@ export default class Interpreter {
   }
 
   evalMessageSend(node: MessageSendNode): IObject {
-    let receiver: IObject
+    let receiver: IObject = null
 
     if(node.receiver) {
       receiver = this.evalNode(node.receiver)
-    } else {
-      receiver = this.currentSpace
     }
 
     let message = toObject(node.message.name)
@@ -159,7 +161,7 @@ export default class Interpreter {
     }
 
     // Not executing a code block, return the raw value of this node
-    let slotValue = SendMessage(receiver, message)
+    let slotValue = SendMessage(receiver ? receiver : this.currentSpace, message)
 
     if(slotValue == null) {
       throw new errors.SlotNotFoundError(node.message, message)

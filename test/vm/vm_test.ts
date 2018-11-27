@@ -208,18 +208,18 @@ describe("VM", () => {
     let vm = new VM()
 
     // Get raw values back
-    vm.eval(`Object.addSlot("size", as: 3)`)
-    var result = vm.eval("Object.size")
+    vm.eval(`obj = Object.new(); obj.addSlot("size", as: 3)`)
+    var result = vm.eval("obj.size")
     assert.equal(result.data, 3)
 
     // Eval a block with no arguments
-    vm.eval(`Object.addSlot("count", as: { 5 })`)
-    var result = vm.eval("Object.count()")
+    vm.eval(`obj = Object.new(); obj.addSlot("count", as: { 5 })`)
+    var result = vm.eval("obj.count()")
     assert.equal(result.data, 5)
 
     // Call blocks at the slot with arguments
-    vm.eval(`Object.addSlot("pow", as: { |x| x * x })`)
-    result = vm.eval("Object.pow(3)")
+    vm.eval(`obj = Object.new(); obj.addSlot("pow", as: { |x| x * x })`)
+    result = vm.eval("obj.pow(3)")
     assert.equal(result.data, 9)
   })
 
@@ -246,6 +246,24 @@ describe("VM", () => {
     `)
 
     assert.equal(result.data, 12)
+  })
+
+  it("sets up an implicit `self` receiver on calls to object blocks", () => {
+    let vm = new VM()
+    let result = vm.eval(`
+      test = Object.new(
+        size: 1,
+        count: 2,
+        add: { size + count }
+      )
+
+      test2 = test.new()
+      add = test2.add
+
+      test.add() + test2.add() + add()
+    `)
+
+    assert.equal(result.data, 3 + 3 + 3)
   })
 
   it("loads the core and standard libraries into the World", () => {

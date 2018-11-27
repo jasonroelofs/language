@@ -1,4 +1,10 @@
 Array.addSlots(
+  # Iterate over each entry in the array, evaluating the passed-in block
+  # for every element.
+  each: { |block|
+    BuiltIn.arrayEach(array: self, block: block)
+  },
+
   # Append a value to the end of the array
   push: { |object|
     BuiltIn.arrayPush(array: self, object: object)

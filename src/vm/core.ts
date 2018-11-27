@@ -162,8 +162,19 @@ AddSlot(Array, toObject("new"), builtInFunc(function(args): IObject {
   return NewObject(Array, array)
 }))
 
-AddSlot(BuiltIn, toObject("arrayLength"), builtInFunc(function(args): IObject {
-  return toObject(args["array"].data.length)
+AddSlot(BuiltIn, toObject("arrayEach"), builtInFunc(function(args, meta = {}, vm): IObject {
+  let array = args["array"]
+  // Block as passed in from the language is actually an ActivationRecord
+  // which we need to unwrap to get the actual block to evaluate.
+  let block = SendMessage(args["block"], toObject("block"))
+  let parameters = SendMessage(block, toObject("parameters")).data
+  let paramName = toObject(parameters[0].name)
+
+  for(var entry of array.data) {
+    vm.evalBlockWithArgs(null, block, [[paramName, entry]])
+  }
+
+  return Null
 }))
 
 AddSlot(BuiltIn, toObject("arrayPush"), builtInFunc(function(args): IObject {
@@ -175,6 +186,10 @@ AddSlot(BuiltIn, toObject("arrayPush"), builtInFunc(function(args): IObject {
 AddSlot(BuiltIn, toObject("arrayPop"), builtInFunc(function(args): IObject {
   let array = args["array"]
   return array.data.pop() || Null
+}))
+
+AddSlot(BuiltIn, toObject("arrayLength"), builtInFunc(function(args): IObject {
+  return toObject(args["array"].data.length)
 }))
 
 /**

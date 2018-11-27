@@ -152,7 +152,7 @@ export default class Interpreter {
           meta[argName] = args[idx]
         }
 
-        result = block.data.call(context, toFunc, meta)
+        result = block.data.call(context, toFunc, meta, this)
       } else {
         result = this.evalCodeBlock(context, block, args)
       }
@@ -175,9 +175,7 @@ export default class Interpreter {
   }
 
   evalCodeBlock(receiver: IObject, codeBlock: IObject, args: ArgumentNode[]): IObject {
-    let codeBody = SendMessage(codeBlock, toObject("body")).data
     let parameters = SendMessage(codeBlock, toObject("parameters")).data
-    let scope = SendMessage(codeBlock, toObject("scope"))
 
     // Check for plain first argument and fix it up to match the name
     // of the first parameter
@@ -201,6 +199,25 @@ export default class Interpreter {
       }
     }
 
+    return this.evalBlockWithArgs(receiver, codeBlock, evaldArgs)
+  }
+
+  // Split out in its own method to allow built-ins to call back into the VM
+  // to evaluate blocks as necessary (e.g. BuiltIn.arrayEach).
+  //
+  //  receiver can be null
+  //  block must be a Block
+  //  args must be a multi-dimentional array of the form:
+  //    [
+  //      [paramName, argValue, (optional meta data)],
+  //      [paramName2, argValue2, (optional meta data)],
+  //      ...
+  //    ]
+  //
+  evalBlockWithArgs(receiver, block, args = []) {
+    let codeBody = SendMessage(block, toObject("body")).data
+    let scope = SendMessage(block, toObject("scope"))
+
     // Set up our own execution space for this block call to the scope
     // that was stored when the block was defined.
     // To make sure the stored scope it's itself corrupted by the block execution
@@ -214,8 +231,8 @@ export default class Interpreter {
       AddSlot(this.currentSpace, toObject("self"), receiver)
     }
 
-    for(var argValue of evaldArgs) {
-      AddSlot.call(null, this.currentSpace, ...argValue)
+    for(var parts of args) {
+      AddSlot.call(null, this.currentSpace, ...parts)
     }
 
     let result = this.eval(codeBody)

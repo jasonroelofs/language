@@ -136,6 +136,13 @@ export default class Interpreter {
       let context = SendMessage(receiver, toObject("receiver"))
       let result
 
+      // However in the case of direct block evaluation `{ ... }()` we won't
+      // be an ActivationRecord, we will be the block itself so work around that.
+      // TODO: Should we be an AR here?
+      if(block == null) {
+        block = receiver
+      }
+
       if(block.builtIn) {
         // We're a built-in, call it directly
         let toFunc = {}

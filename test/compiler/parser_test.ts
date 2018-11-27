@@ -394,6 +394,21 @@ describe("Parser", () => {
           { node: { type: NodeType.Identifier, value: "c" } }
         ]
       },
+      // Direct calls to standalone blocks
+      "{ 1 }()": {
+        type: NodeType.MessageSend,
+        receiver: {
+          type: NodeType.Block,
+          parameters: [],
+          body: [
+            { node: { type: NodeType.NumberLiteral, value: 1 } }
+          ]
+        },
+        message: {
+          name: "call",
+          arguments: [],
+        }
+      },
     }
 
     for(var test in tests) {

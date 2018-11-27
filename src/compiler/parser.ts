@@ -531,7 +531,7 @@ export default class Parser {
     // if the message already is explicitly `call`.
     let callMsg = null
 
-    if(left.message.name == "call") {
+    if(left.message && left.message.name == "call") {
       callMsg = left
     } else {
       callMsg = {

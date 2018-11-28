@@ -114,7 +114,7 @@ function SendMessage(receiver: IObject, messageName: IObject): IObject {
  * or its parent that has the requested slot. If no slot exists in the stack
  * then the original search object is returned
  */
-function FindSpaceWithSlot(obj: IObject, slotName: IObject): IObject {
+function FindObjectWithSlot(obj: IObject, slotName: IObject): IObject {
   return findWithSlot(obj, slotName.data) || obj
 }
 
@@ -163,6 +163,13 @@ function RemoveSlot(receiver: IObject, message: IObject) {
 function GetSlot(receiver: IObject, slotName: IObject): IObject {
   // TODO: No such slot error?
   return receiver.metaSlots.get(slotName.data) || Null
+}
+
+/**
+ * Add the given object as the parent of the receiver
+ */
+function AddParent(receiver: IObject, obj: IObject) {
+  receiver.parents.push(obj)
 }
 
 /**
@@ -233,7 +240,8 @@ export {
   AddSlot,
   RemoveSlot,
   GetSlot,
-  FindSpaceWithSlot,
+  AddParent,
+  FindObjectWithSlot,
   toObject,
   Objekt,
   Slot,

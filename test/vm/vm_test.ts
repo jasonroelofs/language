@@ -49,7 +49,7 @@ describe("VM", () => {
       // Assignment returns the value assigned
       "a = 1": toObject(1),
       // Accessing the local slot returns the stored value
-      "a = 2\na": toObject(2),
+      "a = 2; a": toObject(2),
     }
 
     for(var test in tests) {
@@ -68,6 +68,10 @@ describe("VM", () => {
       "a = 1; b = { a = a + 1 }; b(); b(); b(); a": toObject(4),
       // depth doesn't matter
       "a = 1; { a = 2; { a = 3; { a = 4; { a = 5 }() }() }() }(); a": toObject(5),
+      // Object ownership and nested blocks are handled correctly
+      // Here `get` and `ifTrue` are nested scopes, which need to be linked back
+      // to outer scopes to properly find the right value of `a`.
+      "obj = Object.new(a: 1, get: { true.do(ifTrue: { a }) }); obj.get()": toObject(1),
     }
 
     for(var test in tests) {
@@ -189,6 +193,9 @@ describe("VM", () => {
 
       // Blocks can be executed with just parens and without the explicit .call
       "a = { 1 }; a()": toObject(1),
+
+      // Blocks can be executed with just parens and without the explicit .call
+      "{ 2 }()": toObject(2),
     }
 
     let vm = new VM()

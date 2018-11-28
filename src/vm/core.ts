@@ -220,27 +220,34 @@ AddSlot(BuiltIn, toObject("arrayLength"), builtInFunc(function(args): IObject {
  *  Print a reverse-indented trace of the current scope stack
  */
 AddSlot(BuiltIn, toObject("debugObjectSlots"), builtInFunc(function(args): IObject {
-  let startSpace = args["object"]
-  let space = startSpace
+  let obj = args["object"]
   let depth = 0
   let buffer = ""
   let slotsStr = ""
 
-  while(space) {
-    buffer = "-".repeat(depth)
-    slotsStr = arrayFrom(space.slots.keys()).join(", ")
-    console.log("%s %s [%o]", buffer, space, slotsStr)
-
-    if(space === World) {
-      break
-    }
-
-    depth += 1
-    space = space.parents[0]
-  }
+  printObjSlots(obj, depth)
 
   return Null
 }))
+
+function printObjSlots(obj: IObject, depth: number) {
+  let buffer = ""
+
+  if(depth > 0) {
+    buffer = "-".repeat(depth) + " "
+  }
+
+  let slotsStr = arrayFrom(obj.slots.keys()).join(", ")
+  console.log("%s%s [%o]", buffer, obj, slotsStr)
+
+  if(obj === World) {
+    return
+  }
+
+  for(var parent of obj.parents) {
+    printObjSlots(parent, depth + 1)
+  }
+}
 
 /**
  * The World is the top-level, global object and context.

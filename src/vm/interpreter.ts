@@ -13,7 +13,8 @@ import {
   NewObject,
   SendMessage,
   AddSlot,
-  FindSpaceWithSlot,
+  AddParent,
+  FindObjectWithSlot,
   toObject,
   Objekt,
   Number,
@@ -61,8 +62,8 @@ export default class Interpreter {
         let varValue = this.evalNode(node.right)
         AddSlot(varValue, toObject("objectName"), varName)
 
-        let owningSpace = FindSpaceWithSlot(this.currentSpace, varName)
-        AddSlot(owningSpace, varName, varValue, toObject(node.comment))
+        let owningObject = FindObjectWithSlot(this.currentSpace, varName)
+        AddSlot(owningObject, varName, varValue, toObject(node.comment))
 
         return varValue
 
@@ -71,11 +72,7 @@ export default class Interpreter {
         let found = SendMessage(this.currentSpace, slotName)
 
         if(found == null) {
-          found = SendMessage(SendMessage(this.currentSpace, toObject("self")), slotName)
-
-          if(found == null) {
-            throw new errors.SlotNotFoundError(node, slotName)
-          }
+          throw new errors.SlotNotFoundError(node, slotName)
         }
 
         if(found.codeBlock) {
@@ -240,6 +237,9 @@ export default class Interpreter {
     // be the block's execution space (or should it be the block itself?)
     if(receiver) {
       AddSlot(this.currentSpace, toObject("self"), receiver)
+      // Also inject the receiver in the current scope to ensure slot lookups
+      // properly check this object
+      AddParent(this.currentSpace, receiver)
     }
 
     for(var parts of args) {
@@ -284,7 +284,12 @@ export default class Interpreter {
 
     this.currentSpace = NewObject(newSpace)
     AddSlot(this.currentSpace, toObject("self"), this.currentSpace)
+    AddSlot(this.currentSpace, toObject("space"), this.currentSpace)
     AddSlot(this.currentSpace, toObject("objectName"), toObject(`Space (${this.currentSpace.objectId})`))
+
+    // Link this space back to the previous space so we can keep a proper
+    // stack of spaces, ensuring correct scoping at all times.
+    AddParent(this.currentSpace, previousSpace)
 
     return previousSpace
   }

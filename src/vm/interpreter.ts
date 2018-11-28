@@ -175,7 +175,7 @@ export default class Interpreter {
     let slotValue = SendMessage(receiver ? receiver : this.currentSpace, message)
 
     if(slotValue == null) {
-      throw new errors.SlotNotFoundError(node.message, message)
+      throw new errors.SlotNotFoundError(node.receiver ? node.message : node, message)
     }
 
     if(slotValue.codeBlock) {

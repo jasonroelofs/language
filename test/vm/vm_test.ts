@@ -300,7 +300,8 @@ describe("VM", () => {
 
       let tests = {
         "World.unknownSlot": ["unknownSlot", 6],
-        "missing": ["missing", 0]
+        "missing": ["missing", 0],
+        "{ missing() }()": ["missing", 2],
       }
 
       for(var test in tests) {

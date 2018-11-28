@@ -118,7 +118,19 @@ function FindObjectWithSlot(obj: IObject, slotName: IObject): IObject {
   return findWithSlot(obj, slotName.data) || obj
 }
 
-function findWithSlot(obj: IObject, message: string): IObject {
+function findWithSlot(obj: IObject, message: string, seen: Set<number> = null): IObject {
+  // Protection against lookup loops where parents can point
+  // to objects in the current or other parent stacks.
+  if(seen == null) {
+    seen = new Set<number>()
+  }
+
+  if(seen.has(obj.objectId)) {
+    return null
+  }
+
+  seen.add(obj.objectId)
+
   if(obj.slots.has(message)) {
     return obj
   }
@@ -126,7 +138,7 @@ function findWithSlot(obj: IObject, message: string): IObject {
   let parentSlot = null
 
   for(var parent of obj.parents) {
-    parentSlot = findWithSlot(parent, message)
+    parentSlot = findWithSlot(parent, message, seen)
 
     if(parentSlot) {
       return parentSlot

@@ -3,7 +3,7 @@ import * as assert from "assert"
 import {
   IObject, toObject, Objekt,
   Number, String,
-  NewObject, SendMessage, AddSlot, GetSlot
+  NewObject, SendMessage, AddSlot, GetSlot, AddParent,
 } from "@vm/object"
 
 describe("Object", () => {
@@ -50,6 +50,20 @@ describe("Object", () => {
     let result = SendMessage(obj, toObject("one"))
 
     assert.equal(result, one)
+  })
+
+  it("doesn't get stuck in infinite loops on parent loops", () => {
+    let one = NewObject(Objekt)
+    let two = NewObject(one)
+
+    // Built a parent loop!
+    AddParent(one, two)
+
+    // Search for something that doesn't exist
+    // to show that we've iterated through all parents
+    // and did not get stuck in a loop
+    let result = SendMessage(two, toObject("-not-found-"))
+    assert(result == null)
   })
 
   it("messages not found in the object ask parent objects", () => {

@@ -134,6 +134,12 @@ AddSlot(BuiltIn, toObject("puts"), builtInFunc(function(args): IObject {
   return Null
 }))
 
+AddSlot(BuiltIn, toObject("print"), builtInFunc(function(args): IObject {
+  // TODO This is not web safe.
+  process.stdout.write(args["message"].toString())
+  return Null
+}))
+
 /**
  * Array BuiltIns
  */

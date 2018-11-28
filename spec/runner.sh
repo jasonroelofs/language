@@ -16,8 +16,8 @@ run() {
 
 files=$(find $HERE -type f -name "*.lang")
 
-for spec in $HERE/**/*.lang; do
-  echo
+for spec in $files; do
+  echo $spec
   run $spec
   echo
 done

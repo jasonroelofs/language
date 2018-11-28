@@ -10,12 +10,22 @@ Test = Object.new(
   # and a block in `as` in which tests will be defined.
   describe: { |name, as|
     suite = Suite.new(name: name)
-    as.call(suite.test)
+    as(suite.test)
     suites.push(suite)
 
     # TODO: The actual running of tests should happen in a different object
     # Need something here because we have nothing else at this time.
-    suite.run()
+    self.runAll()
+  },
+
+  runAll: {
+    runner = Runner
+
+    suites.each({ |suite|
+      runner.run(suite)
+    })
+
+    runner.outputResults()
   },
 )
 
@@ -28,25 +38,56 @@ Suite = Object.new(
     tests.push(Unit.new(name: name, test: is))
   },
 
-  run: {
-    IO.puts("Test suite run!")
+  run: { |runner|
     tests.each({ |test|
-      test.run()
+      test.run(runner)
     })
   }
 )
 
 Unit = Object.new(
   name: null,
-
   test: null,
+)
+
+Runner = Object.new(
+  results: [],
+
+  assertions: 0,
+
+  successes: 0,
+
+  failures: 0,
 
   assert: { |expr, message: null|
-    IO.puts(expr)
+    assertions = assertions + 1
+
+    expr.do(
+      ifTrue: { success() },
+      ifFalse: { failure(message) }
+    )
   },
 
-  run: {
-    IO.puts(name)
-    test.call(self.assert)
+  success: {
+    successes = successes + 1
+    IO.print(".")
+  },
+
+  failure: { |message: null|
+    failures = failures + 1
+    IO.print("F")
+  },
+
+  run: { |suite|
+    assertCB = self.assert
+    suite.tests.each({ |test|
+      test.test(assertCB)
+    })
+  },
+
+  outputResults: {
+    IO.puts("")
+    IO.puts("Finished: " + assertions + " assertions, " + successes + " successful, " + failures + " failed")
+    IO.puts("")
   }
 )

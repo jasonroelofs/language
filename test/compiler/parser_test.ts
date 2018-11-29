@@ -326,6 +326,20 @@ describe("Parser", () => {
     }
   })
 
+  /**
+   * Much like infix above, prefix expressions are syntax sugar that need to be
+   * rewritten to message sends
+   */
+  it("parses prefix expressions", () => {
+    let expected = blockCallNode({
+      receiver: { type: NodeType.BooleanLiteral, value: true },
+      message: "!",
+      args: []
+    })
+
+    assertExpression("!true", expected)
+  })
+
   it("parses complex infix expressions", () => {
     let tests = {
       // (1.+(2)).-(3))

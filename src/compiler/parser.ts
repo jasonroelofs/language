@@ -21,7 +21,7 @@ enum Precedence {
   Compare, // <, >, <=, >=
   Sum,     // +, -
   Product, // *, /
-  Prefix,  // -X
+  Prefix,  // !X
   Index,   // []
 }
 
@@ -41,6 +41,7 @@ let Precedences = {
   [TokenType.NotEqual]: Precedence.Equals,
   [TokenType.AndAnd]: Precedence.Equals,
   [TokenType.OrOr]: Precedence.Equals,
+  [TokenType.Not]: Precedence.Prefix,
   [TokenType.OpenParen]: Precedence.Index,
   [TokenType.OpenSquare]: Precedence.Index,
 }
@@ -75,6 +76,7 @@ export default class Parser {
       [TokenType.OpenSquare]: () => this.parseArrayLiteral(),
       [TokenType.OpenBlock]: () => this.parseBlock(),
       [TokenType.OpenParen]: () => this.parseGroupedExpression(),
+      [TokenType.Not]: () => this.parsePrefixExpression(),
       [TokenType.Pipe]: () => this.incompleteExpressionError(),
       [TokenType.CloseParen]: () => this.incompleteExpressionError(),
       [TokenType.CloseSquare]: () => this.incompleteExpressionError(),
@@ -478,6 +480,29 @@ export default class Parser {
     assignment.right = this.parseExpression(Precedence.Lowest)
 
     return assignment
+  }
+
+  parsePrefixExpression(): MessageSendNode {
+    let token = this.currToken()
+    let precedence = this.currPrecedence()
+    this.nextToken()
+
+    if(this.isEndOfStatement()) {
+      throw new errors.IncompleteExpressionError(token)
+    }
+
+    let baseMessage = {
+      type: NodeType.MessageSend,
+      receiver: this.parseExpression(precedence),
+      token: token,
+      message: {
+        name: token.value,
+        token: token,
+        arguments: []
+      }
+    }
+
+    return this.wrapWithCall(token, baseMessage, [])
   }
 
   /**

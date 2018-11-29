@@ -271,6 +271,7 @@ export default class Lexer {
     '>': TokenType.GreaterThan,
     '=': TokenType.Assign,
     '|': TokenType.Pipe,
+    '!': TokenType.Not,
   }
 
   COMPOUND_OPERATORS = {

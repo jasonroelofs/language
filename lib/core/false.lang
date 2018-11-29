@@ -4,6 +4,11 @@ False.addSlots(
     ifFalse()
   },
 
+  # The NOT operator negates the current value using truthiness rules.
+  "!": {
+    true
+  },
+
   toString: {
     "false"
   }

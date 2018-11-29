@@ -135,6 +135,14 @@ describe("VM", () => {
       "false || 1": toObject(1),
       "null || 1": toObject(1),
       "1 || null": toObject(1),
+
+      "!true": False,
+      "!false": True,
+      "!null": True,
+      "!1": False,
+      '!"A string"': False,
+
+      "!(true && false)": True,
     }
 
     for(var test in tests) {

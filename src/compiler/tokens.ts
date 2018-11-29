@@ -17,6 +17,7 @@ export enum TokenType {
 
   AndAnd = "AND_AND",
   OrOr = "OR_OR",
+  Not = "NOT",
 
   Plus = "PLUS",
   Minus = "MINUS",

@@ -126,6 +126,7 @@ describe("Lexer", () => {
       1 != 2
       1 && 2
       1 || 2
+      !true
       obj.message
     `
 
@@ -188,6 +189,10 @@ describe("Lexer", () => {
       { type: TokenType.Number, value: "1" },
       { type: TokenType.OrOr, value: "||" },
       { type: TokenType.Number, value: "2" },
+      { type: TokenType.EOS, value: "\n" },
+
+      { type: TokenType.Not, value: "!" },
+      { type: TokenType.Identifier, value: "true" },
       { type: TokenType.EOS, value: "\n" },
 
       // Message sending is an operator

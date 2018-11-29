@@ -5,6 +5,12 @@ Object.addSlots(
     ifTrue()
   },
 
+  # The NOT operator negates the current value using truthiness rules.
+  # As Objects are always Truthy, this returns false.
+  "!": {
+    false
+  },
+
   # The AND operator will return `other` if both this object and `other` are
   # truthy. Otherwise will return this object if it's falsey or `other` if it
   # is falsey
@@ -33,9 +39,7 @@ Object.addSlots(
   },
 
   "!=": { |other|
-    # TODO: Re-implement in terms of == above.
-    # Need negation with `!`
-    self.objectId() != other.objectId()
+    !(self == other)
   },
 
   # Return a string that represents this object

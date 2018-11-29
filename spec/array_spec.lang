@@ -1,14 +1,14 @@
 # import("test")
 
 Test.describe("Array", as: { |test|
-  test("get", is: { |assert|
+  test("[]", is: { |assert|
     a = [1, 2, 3]
     assert(a[0] == 1)
     assert(a[1] == 2)
     assert(a[2] == 3)
   })
 
-  test("set", is: { |assert|
+  test("[]=", is: { |assert|
     a = []
     a[0] = 1
     a[1] = 2
@@ -31,5 +31,29 @@ Test.describe("Array", as: { |test|
     assert(a.length() == 2)
     assert(a[0] == 1)
     assert(a[1] == 2)
+  })
+
+  test("pop", is: { |assert|
+    a = [1, 2, 3]
+
+    assert(a.pop() == 3)
+    assert(a.pop() == 2)
+    assert(a.pop() == 1)
+    assert(a.pop() == null)
+  })
+
+  test("each", is: { |assert|
+    a = [1, 2, 3]
+    b = []
+
+    a.each({ |entry|
+      b.push(entry * 2)
+    })
+
+    # TODO: When array equality is in place
+    # assert(b == [2, 4, 6])
+    assert(b[0] == 2)
+    assert(b[1] == 4)
+    assert(b[2] == 6)
   })
 })

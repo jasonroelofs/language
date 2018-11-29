@@ -670,6 +670,7 @@ export default class Parser {
       // Skip past our comma if it exists
       if(this.currTokenIs(TokenType.Comma)) {
         this.nextToken()
+        this.checkForComments()
       }
 
       // If we're currently on a close paren, then

@@ -564,6 +564,23 @@ describe("Parser", () => {
     assert.equal(expressions.length, 1)
   })
 
+  it("handles argument lists that end with comments", () => {
+    let test = `
+      a = Object.new(
+        one: 1,
+        # two: 2,
+      )
+    `
+
+    let lexer = new Lexer(test)
+    let {tokens} = lexer.tokenize()
+
+    let parser = new Parser(tokens)
+    let {expressions} = parser.parse()
+
+    assert.equal(expressions.length, 1)
+  })
+
   it("supports attaching comments to method arguments", () => {
     let test = `
       Object.new(

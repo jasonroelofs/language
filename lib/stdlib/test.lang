@@ -29,13 +29,14 @@ Suite = Object.new(
   # Define an individual test.
   # If no block is given, this test is marked as "pending".
   test: { |name, is: null|
-    tests.push(Unit.new(name: name, test: is))
+    tests.push(Unit.new(suite: self, name: name, test: is))
   },
 )
 
 Unit = Object.new(
   name: null,
   test: null,
+  suite: null,
 )
 
 Runner = Object.new(
@@ -55,7 +56,10 @@ Runner = Object.new(
 
     suites.each({ |suite|
       suite.tests.each({ |test|
-        test.test(assert)
+        test.test.do(
+          ifTrue: { test.test(assert) },
+          ifFalse: { reporter.pending(test) }
+        )
       })
     })
 
@@ -69,6 +73,8 @@ Reporter = Object.new(
   successes: 0,
 
   failures: 0,
+
+  pendingTests: [],
 
   startTime: 0,
 
@@ -93,14 +99,35 @@ Reporter = Object.new(
     IO.print("F")
   },
 
+  pending: { |test|
+    pendingTests.push(test)
+  },
+
   complete: {
     IO.puts()
 
     endTime = Time.utc()
     elapsedMs = endTime - startTime
 
+    # Output pending tests
     IO.puts()
-    IO.puts("Finished in " + elapsedMs + "ms. " + assertions + " assertions, " + successes + " successful, " + failures + " failed")
+    IO.puts("Pending tests:")
+    pendingTests.each({ |test|
+      IO.puts()
+      IO.puts("\t" + test.suite.name + " " + test.name)
+    })
+
+    results = "Finished in " + elapsedMs + "ms. "
+    results = results + assertions + " assertions, "
+    results = results + successes + " successes, "
+    results = results + failures + " failures"
+
+    (pendingTests.length() > 0).do(
+      ifTrue: { results = results + ", " + pendingTests.length() + " pending" }
+    )
+
+    IO.puts()
+    IO.puts(results)
     IO.puts()
   }
 )

@@ -1,5 +1,10 @@
 import { Token, TokenType, tokenLength } from "@compiler/tokens"
-import { SyntaxError, UnterminatedStringError, UnknownTokenError } from "@compiler/errors"
+import {
+  SyntaxError,
+  UnterminatedStringError,
+  UnknownEscapeSequenceError,
+  UnknownTokenError
+} from "@compiler/errors"
 
 interface LexerResults {
   tokens: Array<Token>
@@ -145,12 +150,43 @@ export default class Lexer {
   // sure to handle escaped matching quotes, e.g. ("\"" should return the string: `"`)
   stringToken(chunk: string): Token {
     let starter = chunk[0]
+    let buffer = ""
+
     if(starter == '"' || starter == "'") {
 
-      for(var i = 1; i < chunk.length; i++) {
-        if(chunk[i] == starter && chunk[i-1] != "\\") {
-          return { type: TokenType.String, value: chunk.substring(1, i), source: chunk.substring(0, i+1) }
+      var i = 1;
+      while(i < chunk.length) {
+        if(chunk[i] == starter) {
+          return { type: TokenType.String, value: buffer, source: chunk.substring(0, i+1) }
         }
+
+        if(chunk[i] == "\\") {
+          switch(chunk[i + 1]) {
+            case "n":
+              buffer += "\n"
+              break;
+            case "t":
+              buffer += "\t"
+              break;
+            case "\\":
+              buffer += "\\"
+              break;
+            case `"`:
+              buffer += `\\"`
+              break;
+            case `'`:
+              buffer += `\\'`
+              break;
+            default:
+              throw new UnknownEscapeSequenceError({ type: TokenType.String, value: chunk, pos: i})
+          }
+
+          i += 1
+        } else {
+          buffer += chunk[i]
+        }
+
+        i += 1
       }
 
       throw new UnterminatedStringError({ type: TokenType.String, value: chunk })

@@ -82,10 +82,11 @@ describe("Lexer", () => {
       'fo"ur'
       "fi\\"ve"
       'si\\'x'
-      "sev\nen"
-      "ei\tght"
-      "nine\\"nine\\\\"nine\\\\\\"nine"
+      "sev\\nen"
+      "ei\\tght"
+      "nine\\"nine\\\"nine\\\\\\\"nine"
       "こんにちは"
+      "\\n\\t"
     `
 
     let expected = [
@@ -105,9 +106,13 @@ describe("Lexer", () => {
       { type: TokenType.EOS, value: "\n" },
       { type: TokenType.String, value: `ei\tght` },
       { type: TokenType.EOS, value: "\n" },
-      { type: TokenType.String, value: `nine\\"nine\\\\"nine\\\\\\"nine` },
+      { type: TokenType.String, value: `nine\\"nine\\\"nine\\\\\"nine` },
       { type: TokenType.EOS, value: "\n" },
       { type: TokenType.String, value: `こんにちは` },
+      { type: TokenType.EOS, value: "\n" },
+      // These need to be escaped in the test string above to work
+      // around Javascript itself turning them into their characters.
+      { type: TokenType.String, value: "\n\t"},
       { type: TokenType.EOS, value: "\n" },
     ]
 
@@ -454,6 +459,25 @@ describe("Lexer", () => {
         assert.equal(errors.length, 1, `Returned the wrong number of errors for ${test}`)
 
         assert.equal(errors[0].errorType(), "Unterminated String")
+
+        assert.equal(errors[0].position, 0)
+      }
+    })
+
+    it("errors on unknown escape sequences", () => {
+      let tests = [
+        `"\\e"`,
+        `"\\%"`
+      ]
+
+      for(var test of tests) {
+        let lexer = new Lexer(test)
+        let {tokens, errors} = lexer.tokenize()
+
+        assert.equal(tokens.length, 0, `Returned real tokens for ${test}`)
+        assert.equal(errors.length, 1, `Returned the wrong number of errors for ${test}`)
+
+        assert.equal(errors[0].errorType(), "Unknown Escape Sequence")
 
         assert.equal(errors[0].position, 0)
       }

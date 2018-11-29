@@ -71,6 +71,12 @@ class UnterminatedStringError extends SyntaxError {
   }
 }
 
+class UnknownEscapeSequenceError extends SyntaxError {
+  errorType(): string {
+    return `Unknown Escape Sequence`
+  }
+}
+
 class UnknownTokenError extends SyntaxError {
   errorType(): string {
     return `Unknown Token '${this.chunk}'`
@@ -191,6 +197,7 @@ class InvalidArgumentNameError extends ParseError {
 export {
   SyntaxError,
   UnterminatedStringError,
+  UnknownEscapeSequenceError,
   UnknownTokenError,
   InvalidStartOfExpressionError,
   ExpectedEndOfExpressionError,

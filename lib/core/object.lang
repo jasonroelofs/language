@@ -5,6 +5,28 @@ Object.addSlots(
     ifTrue()
   },
 
+  # The AND operator will return `other` if both this object and `other` are
+  # truthy. Otherwise will return this object if it's falsey or `other` if it
+  # is falsey
+  "&&": { |other|
+    # TODO: Why can't `self` be used verbatim here?
+    _self = self
+    self.do(
+      ifTrue: { other },
+      ifFalse: { _self }
+    )
+  },
+
+  # The OR operator will return this object if it's truthy, otherwise it will
+  # return the `other` object.
+  "||": { |other|
+    _self = self
+    self.do(
+      ifTrue: { _self },
+      ifFalse: { other }
+    )
+  },
+
   # Object comparison. Objects are equal if their objectIds are equal.
   "==": { |other|
     self.objectId() == other.objectId()

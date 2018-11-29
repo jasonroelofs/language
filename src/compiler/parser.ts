@@ -39,6 +39,8 @@ let Precedences = {
   [TokenType.GreaterThanEqual]: Precedence.Compare,
   [TokenType.Equal]: Precedence.Equals,
   [TokenType.NotEqual]: Precedence.Equals,
+  [TokenType.AndAnd]: Precedence.Equals,
+  [TokenType.OrOr]: Precedence.Equals,
   [TokenType.OpenParen]: Precedence.Index,
   [TokenType.OpenSquare]: Precedence.Index,
 }
@@ -91,6 +93,8 @@ export default class Parser {
       [TokenType.GreaterThanEqual]: (left) => this.parseInfixExpression(left),
       [TokenType.Equal]: (left) => this.parseInfixExpression(left),
       [TokenType.NotEqual]: (left) => this.parseInfixExpression(left),
+      [TokenType.AndAnd]: (left) => this.parseInfixExpression(left),
+      [TokenType.OrOr]: (left) => this.parseInfixExpression(left),
       [TokenType.OpenParen]: (left) => this.parseCallSite(left),
       [TokenType.OpenSquare]: (left) => this.parseIndexGet(left),
     }

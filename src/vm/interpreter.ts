@@ -283,7 +283,6 @@ export default class Interpreter {
     let previousSpace = this.currentSpace
 
     this.currentSpace = NewObject(newSpace)
-    AddSlot(this.currentSpace, toObject("self"), this.currentSpace)
     AddSlot(this.currentSpace, toObject("space"), this.currentSpace)
     AddSlot(this.currentSpace, toObject("objectName"), toObject(`Space (${this.currentSpace.objectId})`))
 

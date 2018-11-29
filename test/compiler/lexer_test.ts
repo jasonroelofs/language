@@ -124,6 +124,8 @@ describe("Lexer", () => {
       1 <= 2
       1 == 2
       1 != 2
+      1 && 2
+      1 || 2
       obj.message
     `
 
@@ -177,6 +179,18 @@ describe("Lexer", () => {
       { type: TokenType.Number, value: "2" },
       { type: TokenType.EOS, value: "\n" },
 
+      // Boolean operators
+      { type: TokenType.Number, value: "1" },
+      { type: TokenType.AndAnd, value: "&&" },
+      { type: TokenType.Number, value: "2" },
+      { type: TokenType.EOS, value: "\n" },
+
+      { type: TokenType.Number, value: "1" },
+      { type: TokenType.OrOr, value: "||" },
+      { type: TokenType.Number, value: "2" },
+      { type: TokenType.EOS, value: "\n" },
+
+      // Message sending is an operator
       { type: TokenType.Identifier, value: "obj" },
       { type: TokenType.Dot, value: "." },
       { type: TokenType.Identifier, value: "message" },
@@ -444,7 +458,7 @@ describe("Lexer", () => {
       // This set of tests will probably shrink as new tokens are allowed
       // in the lexer. But for now, these are errors!
       let tests = [
-        `&&`,
+        `^`,
         `$`,
       ]
 

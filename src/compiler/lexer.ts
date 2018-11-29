@@ -177,8 +177,6 @@ export default class Lexer {
         return { type: TokenType.Colon, value: ":" }
       case ",":
         return { type: TokenType.Comma, value: "," }
-      case "|" :
-        return { type: TokenType.Pipe, value: "|" }
       case ".":
         return { type: TokenType.Dot, value: "." }
     }
@@ -272,6 +270,7 @@ export default class Lexer {
     '<': TokenType.LessThan,
     '>': TokenType.GreaterThan,
     '=': TokenType.Assign,
+    '|': TokenType.Pipe,
   }
 
   COMPOUND_OPERATORS = {
@@ -279,6 +278,8 @@ export default class Lexer {
     '>=': TokenType.GreaterThanEqual,
     '==': TokenType.Equal,
     '!=': TokenType.NotEqual,
+    '&&': TokenType.AndAnd,
+    '||': TokenType.OrOr,
   }
 
   // Don't immediately catch newlines, as those could be an End Of Statement.

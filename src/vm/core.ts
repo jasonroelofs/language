@@ -237,6 +237,8 @@ AddSlot(BuiltIn, toObject("debugObjectSlots"), builtInFunc(function(args): IObje
 }))
 
 function printObjSlots(obj: IObject, depth: number) {
+  if(!obj) { return }
+
   let buffer = ""
 
   if(depth > 0) {
@@ -250,8 +252,8 @@ function printObjSlots(obj: IObject, depth: number) {
     return
   }
 
-  for(var parent of obj.parents) {
-    printObjSlots(parent, depth + 1)
+  for(var p of obj.parents) {
+    printObjSlots(p, depth + 1)
   }
 }
 

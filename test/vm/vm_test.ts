@@ -93,9 +93,9 @@ describe("VM", () => {
       "1 * 2 + 3 - 4 / 2": toObject(3),
 
       // Variable eval
-      "a = 1\na + 1": toObject(2),
-      "b = 2\n1 + b": toObject(3),
-      "a = 1\nb = 2\na + b": toObject(3),
+      "a = 1; a + 1": toObject(2),
+      "b = 2; 1 + b": toObject(3),
+      "a = 1; b = 2; a + b": toObject(3),
     }
 
     for(var test in tests) {
@@ -115,6 +115,26 @@ describe("VM", () => {
       "3 == 4": False,
       "3 != 4": True,
       "3 != 3": False,
+    }
+
+    for(var test in tests) {
+      assertObjectEval(test, tests[test])
+    }
+  })
+
+  it("evaluates boolean operators", () => {
+    let tests = {
+      "1 && 2": toObject(2),
+      "1 && false": False,
+      "false && 1": False,
+      "null && 1": Null,
+      "1 && null": Null,
+
+      "1 || 2": toObject(1),
+      "1 || false": toObject(1),
+      "false || 1": toObject(1),
+      "null || 1": toObject(1),
+      "1 || null": toObject(1),
     }
 
     for(var test in tests) {

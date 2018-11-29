@@ -15,6 +15,9 @@ export enum TokenType {
   Pipe = "PIPE",
   Dot = "DOT",
 
+  AndAnd = "AND_AND",
+  OrOr = "OR_OR",
+
   Plus = "PLUS",
   Minus = "MINUS",
   Multiply = "MULTIPLY",

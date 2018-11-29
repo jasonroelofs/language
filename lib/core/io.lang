@@ -8,7 +8,7 @@ IO = Object.new(
 
   # Print out a given message to STDOUT, followed by a newline.
   # The `toString` message is called on `message` to get a String value.
-  puts: { |message|
+  puts: { |message: ""|
     BuiltIn.puts(message: message.toString())
   }
 )

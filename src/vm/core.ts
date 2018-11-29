@@ -217,6 +217,15 @@ AddSlot(BuiltIn, toObject("arrayLength"), builtInFunc(function(args): IObject {
 }))
 
 /**
+ * Time / Date BuiltIns
+ */
+
+// Return the current unix timestamp (milliseconds since epoc: Jan 1, 1970)
+AddSlot(BuiltIn, toObject("timeUTC"), builtInFunc(function(): IObject {
+  return toObject(Date.now())
+}))
+
+/**
  * Debugging BuiltIns
  */
 

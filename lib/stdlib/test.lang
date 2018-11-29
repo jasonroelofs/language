@@ -15,17 +15,11 @@ Test = Object.new(
 
     # TODO: The actual running of tests should happen in a different object
     # Need something here because we have nothing else at this time.
-    self.runAll()
-  },
-
-  runAll: {
-    runner = Runner
-
-    suites.each({ |suite|
-      runner.run(suite)
-    })
-
-    runner.outputResults()
+    runner = Runner.new(
+      suites: Test.suites,
+      reporter: Reporter.new(),
+    )
+    runner.run()
   },
 )
 
@@ -37,12 +31,6 @@ Suite = Object.new(
   test: { |name, is: null|
     tests.push(Unit.new(name: name, test: is))
   },
-
-  run: { |runner|
-    tests.each({ |test|
-      test.run(runner)
-    })
-  }
 )
 
 Unit = Object.new(
@@ -51,43 +39,68 @@ Unit = Object.new(
 )
 
 Runner = Object.new(
-  results: [],
+  suites: [],
 
+  reporter: null,
+
+  assert: { |expr, message: null|
+    expr.do(
+      ifTrue: { reporter.success() },
+      ifFalse: { reporter.failure(message) }
+    )
+  },
+
+  run: {
+    reporter.start(suite)
+
+    suites.each({ |suite|
+      suite.tests.each({ |test|
+        test.test(assert)
+      })
+    })
+
+    reporter.complete()
+  },
+)
+
+Reporter = Object.new(
   assertions: 0,
 
   successes: 0,
 
   failures: 0,
 
-  assert: { |expr, message: null|
-    assertions = assertions + 1
+  startTime: 0,
 
-    expr.do(
-      ifTrue: { success() },
-      ifFalse: { failure(message) }
-    )
+  start: { |suite|
+    startTime = Time.utc()
+
+    IO.puts("Running " + suite.name)
+    IO.puts()
   },
 
   success: {
+    assertions = assertions + 1
     successes = successes + 1
+
     IO.print(".")
   },
 
   failure: { |message: null|
+    assertions = assertions + 1
     failures = failures + 1
+
     IO.print("F")
   },
 
-  run: { |suite|
-    assertCB = self.assert
-    suite.tests.each({ |test|
-      test.test(assertCB)
-    })
-  },
+  complete: {
+    IO.puts()
 
-  outputResults: {
-    IO.puts("")
-    IO.puts("Finished: " + assertions + " assertions, " + successes + " successful, " + failures + " failed")
-    IO.puts("")
+    endTime = Time.utc()
+    elapsedMs = endTime - startTime
+
+    IO.puts()
+    IO.puts("Finished in " + elapsedMs + "ms. " + assertions + " assertions, " + successes + " successful, " + failures + " failed")
+    IO.puts()
   }
 )

@@ -1,0 +1,7 @@
+# import("test")
+
+Test.describe("Time", as: { |test|
+  test("utc", is: { |assert|
+    assert(Time.utc() > 0)
+  })
+})

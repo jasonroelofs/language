@@ -364,6 +364,17 @@ describe("Lexer", () => {
       #   comment
 
       a + b # this is at the end of a line
+
+      #
+      # This comment has lots
+      #
+      # of stray
+      #
+      # Whitespace
+      #
+      #   Keeping Indents
+      #
+      c
     `
 
     let expected = [
@@ -381,7 +392,19 @@ describe("Lexer", () => {
 
       { type: TokenType.Comment, value: "this is at the end of a line" },
 
-      { type: TokenType.EOS, value: "" },
+      { type: TokenType.Comment, value: "" },
+      { type: TokenType.Comment, value: "This comment has lots" },
+      { type: TokenType.Comment, value: "" },
+      { type: TokenType.Comment, value: "of stray" },
+      { type: TokenType.Comment, value: "" },
+      { type: TokenType.Comment, value: "Whitespace" },
+      { type: TokenType.Comment, value: "" },
+      { type: TokenType.Comment, value: "  Keeping Indents" },
+      { type: TokenType.Comment, value: "" },
+
+      { type: TokenType.Identifier, value: "c" },
+
+      { type: TokenType.EOS, value: "\n" },
     ]
 
     assertTokens(input, expected)

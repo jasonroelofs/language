@@ -126,10 +126,26 @@ export default class Lexer {
   }
 
   commentToken(chunk: string): Token {
-    let test = chunk.match(this.COMMENT_REGEX)
+    if(chunk[0] == '#') {
+      // Throw away the first space if one exists, but keep all of the rest
+      // of whitespace to preserve formatting.
+      let i = 1
+      let buffer = ""
 
-    if(test) {
-      return { type: TokenType.Comment, value: test[1], source: test[0] }
+      if(chunk[1] == ' ') {
+        i += 1
+      }
+
+      while(i < chunk.length) {
+        if(chunk[i] == '\n') {
+          break
+        }
+
+        buffer += chunk[i]
+        i += 1
+      }
+
+      return { type: TokenType.Comment, value: buffer, source: chunk.substring(0, i) }
     } else {
       return null
     }
@@ -273,9 +289,6 @@ export default class Lexer {
   /**
    * Regex matchers
    */
-
-  // Match a comment (always starts with # and goes to the end of the line)
-  COMMENT_REGEX = /^#\s?(.*)/
 
   // Match all number types.
   NUMBER_REGEX = /^-?\d*\.?\d+/

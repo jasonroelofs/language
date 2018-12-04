@@ -589,6 +589,11 @@ describe("Parser", () => {
 
         # This is the second method
         second: 2,
+
+        #
+        # This is the third method
+        #
+        third: 3,
       )
     `
 
@@ -604,6 +609,7 @@ describe("Parser", () => {
 
     assert.equal(message.arguments[0].comment, "This is the first method")
     assert.equal(message.arguments[1].comment, "This is the second method")
+    assert.equal(message.arguments[2].comment, "\nThis is the third method\n")
   })
 
   describe("Error handling", () => {

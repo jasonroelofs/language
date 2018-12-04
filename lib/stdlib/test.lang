@@ -15,6 +15,8 @@ Test = Object.new(
 
     # TODO: The actual running of tests should happen in a different object
     # Need something here because we have nothing else at this time.
+    # Especially when we get to live development, this needs to be something
+    # callable at any time.
     runner = Runner.new(
       suites: Test.suites,
       reporter: Reporter.new(),
@@ -31,11 +33,30 @@ Suite = Object.new(
   test: { |name, is: null|
     tests.push(Unit.new(suite: self, name: name, test: is))
   },
+
+  run: { |reporter|
+    tests.each({ |test|
+      reporter.startTest(test)
+
+      test.test.do(
+        ifTrue: { test.test(assert) },
+        ifFalse: { reporter.pending(test) }
+      )
+
+      reporter.endTest()
+    })
+  }
 )
 
 Unit = Object.new(
+
+  # The string name given to this test.
   name: null,
+
+  # The block of the test itself.
   test: null,
+
+  # A back-reference to the suite this test is a member of.
   suite: null,
 )
 
@@ -47,7 +68,7 @@ Runner = Object.new(
   assert: { |expr, message: null|
     expr.do(
       ifTrue: { reporter.success() },
-      ifFalse: { reporter.failure(message) }
+      ifFalse: { reporter.failure(message || "Expected true, was false") }
     )
   },
 
@@ -55,28 +76,33 @@ Runner = Object.new(
     reporter.start(suite)
 
     suites.each({ |suite|
-      suite.tests.each({ |test|
-        test.test.do(
-          ifTrue: { test.test(assert) },
-          ifFalse: { reporter.pending(test) }
-        )
-      })
+      suite.run(reporter)
     })
 
     reporter.complete()
   },
 )
 
+TestResult = Object.new(
+  test: null,
+  result: false,
+  message: "",
+  file: "",
+  position: 0,
+)
+
 Reporter = Object.new(
   assertions: 0,
 
-  successes: 0,
+  successes: [],
 
-  failures: 0,
+  failures: [],
 
   pendingTests: [],
 
   startTime: 0,
+
+  currentTest: null,
 
   start: { |suite|
     startTime = Time.utc()
@@ -85,18 +111,26 @@ Reporter = Object.new(
     IO.puts()
   },
 
+  startTest: { |test|
+    currentTest = test
+  },
+
   success: {
     assertions = assertions + 1
-    successes = successes + 1
+    successes.push(TestResult.new(test: currentTest, result: true))
 
     IO.print(".")
   },
 
-  failure: { |message: null|
+  failure: { |message|
     assertions = assertions + 1
-    failures = failures + 1
+    failures.push(TestResult.new(test: currentTest, result: false, message: message))
 
     IO.print("F")
+  },
+
+  endTest: {
+    currentTest = null
   },
 
   pending: { |test|
@@ -117,10 +151,19 @@ Reporter = Object.new(
       IO.puts("\t" + test.suite.name + " " + test.name)
     })
 
+    # Output failing test details
+    IO.puts()
+    IO.puts("Test failures:")
+    failures.each({ |testResult|
+      test = testResult.test
+      IO.puts()
+      IO.puts(test.suite.name + " " + test.name + ": " + testResult.message)
+    })
+
     results = "Finished in " + elapsedMs + "ms. "
     results = results + assertions + " assertions, "
-    results = results + successes + " successes, "
-    results = results + failures + " failures"
+    results = results + successes.length() + " successes, "
+    results = results + failures.length() + " failures"
 
     (pendingTests.length() > 0).do(
       ifTrue: { results = results + ", " + pendingTests.length() + " pending" }

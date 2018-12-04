@@ -4,8 +4,9 @@ import {
   BlockNode,
   MessageSendNode,
   ArgumentNode,
+  ParameterNode,
   NodeType,
-  Expression
+  Expression,
 } from "@compiler/ast"
 import * as errors from "@vm/errors"
 import {
@@ -160,9 +161,12 @@ export default class Interpreter {
           meta[argName] = args[idx]
         }
 
+        // We don't apply as stringent argument error checking here as the intent
+        // is that all code that triggers a built-in should be itself wrapped in a code-level
+        // block that will check for argument / parameter mismatches.
         result = block.data.call(context, toFunc, meta, this)
       } else {
-        result = this.evalCodeBlock(context, block, args)
+        result = this.evalCodeBlock(node.receiver, context, block, args)
       }
 
       return result
@@ -182,16 +186,30 @@ export default class Interpreter {
     return slotValue
   }
 
-  evalCodeBlock(receiver: IObject, codeBlock: IObject, args: ArgumentNode[]): IObject {
+  evalCodeBlock(receiverNode, receiver: IObject, codeBlock: IObject, args: ArgumentNode[]): IObject {
     let parameters = SendMessage(codeBlock, toObject("parameters")).data
+
+    // Param/Arg agreement checks.
+    // We need to make sure that the arguments given can match directly to
+    // parameters defined on the block. This needs to match by arity (taking
+    // defaults into account) and name, while handling the case of a single
+    // argument not requiring a name but still requiring at least one defined
+    // parameter.
+
+    // Gave us arguments, but we don't have parameters
+    if(args.length > 0 && parameters.length == 0) {
+      throw new errors.ArgumentMismatchError(receiverNode, parameters, args)
+    }
 
     // Check for plain first argument and fix it up to match the name
     // of the first parameter
-    if(args.length > 0 && args[0].name == null) {
+    if(args.length > 0 && args[0].name == null && parameters[0]) {
       args[0].name = parameters[0].name
     }
 
     let evaldArgs = []
+    let unusedParams: Array<ParameterNode> = []
+    let usedArgs: Array<ArgumentNode> = []
 
     // Check that arguments match expected parameters and evaluate all
     // provided arguments or default parameter values in the current Space
@@ -200,11 +218,18 @@ export default class Interpreter {
 
       if(arg) {
         evaldArgs.push([toObject(param.name), this.evalNode(arg.value), toObject(arg.comment)])
+        usedArgs.push(arg)
       } else if(param.default) {
         evaldArgs.push([toObject(param.name), this.evalNode(param.default)])
       } else {
-        throw new Error(`Unmatched required parameter '${param.name}'`)
+        unusedParams.push(param)
       }
+    }
+
+    let unusedArgs = args.filter((a) => { return !usedArgs.includes(a) })
+
+    if(unusedParams.length > 0 || unusedArgs.length > 0) {
+      throw new errors.ArgumentMismatchError(receiverNode, parameters, args)
     }
 
     return this.evalBlockWithArgs(receiver, codeBlock, evaldArgs)

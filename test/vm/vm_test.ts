@@ -63,7 +63,8 @@ describe("VM", () => {
     // to accessing and updating that outer variable.
     // This is how Ruby scoping works, but is not how Python scoping works. In Python
     // I would need to say `global a` in the `b` block to enable such access.
-    // Thus I call this "Ruby-esque"
+    // Thus I call this "Ruby-esque" scoping, not because Ruby invented it, but because
+    // Ruby is my most familiar example of this implementation.
     let tests = {
       "a = 1; b = { a = a + 1 }; b(); b(); b(); a": toObject(4),
       // depth doesn't matter
@@ -396,6 +397,51 @@ describe("VM", () => {
 
       assert.equal(error.chunk, "a")
       assert.equal(error.position, 7)
+    })
+
+    it("errors when block parameters and call arguments don't line up", () => {
+      let vm = new VM()
+      var error
+
+      let tests = {
+        // Block doesn't have any arguments defined
+        "a = { 1 }; a(1)": ["a", 11],
+
+        // Block expects more arguments
+        "a = { |b| }; a()": ["a", 13],
+
+        // Block doesn't have an argument with that name
+        "a = { |b| }; a(c: 1)": ["a", 13],
+
+        // Block expects more arguments
+        "a = { |b,c| }; a(b: 1)": ["a", 15],
+
+        // Call uses too many arguments
+        "a = { |b| }; a(b: 1, c: 2)": ["a", 13],
+
+        // Same rules apply to message send invocations
+        "a = Object.new(b: { |c| }); a.b()": ["b", 30],
+        "a = Object.new(b: { }); a.b(1)": ["b", 26],
+
+        // And make sure rules apply to direct invocation
+        "{ |a| }()": ["{", 0],
+        "{ }(1)": ["{", 0],
+      }
+
+      for(var test in tests) {
+        let expected = tests[test]
+
+        try {
+          vm.eval(test)
+        } catch(e) {
+          error = e
+        }
+
+        assertErrorType(error, errors.ArgumentMismatchError)
+
+        assert.equal(error.chunk, expected[0], `Wrong chunk for '${test}'`)
+        assert.equal(error.position, expected[1], `Wrong position for '${test}'`)
+      }
     })
 
     function assertErrorType(result: errors.RuntimeError, errorClass) {

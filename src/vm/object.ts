@@ -100,7 +100,7 @@ function SendMessage(receiver: IObject, messageName: IObject): IObject {
   // TODO Ensure this is a String
   let message = messageName.data
 
-  let hasSlot = findWithSlot(receiver, message)
+  let hasSlot = FindIn(receiver, (obj) => obj.slots.has(message))
 
   if(hasSlot) {
     return hasSlot.slots.get(message)
@@ -109,16 +109,15 @@ function SendMessage(receiver: IObject, messageName: IObject): IObject {
   }
 }
 
-/**
- * For a given slot name and an object to begin the search, find the object
- * or its parent that has the requested slot. If no slot exists in the stack
- * then the original search object is returned
- */
-function FindObjectWithSlot(obj: IObject, slotName: IObject): IObject {
-  return findWithSlot(obj, slotName.data) || obj
-}
+type FindInCheckFunc = (IObject) => boolean
 
-function findWithSlot(obj: IObject, message: string, seen: Set<number> = null): IObject {
+/**
+ * For a given slot name and a check function, find the first object
+ * or the first in it's parents (depth first) that matches the check function.
+ * Returns javascript null if no match found.
+ * Protects against infinite loops via circular parents.
+ */
+function FindIn(obj: IObject, checkFunc: FindInCheckFunc, seen: Set<number> = null): IObject {
   // Protection against lookup loops where parents can point
   // to objects in the current or other parent stacks.
   if(seen == null) {
@@ -131,21 +130,20 @@ function findWithSlot(obj: IObject, message: string, seen: Set<number> = null): 
 
   seen.add(obj.objectId)
 
-  if(obj.slots.has(message)) {
+  if(checkFunc(obj)) {
     return obj
   }
 
-  let parentSlot = null
-
+  let found = null
   for(var parent of obj.parents) {
-    parentSlot = findWithSlot(parent, message, seen)
+    found = FindIn(parent, checkFunc, seen)
 
-    if(parentSlot) {
-      return parentSlot
+    if(found) {
+      return found
     }
   }
 
-  return null
+  return found
 }
 
 /**
@@ -253,7 +251,7 @@ export {
   RemoveSlot,
   GetSlot,
   AddParent,
-  FindObjectWithSlot,
+  FindIn,
   toObject,
   Objekt,
   Slot,

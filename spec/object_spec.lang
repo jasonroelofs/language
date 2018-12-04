@@ -1,0 +1,25 @@
+# import("test")
+
+Test.describe("Object", as: { |test|
+  test("is", is: { |assert|
+    assert(Object.is(Object))
+    assert(Array.is(Array))
+    assert(Array.is(Object))
+    assert(Number.is(Object))
+
+    assert(!Object.is(Number))
+    assert(!Number.is(Array))
+
+    a = [1, 2, 3]
+    assert(a.is(a))
+    assert(a.is(Array))
+
+    assert(a[0].is(Number))
+    assert(a[1].is(Number))
+    assert(a[2].is(Number))
+
+    b = "string"
+    assert(b.is(b))
+    assert(b.is(String))
+  })
+})

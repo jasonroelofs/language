@@ -2,7 +2,7 @@ import {
   NewObject, toObject, IObject, Objekt,
   Number, String, Array,
   True, False, Null,
-  AddSlot, GetSlot,
+  AddSlot, GetSlot, FindIn,
   SendMessage,
 } from "@vm/object"
 
@@ -22,6 +22,23 @@ function builtInFunc(func: BuiltInFunction): IObject {
   value.builtIn = true
 
   return value
+}
+
+// For a set of arguments provided to a built-in function, pull out the keys
+// provided in argKeys and throw an exception if such key is not found.
+// An array is returned with the extracted values provided in the same order
+// as argKeys.
+function extractParams(args, ...argKeys) {
+  let ret = []
+  for(let key of argKeys) {
+    if(args[key] == undefined) {
+      throw new Error(`[BuiltIn Error] Expected argument '${key}' not found in the provided arguments: ${Object.keys(args).join(", ")}`)
+    }
+
+    ret.push(args[key])
+  }
+
+  return ret
 }
 
 /**
@@ -71,6 +88,24 @@ AddSlot(Objekt, toObject("objectId"), builtInFunc(function(): IObject {
  * Container object for all built-in methods we will be exposing to the user
  */
 let BuiltIn = NewObject(Objekt, null, {objectName: "BuiltIn"})
+
+/**
+ * Object BuiltIns
+ */
+AddSlot(BuiltIn, toObject("objectIs"), builtInFunc(function(args): IObject {
+  let [obj, expected] = extractParams(args, "object", "type")
+
+  if(FindIn(obj, (test) => test.objectId == expected.objectId)) {
+    return True
+  }
+
+  return False
+}))
+
+
+/**
+ * Number BuiltIns
+ */
 
 AddSlot(BuiltIn, toObject("numberOp"), builtInFunc(function(args): IObject {
   let left = args["left"]

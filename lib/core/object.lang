@@ -5,6 +5,20 @@ Object.addSlots(
     ifTrue()
   },
 
+  # Is this object of the expected type?
+  # Which in this system means does this object have the expected object
+  # in its parents tree?
+  # Will also return true if the object is itself the expected value,
+  # e.g.
+  #
+  #   Object.is(Object)   => true
+  #   1.is(Number)        => true
+  #   "String".is(Number) => false
+  #
+  is: { |expected|
+    BuiltIn.objectIs(object: self, type: expected)
+  },
+
   # The NOT operator negates the current value using truthiness rules.
   # As Objects are always Truthy, this returns false.
   "!": {

@@ -15,7 +15,7 @@ import {
   SendMessage,
   AddSlot,
   AddParent,
-  FindObjectWithSlot,
+  FindIn,
   toObject,
   Objekt,
   Number,
@@ -63,8 +63,10 @@ export default class Interpreter {
         let varValue = this.evalNode(node.right)
         AddSlot(varValue, toObject("objectName"), varName)
 
-        let owningObject = FindObjectWithSlot(this.currentSpace, varName)
-        AddSlot(owningObject, varName, varValue, toObject(node.comment))
+        // Look up the space stack to find the first scope that already has this
+        // slot defined and assume that is the scope we should also be changing values in
+        let owningObject = FindIn(this.currentSpace, (obj) => obj.slots.has(node.name))
+        AddSlot(owningObject || this.currentSpace, varName, varValue, toObject(node.comment))
 
         return varValue
 

@@ -67,21 +67,8 @@ function addSlots(obj: IObject, args, meta = {}) {
   }
 }
 
-AddSlot(Objekt, toObject("addSlot"), builtInFunc(function(args): IObject {
-  let slotName = args["0"]
-  let slotValue = args["as"]
-  AddSlot(this, slotName, slotValue)
-
-  return Null
-}))
-
-AddSlot(Objekt, toObject("getSlot"), builtInFunc(function(args): IObject {
-  let slotName = args["0"]
-  return GetSlot(this, slotName)
-}))
-
 /**
- * Container object for all built-in methods we will be exposing to the user
+ * Container object for all built-in methods we will be exposing to the user.
  */
 let BuiltIn = NewObject(Objekt, null, {objectName: "BuiltIn", objectId: 99})
 
@@ -92,6 +79,19 @@ AddSlot(BuiltIn, toObject("objectId"), builtInFunc(function(args): IObject {
   let [obj] = extractParams(args, "object")
 
   return toObject(obj.objectId)
+}))
+
+AddSlot(BuiltIn, toObject("objectAddSlot"), builtInFunc(function(args): IObject {
+  let [obj, slotName, slotValue] = extractParams(args, "object", "name", "as")
+
+  AddSlot(obj, slotName, slotValue)
+
+  return Null
+}))
+
+AddSlot(Objekt, toObject("objectGetSlot"), builtInFunc(function(args): IObject {
+  let [obj, slotName] = extractParams(args, "object", "name")
+  return GetSlot(obj, slotName)
 }))
 
 AddSlot(BuiltIn, toObject("objectHasSlot"), builtInFunc(function(args): IObject {

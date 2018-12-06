@@ -1,5 +1,16 @@
 Object.addSlots(
 
+  # Add a single slot to this object.
+  addSlot: { |name, as|
+    BuiltIn.objectAddSlot(object: self, name: name, as: as)
+  },
+
+  # Find a given slot in this object and instead of returning the value at that slot,
+  # this returns a meta object on which information about the slot is stored.
+  getSlot: { |name|
+    BuiltIn.objectGetSlot(object: self, name: name)
+  },
+
   # Get this object's unique internal id
   objectId: {
     BuiltIn.objectId(object: self)

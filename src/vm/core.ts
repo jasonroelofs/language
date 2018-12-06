@@ -317,7 +317,7 @@ function printObjSlots(obj: IObject, depth: number) {
  * All main constants are defined here.
  * The World is alway accessible directly via the 'World' constant.
  */
-var World = NewObject(Objekt, null, {objectName: "World"})
+var World = NewObject(Objekt, null, {objectName: "World", objectId: 20})
 AddSlot(World, toObject("World"), World)
 
 AddSlot(World, toObject("BuiltIn"), BuiltIn)

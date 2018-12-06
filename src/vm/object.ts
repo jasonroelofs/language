@@ -41,6 +41,9 @@ interface ObjectAttrs {
   // What's the user-visible name of this object?
   // At run-time, set on assignment. In the core, set via this option to NewObject.
   objectName?: string
+
+  // Should this object have an explicit objectId?
+  objectId?: number
 }
 
 /**
@@ -64,18 +67,30 @@ let baseToString = function() {
   }
 }
 
+// Every object gets a unique ID
+// The first 100 are reserved for internal use
+// TODO Not multi-interpreter or thread safe at all :D
+var objectIdSeq = 100;
+
 /**
  * Create a new object from a given parent.
  * The `data` parameter is meant for internal use only, as a pointer
  * to the Javascript value of a given object, e.g. a number (1) or a string ("").
  */
-var objectIdSeq = 0; // TODO Not multi-interpreter or thread safe at all :D
 function NewObject(parent: IObject, data = null, attrs: ObjectAttrs = null): IObject {
+  let objId
+
+  if(attrs && attrs.objectId) {
+    objId = attrs.objectId
+  } else {
+    objId = objectIdSeq++
+  }
+
   let obj = {
     parents: (parent ? [parent] : []),
     slots: new Map(),
     metaSlots: new Map(),
-    objectId: objectIdSeq++,
+    objectId: objId,
     data: data,
     codeBlock: false,
     builtIn: false,
@@ -186,23 +201,23 @@ function AddParent(receiver: IObject, obj: IObject) {
  * The base of all objects. Should not ever be used directly.
  * Provides the slots for Object, through which everything else should build off of.
  */
-var ObjectBase = NewObject(null)                                    // 0
+var ObjectBase = NewObject(null, null, {objectId: 0})
 
 // Sorry, this can't be "Object" in javascript land. That name is already taken
 // and will cause weird problems if we try to reuse it.
 // This will be properly renamed back to "Object" when in the language.
-var Objekt = NewObject(ObjectBase, null, {objectName: "Object"})    // 1
+var Objekt = NewObject(ObjectBase, null, {objectName: "Object", objectId: 1})
 
-var Slot = NewObject(Objekt, null, {objectName: "Slot"})            // 2
+var Null = NewObject(Objekt, null, {objectName: "Null", objectId: 2})
+var True = NewObject(Objekt, true, {objectName: "True", objectId: 3})
+var False = NewObject(Objekt, false, {objectName: "False", objectId: 4})
 
-var Null = NewObject(Objekt, null, {objectName: "Null"})            // 3
-var True = NewObject(Objekt, true, {objectName: "True"})            // 4
-var False = NewObject(Objekt, false, {objectName: "False"})         // 5
+var Number = NewObject(Objekt, 0, {objectName: "Number", objectId: 5})
+var String = NewObject(Objekt, "", {objectName: "String", objectId: 6})
 
-var Number = NewObject(Objekt, 0, {objectName: "Number"})           // 6
-var String = NewObject(Objekt, "", {objectName: "String"})          // 7
+var Array = NewObject(Objekt, [], {objectName: "Array", objectId: 7})
 
-var Array = NewObject(Objekt, [], {objectName: "Array"})            // 8
+var Slot = NewObject(Objekt, null, {objectName: "Slot", objectId: 8})
 
 function toObject(nativeValue: any): IObject {
   if(nativeValue === true) {

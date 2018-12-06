@@ -1,0 +1,25 @@
+# import("test")
+
+Test.describe("String", as: { |test|
+  test("+", is: { |assert|
+    one = "one"
+    two = "two"
+
+    assert(one + two == "onetwo")
+  })
+
+  test("==", is: { |assert|
+    a = "one"
+    assert(a == a)
+
+    assert("one" == "one")
+    assert(!("one" == "two"))
+    assert(!("one" == null))
+  })
+
+  test("!=", is: { |assert|
+    assert("one" != "two")
+    assert(!("one" != "one"))
+  })
+
+})

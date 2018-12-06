@@ -32,5 +32,48 @@ Array.addSlots(
   # Return the number of elements in this array
   length: {
     BuiltIn.arrayLength(array: self)
+  },
+
+  "==": { |other|
+    # TODO: Update when we support `super` calls.
+    objectId() == other.objectId() || {
+      other.is(Array) &&
+      { length() == other.length() } &&
+      { allElementsEqual(other) }
+    }
+  }
+
+  allElementsEqual: { |other|
+    i = 0
+    equal = true
+
+    each({ |element|
+      # If we've already found a mis-match, fly past the rest
+      # TODO: Revisit when we've got a way to short-circuit the rest
+      # of the invocations, like `next`
+      equal.do(
+        ifTrue: { equal = (element == other[i]) },
+      )
+
+      i = i + 1
+    })
+
+    equal
+  }
+
+  toString: {
+    buf = "["
+    i = 0
+
+    each({ |element|
+      buf = buf + element.toString()
+      i = i + 1
+
+      (i < length()).do(
+        ifTrue: { buf = buf + ", " }
+      )
+    })
+
+    buf + "]"
   }
 )

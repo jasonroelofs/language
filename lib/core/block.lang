@@ -12,5 +12,12 @@ Block = Object.new(
 
   # The scope is the Space that was active when this Block was
   # created. This is used to make sure that Blocks are closures.
-  scope: null
+  scope: null,
+
+  # All blocks can respond to the `call` message.
+  # In fact, any object that implements the `call` message can be treated
+  # like a block!
+  # Provided here for documentation purposes. The handling of the
+  # "call" message is special-cased in the interpreter.
+  call: null,
 )

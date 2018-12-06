@@ -42,6 +42,10 @@ Test.describe("Array", as: { |test|
     assert(a.pop() == null)
   })
 
+  test("toString", is: { |assert|
+    assert([1, 2, 3].toString() == "[1, 2, 3]")
+  })
+
   test("each", is: { |assert|
     a = [1, 2, 3]
     b = []
@@ -50,10 +54,31 @@ Test.describe("Array", as: { |test|
       b.push(entry * 2)
     })
 
-    # TODO: When array equality is in place
-    # assert(b == [2, 4, 6])
-    assert(b[0] == 2)
-    assert(b[1] == 4)
-    assert(b[2] == 6)
+    assert(b == [2, 4, 6])
+  })
+
+  test("==", is: { |assert|
+    assert([] == [])
+
+    a = [1, 2, 3]
+    b = [3, 4, 5]
+    assert(a == a)
+    assert(b == b)
+    assert(a != b)
+
+    assert(a != 1)
+    assert(b != "2")
+
+    assert([1] == [1])
+    assert([1] != [2])
+
+    assert([1, 2] != [1])
+
+    assert([1, "str"] == [1, "str"])
+
+    assert(["str"] == ["str"])
+    assert(["str"] != [1])
+
+    assert([null] == [null])
   })
 })

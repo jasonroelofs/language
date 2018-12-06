@@ -80,18 +80,26 @@ AddSlot(Objekt, toObject("getSlot"), builtInFunc(function(args): IObject {
   return GetSlot(this, slotName)
 }))
 
-AddSlot(Objekt, toObject("objectId"), builtInFunc(function(): IObject {
-  return toObject(this.objectId)
-}))
-
 /**
  * Container object for all built-in methods we will be exposing to the user
  */
-let BuiltIn = NewObject(Objekt, null, {objectName: "BuiltIn"})
+let BuiltIn = NewObject(Objekt, null, {objectName: "BuiltIn", objectId: 99})
 
 /**
  * Object BuiltIns
  */
+AddSlot(BuiltIn, toObject("objectId"), builtInFunc(function(args): IObject {
+  let [obj] = extractParams(args, "object")
+
+  return toObject(obj.objectId)
+}))
+
+AddSlot(BuiltIn, toObject("objectHasSlot"), builtInFunc(function(args): IObject {
+  let [obj, slotName] = extractParams(args, "object", "slotName")
+
+  return FindIn(obj, (o) => o.slots.has(slotName.data)) ? True : False
+}))
+
 AddSlot(BuiltIn, toObject("objectIs"), builtInFunc(function(args): IObject {
   let [obj, expected] = extractParams(args, "object", "type")
 
@@ -148,13 +156,13 @@ AddSlot(BuiltIn, toObject("numberToString"), builtInFunc(function(args): IObject
  */
 
 AddSlot(BuiltIn, toObject("stringOp"), builtInFunc(function(args): IObject {
-  let left = args["left"]
-  let op = args["op"]
-  let right = args["right"]
+  let [left, op, right] = extractParams(args, "left", "op", "right")
 
   switch(op.data) {
     case "+":
       return toObject(left.data + right.data)
+    case "==":
+      return toObject(left.data == right.data)
     default:
       throw new Error(`Unknown operand on strings '${op}'`)
   }
@@ -222,7 +230,8 @@ AddSlot(BuiltIn, toObject("arraySet"), builtInFunc(function(args): IObject {
 }))
 
 AddSlot(BuiltIn, toObject("arrayEach"), builtInFunc(function(args, meta = {}, vm): IObject {
-  let array = args["array"]
+  let [array] = extractParams(args, "array")
+
   // Block as passed in from the language is actually an ActivationRecord
   // which we need to unwrap to get the actual block to evaluate.
   let block = SendMessage(args["block"], toObject("block"))
@@ -248,7 +257,9 @@ AddSlot(BuiltIn, toObject("arrayPop"), builtInFunc(function(args): IObject {
 }))
 
 AddSlot(BuiltIn, toObject("arrayLength"), builtInFunc(function(args): IObject {
-  return toObject(args["array"].data.length)
+  let [array] = extractParams(args, "array")
+
+  return toObject(array.data.length)
 }))
 
 /**

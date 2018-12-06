@@ -260,10 +260,10 @@ export default class Interpreter {
     let previousSpace = this.pushSpace(scope)
 
     // If this block is owned by an explicit object, we need to make sure
-    // that `self` is set appropriately to that object. Otherwise `self` should
-    // be the block's execution space (or should it be the block itself?)
+    // that the `self` slot is set appropriately to that object.
     if(receiver) {
       AddSlot(this.currentSpace, toObject("self"), receiver)
+
       // Also inject the receiver in the current scope to ensure slot lookups
       // properly check this object
       AddParent(this.currentSpace, receiver)

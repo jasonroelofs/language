@@ -22,4 +22,55 @@ Test.describe("Object", as: { |test|
     assert(b.is(b))
     assert(b.is(String))
   })
+
+  test("&&", is: { |assert|
+    assert(true && true)
+    assert(!(true && false))
+    assert(!(null && true))
+
+    assert(!(false && false))
+
+    assert(1 && 2)
+    assert(!(1 && false))
+
+    # && does not short-circuit by default
+    a = 1
+    assert((a = a + 1) && (a = a + 2))
+    assert(a == 4, message: "Both sides, a is now " + a)
+
+    # But provide a block and it will
+    b = 1
+    assert(!(false && { b = b + 2 }))
+    assert(b == 1, message: "Short circuit 1, b ended up " + b)
+
+    c = 1
+    assert((c = c + 1) && { c = c + 2 })
+    assert(c == 4, message: "Short circuit 2, c ended up " + c)
+  })
+
+  test("||", is: { |assert|
+    assert(true || true)
+    assert(true || false)
+    assert(null || true)
+    assert(true || null)
+
+    assert(!(false || false))
+
+    assert(1 || 2)
+    assert(1 || false)
+
+    # || does not short-circuit by default
+    a = 1
+    assert((a = a + 1) || (a = a + 2))
+    assert(a == 4, message: "Both sides, a is now " + a)
+
+    # But provide a block and it will
+    b = 1
+    assert(true || { b = b + 2 })
+    assert(b == 1, message: "Short circuit 1, b ended up " + b)
+
+    c = 1
+    assert(false || { c = c + 2 })
+    assert(c == 3, message: "Short circuit 2, c ended up " + c)
+  })
 })

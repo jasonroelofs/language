@@ -277,6 +277,17 @@ describe("VM", () => {
     assert.equal(result.data, 9)
   })
 
+  it("keeps the value of `self` through nested messages", () => {
+    let vm = new VM()
+
+    let result = vm.eval(`
+      obj = Object.new(one: 1, two: { self.one + self.one }, three: { self.two() + self.one })
+      obj.three()
+    `)
+
+    assert.equal(result.data, 3)
+  })
+
   it("supports creation of new objects", () => {
     let vm = new VM()
 

@@ -1,4 +1,15 @@
 Object.addSlots(
+
+  # Get this object's unique internal id
+  objectId: {
+    BuiltIn.objectId(object: self)
+  },
+
+  # Does this object contain a slot with the given name?
+  hasSlot: { |slotName|
+    BuiltIn.objectHasSlot(object: self, slotName: slotName)
+  },
+
   # All objects except False and Null are what we call "truthy".
   # When the `do` message is sent, objects will always execute the `ifTrue` block.
   do: { |ifTrue: {}, ifFalse: {}|
@@ -25,25 +36,42 @@ Object.addSlots(
     false
   },
 
+  # TODO: So due to how the system works, && and || do not
+  # short-circuit by default, but instead evaluate the whole thing.
+  # To make this short-circuit itself would require a special execution
+  # path through the interpereter just for the && and || messages, which
+  # I'm not a fan of doing. One option is to provide an `.and` and `.or` message
+  # which explicitly takes blocks to evaluate which can lead to verbose code.
+  # Alternatively, the path I'm taking for now is that if you wrap all following
+  # clauses for && and || in a block, then these messages will only evaluate that
+  # block if necessary.
+
   # The AND operator will return `other` if both this object and `other` are
   # truthy. Otherwise will return this object if it's falsey or `other` if it
   # is falsey
   "&&": { |other|
-    # TODO: Why can't `self` be used verbatim here?
-    _self = self
     self.do(
-      ifTrue: { other },
-      ifFalse: { _self }
+      ifTrue: {
+        other.hasSlot("call").do(
+          ifTrue: { other.call() },
+          ifFalse: { other }
+        )
+      },
+      ifFalse: { self }
     )
   },
 
   # The OR operator will return this object if it's truthy, otherwise it will
   # return the `other` object.
   "||": { |other|
-    _self = self
     self.do(
-      ifTrue: { _self },
-      ifFalse: { other }
+      ifTrue: { self },
+      ifFalse: {
+        other.hasSlot("call").do(
+          ifTrue: { other.call() },
+          ifFalse: { other }
+        )
+      }
     )
   },
 

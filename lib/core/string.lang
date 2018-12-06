@@ -6,6 +6,11 @@ String.addSlots(
     BuiltIn.stringOp(left: self, op: "+", right: other.toString())
   },
 
+  # String equality
+  "==": { |other|
+    objectId() == other.objectId() || { BuiltIn.stringOp(left: self, op: "==", right: other) }
+  },
+
   toString: {
     self
   }

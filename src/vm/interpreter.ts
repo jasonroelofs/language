@@ -174,11 +174,15 @@ export default class Interpreter {
       return result
     }
 
-    // Not executing a code block, return the raw value of this node
+    // Not executing a code block, return the raw value stored at this slot
     let slotValue = SendMessage(receiver ? receiver : this.currentSpace, message)
 
     if(slotValue == null) {
-      throw new errors.SlotNotFoundError(node.receiver ? node.message : node, message)
+      if(receiver) {
+        throw new errors.NoSuchMessageError(node, message)
+      } else {
+        throw new errors.SlotNotFoundError(node, message)
+      }
     }
 
     if(slotValue.codeBlock) {

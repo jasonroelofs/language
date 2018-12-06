@@ -56,13 +56,29 @@ class RuntimeError extends Error {
 class SlotNotFoundError extends RuntimeError {
   message: string
 
-  constructor(node: Node | MessageNode, message: IObject) {
+  constructor(node: Node, message: IObject) {
     super(node.token)
     this.message = message.data
   }
 
   errorType(): string {
     return `Slot '${this.message}' Not Found`
+  }
+}
+
+class NoSuchMessageError extends RuntimeError {
+
+  message: string
+  receiver: Node
+
+  constructor(node: Node, message: IObject) {
+    super(node.token)
+    this.message = message.data
+    this.receiver = node.receiver
+  }
+
+  errorType(): string {
+    return `'${this.receiver.token.value}' does not respond to the '${this.message}' message`
   }
 }
 
@@ -179,6 +195,7 @@ class ArgumentMismatchError extends RuntimeError {
 export {
   RuntimeError,
   SlotNotFoundError,
+  NoSuchMessageError,
   NotABlockError,
   ArgumentMismatchError,
 }

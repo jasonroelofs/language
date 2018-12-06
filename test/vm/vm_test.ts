@@ -346,9 +346,9 @@ describe("VM", () => {
       var error
 
       let tests = {
-        "World.unknownSlot": ["unknownSlot", 6],
-        "missing": ["missing", 0],
-        "{ missing() }()": ["missing", 2],
+        "World.unknownSlot": [errors.NoSuchMessageError, ".", 5],
+        "missing": [errors.SlotNotFoundError, "missing", 0],
+        "{ missing() }()": [errors.SlotNotFoundError, "missing", 2],
       }
 
       for(var test in tests) {
@@ -358,10 +358,12 @@ describe("VM", () => {
           error = e
         }
 
-        assertErrorType(error, errors.SlotNotFoundError)
+        let expected = tests[test]
 
-        assert.equal(error.chunk, tests[test][0], `Wrong chunk, expected ${tests[test][0]} got ${error.chunk}`)
-        assert.equal(error.position, tests[test][1], `Wrong position, expected ${tests[test][1]} got ${error.position}`)
+        assertErrorType(error, expected[0])
+
+        assert.equal(error.chunk, expected[1], `Wrong chunk, expected ${tests[test][0]} got ${error.chunk}`)
+        assert.equal(error.position, expected[2], `Wrong position, expected ${tests[test][1]} got ${error.position}`)
       }
     })
 

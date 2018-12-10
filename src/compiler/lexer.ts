@@ -56,15 +56,14 @@ export default class Lexer {
           this.identifierToken(chunk) ||
           this.unknownToken(chunk)
       } catch(error) {
+        // TODO: Update error API to match token: pos, file, line, ch
         error.position = this.currentPos
         error.file = this.filePath
         this.errors.push(error)
         break
       }
 
-      token.pos = this.currentPos
-      token.file = this.filePath
-
+      this.applyPositionInfo(token)
       this.consume(token)
       this.tokens.push(token)
 
@@ -73,8 +72,7 @@ export default class Lexer {
       // and mark it as such.
       let eol = this.endOfStatementToken(this.input.substring(this.currentPos), token)
       if(eol) {
-        eol.pos = this.currentPos
-        eol.file = this.filePath
+        this.applyPositionInfo(eol)
         this.tokens.push(eol)
         this.currentPos += tokenLength(eol)
       }
@@ -89,9 +87,55 @@ export default class Lexer {
       this.tokens.push({ type: TokenType.EOS, value: "", pos: this.currentPos, file: this.filePath })
     }
 
+    // Run through our tokens one more time to fill out the `line` and `ch` fields
+    this.calcLineInfo()
+
     return {
       tokens: this.tokens,
       errors: this.errors
+    }
+  }
+
+  applyPositionInfo(token: Token) {
+    token.pos = this.currentPos
+    token.file = this.filePath
+  }
+
+  // Post-process the tokens list to fill in line and character information
+  calcLineInfo() {
+    if(this.tokens.length == 0) {
+      return
+    }
+
+    // TODO Also update entries in this.errors
+
+    let tokenIdx = 0
+    let inputIdx = 0
+    let currLine = 1
+    let currCh = 1
+    let topToken = this.tokens[0]
+
+    while(inputIdx < this.input.length) {
+      if(topToken.pos == inputIdx) {
+        topToken.line = currLine
+        topToken.ch = currCh
+
+        tokenIdx += 1
+        topToken = this.tokens[tokenIdx]
+
+        if(!topToken) {
+          return
+        }
+      }
+
+      if(this.input[inputIdx] == "\n") {
+        currLine += 1
+        currCh = 1
+      } else {
+        currCh += 1
+      }
+
+      inputIdx += 1
     }
   }
 
@@ -194,7 +238,7 @@ export default class Lexer {
               buffer += `\\'`
               break;
             default:
-              throw new UnknownEscapeSequenceError({ type: TokenType.String, value: chunk, pos: i})
+              throw new UnknownEscapeSequenceError({ type: TokenType.String, value: chunk, pos: i })
           }
 
           i += 1

@@ -50,6 +50,12 @@ export interface Token {
   // in the input string
   pos?: number
 
+  // The 1-based line number of this token in `file`
+  line?: number
+
+  // The 1-based character position of this token on its line
+  ch?: number
+
   // The file path to the source file from which we
   // created this token in the Lexer
   file?: string

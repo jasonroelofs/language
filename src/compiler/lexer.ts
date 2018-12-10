@@ -56,9 +56,10 @@ export default class Lexer {
           this.identifierToken(chunk) ||
           this.unknownToken(chunk)
       } catch(error) {
-        // TODO: Update error API to match token: pos, file, line, ch
-        error.position = this.currentPos
-        error.file = this.filePath
+        this.applyPositionInfo(error)
+        // TODO There's probably a better way to
+        // clean up errors here to better match runtime error structures.
+        error.token.file = this.filePath
         this.errors.push(error)
         break
       }
@@ -107,15 +108,21 @@ export default class Lexer {
       return
     }
 
-    // TODO Also update entries in this.errors
-
     let tokenIdx = 0
     let inputIdx = 0
-    let currLine = 1
-    let currCh = 1
+    let currLine = 0
+    let currCh = 0
+
     let topToken = this.tokens[0]
+    // TODO: Update when we have more than one error returning
+    let topError = this.errors[0]
 
     while(inputIdx < this.input.length) {
+      if(topError && topError.pos == inputIdx) {
+        topError.token.line = currLine
+        topError.token.ch = currCh
+      }
+
       if(topToken.pos == inputIdx) {
         topToken.line = currLine
         topToken.ch = currCh
@@ -130,7 +137,7 @@ export default class Lexer {
 
       if(this.input[inputIdx] == "\n") {
         currLine += 1
-        currCh = 1
+        currCh = 0
       } else {
         currCh += 1
       }

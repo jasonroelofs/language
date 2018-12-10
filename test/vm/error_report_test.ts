@@ -31,7 +31,7 @@ describe("ErrorReport", () => {
     `
     let chunk = "e f +"
     let pos = text.indexOf(chunk)
-    let error = new SyntaxError(stringToken(chunk, pos))
+    let error = new SyntaxError(stringToken(chunk, {line: 3, ch: 0}))
 
     let report = new ErrorReport(error, fileMap(null, text))
     let output = report.buildReport()
@@ -52,7 +52,7 @@ describe("ErrorReport", () => {
     `
     let chunk = "e f +"
     let pos = text.indexOf(chunk)
-    let error = new SyntaxError(stringToken(chunk, pos))
+    let error = new SyntaxError(stringToken(chunk, {line: 1, ch: 7}))
 
     let report = new ErrorReport(error, fileMap(null, text))
     let output = report.buildReport()
@@ -68,7 +68,7 @@ describe("ErrorReport", () => {
 
   it("can include current file name information", () => {
     let text = "Error starts here"
-    let error = new SyntaxError(stringToken(text, 0, "my/test/file.lang"))
+    let error = new SyntaxError(stringToken(text, {line: 0, ch: 0, file: "my/test/file.lang"}))
 
     let report = new ErrorReport(error, fileMap("my/test/file.lang", text))
     let output = report.buildReport()
@@ -84,7 +84,7 @@ describe("ErrorReport", () => {
 
   it("tries to find the right location if similar text exists on the same line", () => {
     let text = "a = 1; a.error"
-    let error = new SyntaxError(stringToken("a", 7, "my/test/file.lang"))
+    let error = new SyntaxError(stringToken("a", {line: 0, ch: 7, file: "my/test/file.lang"}))
 
     let report = new ErrorReport(error, fileMap("my/test/file.lang", text))
     let output = report.buildReport()
@@ -236,15 +236,13 @@ describe("ErrorReport", () => {
 
     constructor(startToken, endToken) {
       super(endToken)
-      this.position = endToken.pos
 
       this.startToken = startToken
       this.endToken = endToken
     }
     reportOptions(): Object {
       return {
-        startChunk: this.startToken.value,
-        startChunkPosition: this.startToken.pos,
+        startToken: this.startToken,
         startDescription: "Block opened here",
       }
     }
@@ -260,8 +258,8 @@ describe("ErrorReport", () => {
     `
 
     let error = new MultiTokenError(
-      { type: TokenType.OpenBlock, value: "{", pos: input.indexOf("{"), file: "[test]" },
-      { type: TokenType.EOS, value: "", pos: input.length, file: "[test]" },
+      { type: TokenType.OpenBlock, value: "{", line: 0, ch: 8, file: "[test]" },
+      { type: TokenType.EOS, value: "", line: 4, ch: 7, file: "[test]" },
     )
 
     let report = new ErrorReport(error, fileMap("[test]", input))
@@ -287,8 +285,8 @@ describe("ErrorReport", () => {
     input = input.trimRight()
 
     let error = new MultiTokenError(
-      { type: TokenType.OpenBlock, value: "{", pos: input.indexOf("{"), file: "[test]" },
-      { type: TokenType.EOS, value: "", pos: input.length, file: "[test]" },
+      { type: TokenType.OpenBlock, value: "{", line: 0, ch: 8, file: "[test]" },
+      { type: TokenType.EOS, value: "", line: 99, ch: 7, file: "[test]" },
     )
 
     let report = new ErrorReport(error, fileMap("[test]", input))
@@ -317,8 +315,8 @@ describe("ErrorReport", () => {
     assert.equal(output, expected)
   })
 
-  function stringToken(chunk: string, pos: number = 0, file: string = null): Token {
-    return { type: TokenType.String, value: chunk, pos: pos, file: file }
+  function stringToken(chunk: string, {line = 0, ch = 0, file = null} = {}): Token {
+    return { type: TokenType.String, value: chunk, file: file, line: line, ch: ch }
   }
 
   function fileMap(filePath, content) {

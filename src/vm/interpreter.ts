@@ -330,7 +330,8 @@ export default class Interpreter {
     let sender = NewObject(this.Sender)
 
     // TODO Something that lets us print out the name of the message?
-    AddSlot(sender, toObject("line"), toObject(node.token.line))
+    // Line is 0-based internally, so we push it to 1-based here for user readability
+    AddSlot(sender, toObject("line"), toObject(node.token.line + 1))
     AddSlot(sender, toObject("file"), toObject(node.token.file))
 
     // We make use of shift/unshift to keep a reverse order so that in the language

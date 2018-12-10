@@ -434,29 +434,29 @@ describe("Lexer", () => {
     assert.equal(tokens[9].pos, 61, "Wrong position for EOS after string")
     assert.equal(tokens[10].pos, 70, "Wrong position for nested")
 
-    assert.equal(tokens[0].line, 2, "Wrong line for a")
-    assert.equal(tokens[1].line, 2, "Wrong line for EOS after a")
-    assert.equal(tokens[2].line, 3, "Wrong line for b")
-    assert.equal(tokens[3].line, 3, "Wrong line for EOS (;) after b")
-    assert.equal(tokens[4].line, 3, "Wrong line for c")
-    assert.equal(tokens[5].line, 3, "Wrong line for +")
-    assert.equal(tokens[6].line, 3, "Wrong line for d")
-    assert.equal(tokens[7].line, 3, "Wrong line for EOS after d")
-    assert.equal(tokens[8].line, 4, "Wrong line for string")
-    assert.equal(tokens[9].line, 5, "Wrong line for EOS after string")
-    assert.equal(tokens[10].line, 6, "Wrong line for nested")
+    assert.equal(tokens[0].line, 1, "Wrong line for a")
+    assert.equal(tokens[1].line, 1, "Wrong line for EOS after a")
+    assert.equal(tokens[2].line, 2, "Wrong line for b")
+    assert.equal(tokens[3].line, 2, "Wrong line for EOS (;) after b")
+    assert.equal(tokens[4].line, 2, "Wrong line for c")
+    assert.equal(tokens[5].line, 2, "Wrong line for +")
+    assert.equal(tokens[6].line, 2, "Wrong line for d")
+    assert.equal(tokens[7].line, 2, "Wrong line for EOS after d")
+    assert.equal(tokens[8].line, 3, "Wrong line for string")
+    assert.equal(tokens[9].line, 4, "Wrong line for EOS after string")
+    assert.equal(tokens[10].line, 5, "Wrong line for nested")
 
-    assert.equal(tokens[0].ch, 7, "Wrong character for a")
-    assert.equal(tokens[1].ch, 8, "Wrong character for EOS after a")
-    assert.equal(tokens[2].ch, 7, "Wrong character for b")
-    assert.equal(tokens[3].ch, 8, "Wrong character for EOS (;) after b")
-    assert.equal(tokens[4].ch, 10, "Wrong character for c")
-    assert.equal(tokens[5].ch, 12, "Wrong character for +")
-    assert.equal(tokens[6].ch, 14, "Wrong character for d")
-    assert.equal(tokens[7].ch, 15, "Wrong character for EOS after d")
-    assert.equal(tokens[8].ch, 7, "Wrong character for string")
-    assert.equal(tokens[9].ch, 19, "Wrong character for EOS after string")
-    assert.equal(tokens[10].ch, 9, "Wrong character for nested")
+    assert.equal(tokens[0].ch, 6, "Wrong character for a")
+    assert.equal(tokens[1].ch, 7, "Wrong character for EOS after a")
+    assert.equal(tokens[2].ch, 6, "Wrong character for b")
+    assert.equal(tokens[3].ch, 7, "Wrong character for EOS (;) after b")
+    assert.equal(tokens[4].ch, 9, "Wrong character for c")
+    assert.equal(tokens[5].ch, 11, "Wrong character for +")
+    assert.equal(tokens[6].ch, 13, "Wrong character for d")
+    assert.equal(tokens[7].ch, 14, "Wrong character for EOS after d")
+    assert.equal(tokens[8].ch, 6, "Wrong character for string")
+    assert.equal(tokens[9].ch, 18, "Wrong character for EOS after string")
+    assert.equal(tokens[10].ch, 8, "Wrong character for nested")
   })
 
   it("tokenizes other operators", () => {
@@ -507,7 +507,7 @@ describe("Lexer", () => {
 
         assert.equal(errors[0].errorType(), "Unterminated String")
 
-        assert.equal(errors[0].position, 0)
+        assert.equal(errors[0].pos, 0)
       }
     })
 
@@ -526,7 +526,7 @@ describe("Lexer", () => {
 
         assert.equal(errors[0].errorType(), "Unknown Escape Sequence")
 
-        assert.equal(errors[0].position, 0)
+        assert.equal(errors[0].pos, 0)
       }
     })
 
@@ -547,7 +547,7 @@ describe("Lexer", () => {
 
         assert.equal(errors[0].errorType(), `Unknown Token '${test[0]}'`)
 
-        assert.equal(errors[0].position, 0)
+        assert.equal(errors[0].pos, 0)
       }
     })
   })

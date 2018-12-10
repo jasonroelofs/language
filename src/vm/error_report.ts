@@ -1,4 +1,5 @@
 import { codeBlock } from "common-tags"
+import { Token } from "@compiler/tokens"
 
 // Errors can provide options for the reporter to
 // further customize the output.
@@ -15,23 +16,15 @@ interface ReportOptions {
   // where the error happened. In such situations, provide the following
   // options to output a "error started here" segment.
   // Please make sure all three are set.
-  startChunk: string
-  startChunkPosition: number
+  startToken: Token
   startDescription: string
 
 }
 
 interface SystemError {
 
-  // The section of code that triggered the error
-  chunk: string
-
-  // The raw position in the input
-  position: number
-
-  // The full file path of the source that triggered
-  // this error.
-  file: string
+  // The raw token that triggered this error
+  token: Token
 
   baseType(): string
   errorType(): string
@@ -67,7 +60,8 @@ class ErrorReport {
   constructor(error: SystemError, loadedFiles: Map<string, string>) {
     this.error = error
     this.loadedFiles = loadedFiles
-    this.file = this.error.file
+
+    this.file = this.error.token.file
     this.source = this.loadedFiles.get(this.file)
 
     if(typeof error.reportOptions === "function") {
@@ -111,20 +105,18 @@ class ErrorReport {
   renderOffendingLines() {
     let importantLines = []
 
-    if(this.reportOptions.startChunk) {
+    if(this.reportOptions.startToken) {
       importantLines.push({
-        chunk: this.reportOptions.startChunk,
-        position: this.reportOptions.startChunkPosition,
-        tagOn: this.reportOptions.startDescription
+        token: this.reportOptions.startToken,
+        tagOn: this.reportOptions.startDescription,
       })
     }
 
     importantLines.push({
-      chunk: this.error.chunk,
-      position: this.error.position,
+      token: this.error.token,
     })
 
-    // We have raw input positions, need to figure out the matching
+    // We have initial line and character positions, need to figure out the matching
     // line numbers these positions map to. This will set
     // startLine and endLine on each record in importantLines.
     // startLine and endLine are 0-based indexes for ease of later
@@ -197,32 +189,22 @@ class ErrorReport {
     let sourceLines = this.source.split("\n")
 
     for(var line of importantLines) {
-      let preLine = this.source.substring(0, line.position)
-      let chunkLines = line.chunk.trimRight().split("\n")
-      let preLineSplit = preLine.split("\n")
+      let chunk = line.token.value
+      let chunkLines = chunk.trimRight().split("\n")
 
-      line.startLine = preLineSplit.length - 1
+      // token.line is 1-based. Undo that for easier calculations above
+      line.startLine = line.token.line
       line.endLine = line.startLine + (chunkLines.length - 1)
 
-      if(line.chunk == "" || line.chunk == "\n") {
+      if(chunk == "" || chunk == "\n") {
         // The only way a chunk is one of these two values is if its an EOS marker,
         // so we just put the marker at the end of the last line of output.
-        line.markerStart = sourceLines[line.endLine].length
+        line.markerStart = sourceLines[line.token.line].length
         line.markerLength = 1
       } else {
         let chunkLastLine = chunkLines[chunkLines.length - 1]
-        let lineStartPos = 0
 
-        // Find the raw source position of the beginning of the line this
-        // chunk is on so we can then find out the real position of the
-        // error string, ensuring the right location for our error marker.
-        preLineSplit.slice(0, -1).forEach((line) => {
-          // Add one for the new-line marker, as that counts in the raw position
-          // as `split` does not include the character we split on
-          lineStartPos += line.length + 1
-        })
-
-        line.markerStart = line.position - lineStartPos
+        line.markerStart = line.token.ch
         line.markerLength = chunkLastLine.length
       }
     }

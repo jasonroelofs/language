@@ -379,7 +379,7 @@ describe("VM", () => {
         assertErrorType(error, expected[0])
 
         assert.equal(error.chunk, expected[1], `Wrong chunk, expected ${tests[test][0]} got ${error.chunk}`)
-        assert.equal(error.position, expected[2], `Wrong position, expected ${tests[test][1]} got ${error.position}`)
+        assert.equal(error.ch, expected[2], `Wrong position, expected ${tests[test][1]} got ${error.ch}`)
       }
     })
 
@@ -396,7 +396,7 @@ describe("VM", () => {
       assertErrorType(error, errors.NotABlockError)
 
       assert.equal(error.chunk, "m")
-      assert.equal(error.position, 24)
+      assert.equal(error.ch, 24)
     })
 
     it("errors on invalid block invocation", () => {
@@ -413,7 +413,7 @@ describe("VM", () => {
       assertErrorType(error, errors.NotABlockError)
 
       assert.equal(error.chunk, "a")
-      assert.equal(error.position, 7)
+      assert.equal(error.ch, 7)
 
       // Implicit version
       try {
@@ -425,7 +425,7 @@ describe("VM", () => {
       assertErrorType(error, errors.NotABlockError)
 
       assert.equal(error.chunk, "a")
-      assert.equal(error.position, 7)
+      assert.equal(error.ch, 7)
     })
 
     it("errors when block parameters and call arguments don't line up", () => {
@@ -469,7 +469,7 @@ describe("VM", () => {
         assertErrorType(error, errors.ArgumentMismatchError)
 
         assert.equal(error.chunk, expected[0], `Wrong chunk for '${test}'`)
-        assert.equal(error.position, expected[1], `Wrong position for '${test}'`)
+        assert.equal(error.ch, expected[1], `Wrong position for '${test}'`)
       }
     })
 

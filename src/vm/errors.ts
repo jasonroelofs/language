@@ -20,7 +20,9 @@ class RuntimeError extends Error {
 
   chunk: string
 
-  position: number
+  line: number
+
+  ch: number
 
   file: string
 
@@ -29,7 +31,8 @@ class RuntimeError extends Error {
 
     this.token = token
     this.chunk = token.value
-    this.position = token.pos
+    this.line = token.line
+    this.ch = token.ch
     this.file = token.file
   }
 

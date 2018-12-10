@@ -757,7 +757,7 @@ describe("Parser", () => {
 
       assert.equal(errors.length, 1, `Parser should have thrown errors in ${input}`)
       assert(errors[0] instanceof errorType, `Wrong error type for '${input}' got: ${errors[0].errorType()}`)
-      assert.equal(errors[0].position, position, `Wrong position for '${input}'`)
+      assert.equal(errors[0].pos, position, `Wrong position for '${input}'`)
 
       // Let tests do further checks against the error object
       return errors[0]

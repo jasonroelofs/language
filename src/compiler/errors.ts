@@ -10,17 +10,27 @@ class SyntaxError extends Error {
 
   token: Token
 
-  chunk: string
+  // The following are provided to create parity between
+  // these errors and Tokens, as errors are created instead
+  // of tokens.
 
-  position: number
+  value: string
+
+  line: number
+
+  ch: number
+
+  pos: number
 
   file: string
 
   constructor(token: Token) {
     super()
     this.token = token
-    this.chunk = token.value
-    this.position = token.pos || 0
+    this.value = token.value
+    this.line = token.line
+    this.ch = token.ch
+    this.pos = token.pos
     this.file = token.file
   }
 
@@ -79,7 +89,7 @@ class UnknownEscapeSequenceError extends SyntaxError {
 
 class UnknownTokenError extends SyntaxError {
   errorType(): string {
-    return `Unknown Token '${this.chunk}'`
+    return `Unknown Token '${this.value}'`
   }
 }
 
@@ -129,8 +139,7 @@ class UnmatchedClosingTagError extends ParseError {
 
   reportOptions(): Object {
     return {
-      startChunk: this.startToken.value,
-      startChunkPosition: this.startToken.pos,
+      startToken: this.startToken,
       startDescription: "Opened here"
     }
   }

@@ -340,6 +340,22 @@ describe("VM", () => {
     assert.equal(result, False)
   })
 
+  it("provides a caller slot to all blocks with call stack information", () => {
+    let vm = new VM()
+    let result = vm.eval(`
+      obj = Object.new(
+        callMe: { sender }
+      )
+      obj.callMe()
+    `)
+
+    assert.equal(result.data.length, 1)
+
+    let sender = result.data[0]
+    assert.equal(SendMessage(sender, toObject("line")).data, 5)
+    assert.equal(SendMessage(sender, toObject("file")).data, "[script]")
+  })
+
   describe("Error Handling", () => {
     it("errors on failed slot lookup", () => {
       let vm = new VM()

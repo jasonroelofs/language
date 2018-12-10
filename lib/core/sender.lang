@@ -1,0 +1,10 @@
+# A Sender keeps track of the file/source and line number of each
+# step in the current call stack, available through the `sender` message.
+Sender = Object.new(
+  file: "",
+  line: 0,
+
+  toString: {
+    file + ":" + line
+  }
+)

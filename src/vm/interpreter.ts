@@ -1,5 +1,8 @@
 import * as util from "util"
 import {
+  Token
+} from "@compiler/tokens"
+import {
   Node,
   BlockNode,
   MessageSendNode,
@@ -20,6 +23,7 @@ import {
   Objekt,
   Number,
   String,
+  Array,
   Null,
   True,
   False,
@@ -29,10 +33,18 @@ export default class Interpreter {
 
   currentSpace: IObject
 
+  // Keep a callstack that's a list of in-language objects
+  // For each space we make this list available as a snapshot of the call stack
+  // at that point in time.
+  callStack: IObject[]
+
   Block: IObject
+  Sender: IObject
   ActivationRecord: IObject
 
   constructor(baseSpace: IObject) {
+    this.callStack = []
+
     this.currentSpace = baseSpace
   }
 
@@ -43,6 +55,7 @@ export default class Interpreter {
     // Grab a hold of some objects that we make use of that are defined
     // in the core lib
     this.Block = SendMessage(this.currentSpace, toObject("Block"))
+    this.Sender = SendMessage(this.currentSpace, toObject("Sender"))
     this.ActivationRecord = SendMessage(this.currentSpace, toObject("ActivationRecord"))
   }
 
@@ -140,6 +153,8 @@ export default class Interpreter {
       let context = SendMessage(receiver, toObject("receiver"))
       let result
 
+      this.pushCallStack(node)
+
       // However in the case of direct block evaluation `{ ... }()` we won't
       // be an ActivationRecord, we will be the block itself so work around that.
       // TODO: Should we be an AR here?
@@ -170,6 +185,8 @@ export default class Interpreter {
       } else {
         result = this.evalCodeBlock(node.receiver, context, block, args)
       }
+
+      this.popCallStack()
 
       return result
     }
@@ -273,6 +290,9 @@ export default class Interpreter {
       AddParent(this.currentSpace, receiver)
     }
 
+    // Expose a copy of the call stack
+    AddSlot(this.currentSpace, toObject("sender"), toObject(this.callStack))
+
     for(var parts of args) {
       AddSlot.call(null, this.currentSpace, ...parts)
     }
@@ -304,6 +324,22 @@ export default class Interpreter {
     }
 
     return activation
+  }
+
+  pushCallStack(node: Node) {
+    let sender = NewObject(this.Sender)
+
+    // TODO Something that lets us print out the name of the message?
+    AddSlot(sender, toObject("line"), toObject(node.token.line))
+    AddSlot(sender, toObject("file"), toObject(node.token.file))
+
+    // We make use of shift/unshift to keep a reverse order so that in the language
+    // `sender` is in the order of most recent call stack first.
+    this.callStack.unshift(sender)
+  }
+
+  popCallStack() {
+    this.callStack.shift()
   }
 
   // Push a new Space onto the stack, building it off of

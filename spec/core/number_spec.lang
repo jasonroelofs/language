@@ -59,4 +59,10 @@ Test.describe("Number", as: { |test|
     assert(-2 != 3)
     assert(!(1 != 1))
   })
+
+  test("toString", is: { |assert|
+    assert(1.toString() == "1")
+    assert(1.5.toString() == "1.5")
+    assert(-3.toString() == "-3")
+  })
 })

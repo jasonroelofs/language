@@ -1,0 +1,7 @@
+# import("test")
+
+Test.describe("False", as: { |test|
+  test("toString", is: { |assert|
+    assert(false.toString() == "false")
+  })
+})

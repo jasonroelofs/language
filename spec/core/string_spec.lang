@@ -21,5 +21,4 @@ Test.describe("String", as: { |test|
     assert("one" != "two")
     assert(!("one" != "one"))
   })
-
 })

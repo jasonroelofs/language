@@ -1,0 +1,7 @@
+# import("test")
+
+Test.describe("True", as: { |test|
+  test("toString", is: { |assert|
+    assert(true.toString() == "true")
+  })
+})

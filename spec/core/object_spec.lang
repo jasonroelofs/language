@@ -1,6 +1,14 @@
 # import("test")
 
 Test.describe("Object", as: { |test|
+  test("== and !=", is: { |assert|
+    assert(true == true)
+    assert(false == false)
+    assert(true != false)
+    assert(null == null)
+    assert(null != false)
+  })
+
   test("is", is: { |assert|
     assert(Object.is(Object))
     assert(Array.is(Array))

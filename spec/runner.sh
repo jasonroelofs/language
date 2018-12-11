@@ -7,17 +7,6 @@
 NODE="node"
 HERE=$(dirname $0)
 CLI="$HERE/../dist/bin/lang-cli.js"
+FILES=$(find $HERE -type f -name "*.lang")
 
-run() {
-  file=$1
-
-  $NODE $CLI $file
-}
-
-files=$(find $HERE -type f -name "*.lang")
-
-for spec in $files; do
-  echo $spec
-  run $spec
-  echo
-done
+$NODE $CLI $FILES

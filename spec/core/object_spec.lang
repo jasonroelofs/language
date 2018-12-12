@@ -1,6 +1,22 @@
 # import("test")
 
 Test.describe("Object", as: { |test|
+  test("new", is: { |assert|
+    obj = Object.new(list: [], string: "", number: 1)
+
+    assert(obj.list == [])
+    assert(obj.string == "")
+    assert(obj.number == 1)
+  })
+
+  test("new supports inheritance", is: { |assert|
+    parent = Object.new(name: "parent", getName: { name })
+    child = parent.new(name: "child")
+
+    assert(parent.getName() == "parent")
+    assert(child.getName() == "child")
+  })
+
   test("== and !=", is: { |assert|
     assert(true == true)
     assert(false == false)

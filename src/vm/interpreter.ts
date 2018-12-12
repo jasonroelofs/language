@@ -286,8 +286,10 @@ export default class Interpreter {
       AddSlot(this.currentSpace, toObject("self"), receiver)
 
       // Also inject the receiver in the current scope to ensure slot lookups
-      // properly check this object
-      AddParent(this.currentSpace, receiver)
+      // properly check this object.
+      // We inject the parent first in the parents list to ensure it's values
+      // are found over what else may be in the space stack
+      this.currentSpace.parents.unshift(receiver)
     }
 
     // Expose a copy of the call stack

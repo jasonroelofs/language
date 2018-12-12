@@ -268,6 +268,7 @@ export {
   AddParent,
   FindIn,
   toObject,
+  ObjectBase,
   Objekt,
   Slot,
   Null,

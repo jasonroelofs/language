@@ -1,5 +1,5 @@
 import {
-  NewObject, toObject, IObject, Objekt,
+  NewObject, toObject, IObject, ObjectBase, Objekt,
   Number, String, Array,
   True, False, Null,
   AddSlot, GetSlot, FindIn,
@@ -281,7 +281,7 @@ AddSlot(BuiltIn, toObject("timeUTC"), builtInFunc(function(): IObject {
  *  Print a reverse-indented trace of the current scope stack
  */
 AddSlot(BuiltIn, toObject("debugObjectSlots"), builtInFunc(function(args): IObject {
-  let obj = args["object"]
+  let obj = args["object"] || args["0"]
   let depth = 0
   let buffer = ""
   let slotsStr = ""
@@ -293,6 +293,7 @@ AddSlot(BuiltIn, toObject("debugObjectSlots"), builtInFunc(function(args): IObje
 
 function printObjSlots(obj: IObject, depth: number) {
   if(!obj) { return }
+  if(obj === ObjectBase) { return }
 
   let buffer = ""
 
@@ -301,13 +302,13 @@ function printObjSlots(obj: IObject, depth: number) {
   }
 
   let slotsStr = arrayFrom(obj.slots.keys()).join(", ")
-  console.log("%s%s [%o]", buffer, obj, slotsStr)
+  console.log("%s%s [%o]", buffer, obj.toString(), slotsStr)
 
   if(obj === World) {
     return
   }
 
-  for(var p of obj.parents) {
+  for(let p of obj.parents) {
     printObjSlots(p, depth + 1)
   }
 }

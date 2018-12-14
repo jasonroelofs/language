@@ -70,6 +70,12 @@ export default class Interpreter {
   }
 
   evalNode(node: Node): IObject {
+    let obj = this._evalNode(node)
+    obj.astNode = node
+    return obj
+  }
+
+  _evalNode(node: Node): IObject {
     switch(node.type) {
       case NodeType.Assignment:
         let varName = toObject(node.name)

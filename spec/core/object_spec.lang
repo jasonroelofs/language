@@ -17,6 +17,26 @@ Test.describe("Object", as: { |test|
     assert(child.getName() == "child")
   })
 
+  test("new stores default values for children objects", is: { |assert|
+    obj1 = Object.new(list1: [])
+    obj1.list1.push(1)
+
+    obj2 = obj1.new(list2: [])
+    obj2.list2.push(2)
+
+    obj3 = obj2.new(list3: [])
+    obj3.list3.push(3)
+
+    assert(obj1.list1 == [1])
+
+    assert(obj2.list1 == [])
+    assert(obj2.list2 == [2])
+
+    assert(obj3.list1 == [])
+    assert(obj3.list2 == [])
+    assert(obj3.list3 == [3])
+  })
+
   test("== and !=", is: { |assert|
     assert(true == true)
     assert(false == false)

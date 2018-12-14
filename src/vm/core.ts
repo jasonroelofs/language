@@ -45,8 +45,28 @@ function extractParams(args, ...argKeys) {
  * Create and return a new object with the current object as the first
  * parent, and all provided slots added to the new object.
  */
-AddSlot(Objekt, toObject("new"), builtInFunc(function(args, meta = {}): IObject {
+AddSlot(Objekt, toObject("new"), builtInFunc(function(args, meta = {}, vm): IObject {
   let obj = NewObject(this)
+  let slot
+
+  // Look for slots with defined default values and apply
+  // those to this new object first.
+  this.slots.forEach((value, key) => {
+    // We never apply default values of code blocks slots into child
+    // objects as that would break inheritance expectations.
+    if(value.codeBlock) {
+      return
+    }
+
+    slot = this.metaSlots.get(key)
+
+    if(slot && slot.astNode) {
+      AddSlot(obj, toObject(key), vm._evalNode(slot.astNode))
+    }
+  })
+
+  // Then apply the values provided to us from the parameters to .new()
+  // to ensure we overwrite any matching slots
   addSlots(obj, args, meta)
 
   return obj

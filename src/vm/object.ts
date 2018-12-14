@@ -1,5 +1,6 @@
 import * as util from "util"
 import * as errors from "@vm/errors"
+import { Node } from "@compiler/ast"
 import { isArray } from "@vm/js_core"
 
 /**
@@ -21,6 +22,10 @@ interface IObject {
 
   // Unique identifier for this object
   objectId: number
+
+  // A link back to the section of the AST that led to the creation of this object
+  // Can be null
+  astNode?: Node
 
   // `data` is internal-only storage of the Javascript value that this object
   // represents, used e.g. for Number and String
@@ -167,6 +172,7 @@ function FindIn(obj: IObject, checkFunc: FindInCheckFunc, seen: Set<number> = nu
  */
 function AddSlot(receiver: IObject, message: IObject, value: IObject, comments: IObject = Null) {
   let metaSlot = NewObject(Slot)
+  metaSlot.astNode = value.astNode
   metaSlot.slots.set("value", value)
   metaSlot.slots.set("comments", comments)
 

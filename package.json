@@ -7,6 +7,9 @@
     "doc": "docs",
     "test": "test"
   },
+  "bin": {
+    "lang-cli": "dist/bin/lang-cli.js"
+  },
   "scripts": {
     "test": "make"
   },

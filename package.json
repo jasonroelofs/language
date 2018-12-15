@@ -8,7 +8,8 @@
     "test": "test"
   },
   "bin": {
-    "lang-cli": "dist/bin/lang-cli.js"
+    "lang-cli": "dist/bin/lang-cli.js",
+    "lang-task": "bin/lang-task"
   },
   "scripts": {
     "test": "make"

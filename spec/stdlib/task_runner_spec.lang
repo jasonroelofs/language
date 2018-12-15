@@ -1,0 +1,23 @@
+# import("test")
+
+Test.describe("TaskRunner", as: { |test|
+  test("defining tasks", is: { |assert|
+    runner = TaskRunner.new()
+    runner.define("task", is: { 1 })
+
+    assert(runner.tasks.slotNames(includeParents: false) == ["task"])
+  })
+
+  test("executes task that matches argv", is: { |assert|
+    runner = TaskRunner.new()
+    runner.define("task", is: { 1 })
+
+    result = runner.run(["task"])
+
+    assert(result == 1)
+  })
+
+  test("outputs the list of defined tasks when --help given")
+
+  test("runs the 'default' task if no arguments provided")
+})

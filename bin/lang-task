@@ -1,0 +1,5 @@
+#!/usr/bin/env lang-cli
+
+# import("task_runner")
+
+TaskRunner.new().run(Process.argv)

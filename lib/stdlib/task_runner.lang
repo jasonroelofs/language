@@ -1,0 +1,32 @@
+TaskRunner = Object.new(
+  # Tasks are unique by name, so we store them as slots in
+  # an anonymous object. name => Task
+  tasks: Object.new(),
+
+  define: { |name, is|
+    tasks.addSlot(name: name, as: Task.new(name: name, block: is))
+  },
+
+  run: { |argv: []|
+    retVal = null
+
+    argv.each({ |arg|
+      tasks.hasSlot(arg).do(
+        ifTrue: { retVal = tasks.send(arg).block() },
+        ifFalse: { unknownTask(arg) }
+      )
+    })
+
+    retVal
+  },
+
+  unknownTask: { |taskName|
+    IO.puts("Don't know how to run task '" + taskName + "'")
+  }
+)
+
+Task = Object.new(
+  name: "",
+  description: "",
+  block: {},
+)

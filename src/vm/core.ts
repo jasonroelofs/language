@@ -2,7 +2,7 @@ import {
   NewObject, toObject, IObject, ObjectBase, Objekt,
   Number, String, Array,
   True, False, Null,
-  AddSlot, GetSlot, FindIn,
+  AddSlot, GetSlot, EachParent, FindIn,
   SendMessage,
 } from "@vm/object"
 
@@ -112,6 +112,22 @@ AddSlot(BuiltIn, toObject("objectAddSlot"), builtInFunc(function(args): IObject 
 AddSlot(Objekt, toObject("objectGetSlot"), builtInFunc(function(args): IObject {
   let [obj, slotName] = extractParams(args, "object", "name")
   return GetSlot(obj, slotName)
+}))
+
+AddSlot(Objekt, toObject("objectGetSlotNames"), builtInFunc(function(args): IObject {
+  let [obj, includeParents] = extractParams(args, "object", "includeParents")
+
+  if(includeParents == True) {
+    let allSlots = []
+
+    EachParent(obj, (o) => {
+      allSlots = allSlots.concat(arrayFrom(o.slots.keys()))
+    })
+
+    return toObject(allSlots)
+  } else {
+    return toObject(obj.slots.keys())
+  }
 }))
 
 AddSlot(BuiltIn, toObject("objectHasSlot"), builtInFunc(function(args): IObject {

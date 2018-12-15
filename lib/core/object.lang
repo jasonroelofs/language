@@ -11,6 +11,12 @@ Object.addSlots(
     BuiltIn.objectGetSlot(object: self, name: name)
   },
 
+  # Get the list of the name of slots on this object and all parents.
+  # If includeParents is false, will only return this object's immediate slots.
+  slotNames: { |includeParents: true|
+    BuiltIn.objectGetSlotNames(object: self, includeParents: includeParents)
+  },
+
   # Get this object's unique internal id
   objectId: {
     BuiltIn.objectId(object: self)

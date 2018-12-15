@@ -37,6 +37,13 @@ Test.describe("Object", as: { |test|
     assert(obj3.list3 == [3])
   })
 
+  test("slotNames", is: { |assert|
+    obj = Object.new(slot: "value")
+
+    assert(obj.slotNames().length() > 1)
+    assert(obj.slotNames(includeParents: false) == ["slot", "objectName"])
+  })
+
   test("== and !=", is: { |assert|
     assert(true == true)
     assert(false == false)

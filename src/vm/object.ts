@@ -129,15 +129,13 @@ function SendMessage(receiver: IObject, messageName: IObject): IObject {
   }
 }
 
-type FindInCheckFunc = (IObject) => boolean
+type EachParentFunc = (IObject) => void
 
 /**
- * For a given slot name and a check function, find the first object
- * or the first in it's parents (depth first) that matches the check function.
- * Returns javascript null if no match found.
- * Protects against infinite loops via circular parents.
+ * Iterate over an object and all of its parents, depth first, running callbackFunc
+ * against each object in the set.
  */
-function FindIn(obj: IObject, checkFunc: FindInCheckFunc, seen: Set<number> = null): IObject {
+function EachParent(obj: IObject, callbackFunc: EachParentFunc, seen: Set<number> = null) {
   // Protection against lookup loops where parents can point
   // to objects in the current or other parent stacks.
   if(seen == null) {
@@ -145,23 +143,39 @@ function FindIn(obj: IObject, checkFunc: FindInCheckFunc, seen: Set<number> = nu
   }
 
   if(seen.has(obj.objectId)) {
-    return null
+    return
   }
 
   seen.add(obj.objectId)
 
-  if(checkFunc(obj)) {
-    return obj
-  }
+  callbackFunc(obj)
 
-  let found = null
   for(var parent of obj.parents) {
-    found = FindIn(parent, checkFunc, seen)
-
-    if(found) {
-      return found
-    }
+    EachParent(parent, callbackFunc, seen)
   }
+}
+
+type FindInCheckFunc = (IObject) => boolean
+
+/**
+ * For a given object and a check function, find the first object
+ * or the first in it's parents (depth first) that matches the check function.
+ * Returns javascript null if no match found.
+ */
+function FindIn(obj: IObject, checkFunc: FindInCheckFunc, seen: Set<number> = null): IObject {
+  let found = null
+
+  EachParent(obj, (o) => {
+    // TODO: Is there a nice way to trigger EachParent to cancel
+    // any future iterations?
+    if(found != null) {
+      return
+    }
+
+    if(checkFunc(o)) {
+      found = o
+    }
+  })
 
   return found
 }
@@ -272,6 +286,7 @@ export {
   RemoveSlot,
   GetSlot,
   AddParent,
+  EachParent,
   FindIn,
   toObject,
   ObjectBase,

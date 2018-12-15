@@ -88,6 +88,48 @@ function addSlots(obj: IObject, args, meta = {}) {
 }
 
 /**
+ * Send a message to this object
+ * Use this to programmatically send messages to objects or to send messages
+ * that aren't proper identifiers.
+ */
+AddSlot(Objekt, toObject("send"), builtInFunc(function(args, meta = {}, vm): IObject {
+  let obj = this
+  let message = args["0"]
+  let slotValue = SendMessage(obj, message)
+
+  if(!slotValue) {
+    // TODO: raise error: Object does not respond to the `message` message.
+    return Null
+  }
+
+  if(slotValue.codeBlock) {
+    // TODO: What if someone does Object.send("new"), e.g. triggers
+    // one of the view top-level built-ins?
+    // Leaning towards ignoring as I will eventually allow support for
+    // arbitrary parameters to a block which will solve this problem.
+    let params = []
+
+    for(let key in args) {
+      if(key == "0") { continue }
+
+      params.push([toObject(key), args[key]])
+    }
+
+    let codeBlock = slotValue
+
+    // Unwrap any ActivationRecord we run into
+    // TODO: ICK, too much internal knowledge required here
+    if(slotValue.parents[0] == vm.ActivationRecord) {
+      codeBlock = SendMessage(slotValue, toObject("block"))
+    }
+
+    return vm.evalBlockWithArgs(obj, codeBlock, params)
+  }
+
+  return slotValue
+}))
+
+/**
  * Container object for all built-in methods we will be exposing to the user.
  */
 let BuiltIn = NewObject(Objekt, null, {objectName: "BuiltIn", objectId: 99})

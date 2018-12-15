@@ -246,12 +246,12 @@ function toObject(nativeValue: any): IObject {
     return NewObject(String, nativeValue)
   }
 
-  if(isArray(nativeValue)) {
+  if(isArray(nativeValue) || (Symbol.iterator in nativeValue)) {
     let array = []
 
-    nativeValue.forEach((entry) => {
+    for(var entry of nativeValue) {
       array.push(toObject(entry))
-    })
+    }
 
     return NewObject(Array, array)
   }

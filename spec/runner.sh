@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# Go through the various files in this directory and run them,
-# ensuring correct output.
-# Eventually plan on rewriting this all in the language itself.
+# Requires `lang-cli` to be made available through `npm link`
 
-NODE="node"
-HERE=$(dirname $0)
-CLI="$HERE/../dist/bin/lang-cli.js"
-FILES=$(find $HERE -type f -name "*.lang")
-
-$NODE $CLI $FILES
+find spec/ -type f -name "*.lang" -exec lang-cli {} \;

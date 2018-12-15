@@ -17,13 +17,18 @@ export default class VM {
 
   interpreter: Interpreter
 
+  // The list of command line arguments that do not include
+  // the paths of scripts being run.
+  argv: string[]
+
   // Keep track of the files we load and their sources
   // Keyed on file path which is always the full path
   // to the file in question.
   loadedFiles: Map<string, string>
 
-  constructor() {
+  constructor(argv = []) {
     this.loadedFiles = new Map<string, string>()
+    this.argv = argv
 
     this.interpreter = new Interpreter(World)
 
@@ -41,7 +46,7 @@ export default class VM {
       this.loadFile(path)
     })
 
-    this.interpreter.ready()
+    this.interpreter.ready(this.argv)
   }
 
   loadStdLib() {

@@ -1,0 +1,5 @@
+Process = Object.new(
+  # Set by the VM at run time, this is the list of arguments provided
+  # to the VM via the command line.
+  argv: []
+)

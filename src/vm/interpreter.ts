@@ -48,7 +48,7 @@ export default class Interpreter {
     this.currentSpace = baseSpace
   }
 
-  ready() {
+  ready(argv = []) {
     // Initialize our initial execution space and we are ready to go
     this.pushSpace(this.currentSpace)
 
@@ -57,6 +57,10 @@ export default class Interpreter {
     this.Block = SendMessage(this.currentSpace, toObject("Block"))
     this.Sender = SendMessage(this.currentSpace, toObject("Sender"))
     this.ActivationRecord = SendMessage(this.currentSpace, toObject("ActivationRecord"))
+
+    // Expose static values from the runtime into the language
+    let Process = SendMessage(this.currentSpace, toObject("Process"))
+    AddSlot(Process, toObject("argv"), toObject(argv))
   }
 
   eval(expressions: Array<Expression>): IObject {

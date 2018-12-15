@@ -5,7 +5,7 @@ SHELL := env PATH=$(PATH) /bin/bash
 
 all: build test
 
-build: compile rewrite-paths copy-lib fix-shebang
+build: compile rewrite-paths link-lib fix-shebang
 
 compile:
 	tsc
@@ -24,8 +24,11 @@ fix-shebang:
 	@mv .cli.tmp dist/bin/lang-cli.js
 	@chmod a+x dist/bin/lang-cli.js
 
-copy-lib:
-	cp -r lib/ dist/lib
+# Our core and standard libraries are written in the language and need to be
+# installed into the build area, but we don't want to have to constantly copy
+# files around as these files are being worked on. Instead, lets symlink it!
+link-lib:
+	ln -sf `pwd`/lib dist/lib
 
 test: unit-tests specs
 

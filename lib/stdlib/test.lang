@@ -143,22 +143,28 @@ Reporter = Object.new(
     endTime = Time.utc()
     elapsedMs = endTime - startTime
 
+    hasPending = pendingTests.length() > 0
+
     # Output pending tests
-    IO.puts()
-    IO.puts("Pending tests:")
-    pendingTests.each({ |test|
+    hasPending.do({
       IO.puts()
-      IO.puts("\t" + test.suite.name + " " + test.name)
+      IO.puts("Pending tests:")
+      pendingTests.each({ |test|
+        IO.puts()
+        IO.puts("\t" + test.suite.name + " " + test.name)
+      })
     })
 
     # Output failing test details
-    IO.puts()
-    IO.puts("Test failures:")
-    failures.each({ |testResult|
-      test = testResult.test
+    (failures.length() > 0).do({
       IO.puts()
-      IO.puts(test.suite.name + " " + test.name + ": " + testResult.message)
-      IO.puts("\t" + testResult.location)
+      IO.puts("Test failures:")
+      failures.each({ |testResult|
+        test = testResult.test
+        IO.puts()
+        IO.puts(test.suite.name + " " + test.name + ": " + testResult.message)
+        IO.puts("\t" + testResult.location)
+      })
     })
 
     results = "Finished in " + elapsedMs + "ms. "
@@ -166,9 +172,7 @@ Reporter = Object.new(
     results = results + successes.length() + " successes, "
     results = results + failures.length() + " failures"
 
-    (pendingTests.length() > 0).do(
-      ifTrue: { results = results + ", " + pendingTests.length() + " pending" }
-    )
+    hasPending.do({ results = results + ", " + pendingTests.length() + " pending" })
 
     IO.puts()
     IO.puts(results)

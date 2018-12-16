@@ -29,6 +29,12 @@ Array.addSlots(
     BuiltIn.arrayPop(array: self)
   },
 
+  # Return a sub-set of the current array, starting at `start`
+  # and going til the end of the array.
+  slice: { |start, end: null|
+    BuiltIn.arraySlice(array: self, start: start, end: end)
+  },
+
   # Return the number of elements in this array
   length: {
     BuiltIn.arrayLength(array: self)

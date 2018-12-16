@@ -4,32 +4,46 @@ TaskRunner = Object.new(
   tasks: Object.new(),
 
   define: { |name, is|
-    tasks.addSlot(name: name, as: Task.new(name: name, block: is))
+    tasks.addSlot(name: name, as: Task.new(name: name, is: is))
+  },
+
+  taskNames: {
+    tasks.slotNames(includeParents: false)
   },
 
   run: { |argv: []|
-    retVal = null
-
     argv.isEmpty().do(ifTrue: { argv.push("default") })
 
-    argv.each({ |arg|
-      tasks.hasSlot(arg).do(
-        ifTrue: { retVal = tasks.send(arg).block() },
-        ifFalse: { unknownTask(arg) }
-      )
-    })
+    taskName = argv[0]
+    rest = argv.slice(1)
 
-    retVal
+    tasks.hasSlot(taskName).do(
+      # TODO: Need splatting!
+      ifTrue: { runTask(taskName, args: rest)},
+      ifFalse: { unknownTask(taskName) }
+    )
+  },
+
+  runTask: { |taskName, args|
+    task = tasks.send(taskName)
+
+    # TODO: Test against method arity so we can provide a more
+    # task-oriented error message and documentation when args and
+    # parameters don't match up.
+    (args.length() > 0).do(
+      ifTrue: { task.is(args) },
+      ifFalse: { task.is() }
+    )
   },
 
   unknownTask: { |taskName|
-    IO.puts("Don't know how to run task '" + taskName + "'")
-    # TODO: Raise exception
+    # TODO: Raise exception?
+    "Don't know how to run task '" + taskName + "'"
   }
 )
 
 Task = Object.new(
   name: "",
   description: "",
-  block: {},
+  is: {},
 )

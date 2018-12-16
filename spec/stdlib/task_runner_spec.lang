@@ -5,7 +5,7 @@ Test.describe("TaskRunner", as: { |test|
     runner = TaskRunner.new()
     runner.define("task", is: { 1 })
 
-    assert(runner.tasks.slotNames(includeParents: false) == ["task"])
+    assert(runner.taskNames() == ["task"])
   })
 
   test("executes task that matches argv", is: { |assert|
@@ -17,6 +17,17 @@ Test.describe("TaskRunner", as: { |test|
     assert(result == 1)
   })
 
+  test("it passes in arguments to the task if provided", is: { |assert|
+    runner = TaskRunner.new()
+    # TODO: I want blocks to take normal parameters
+    # Need splatting for this to work though
+    runner.define("addNumbers", is: { |args| args[0] + args[1] })
+
+    result = runner.run(["addNumbers", "1", "2"])
+
+    assert(result == "12")
+  })
+
   test("outputs the list of defined tasks when --help given")
 
   test("runs the 'default' task if no arguments provided", is: { |assert|
@@ -26,5 +37,13 @@ Test.describe("TaskRunner", as: { |test|
 
     result = runner.run()
     assert(result == "default")
+  })
+
+  test("outputs an error message if no such task found", is: { |assert|
+    runner = TaskRunner.new()
+
+    result = runner.run(["unknown"])
+
+    assert(result == "Don't know how to run task 'unknown'")
   })
 })

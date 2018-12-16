@@ -334,6 +334,16 @@ AddSlot(BuiltIn, toObject("arrayPop"), builtInFunc(function(args): IObject {
   return array.data.pop() || Null
 }))
 
+AddSlot(BuiltIn, toObject("arraySlice"), builtInFunc(function(args): IObject {
+  let [array, start, end] = extractParams(args, "array", "start", "end")
+
+  if(end === Null) {
+    return toObject(array.data.slice(start.data))
+  } else {
+    return toObject(array.data.slice(start.data, end.data))
+  }
+}))
+
 AddSlot(BuiltIn, toObject("arrayLength"), builtInFunc(function(args): IObject {
   let [array] = extractParams(args, "array")
 

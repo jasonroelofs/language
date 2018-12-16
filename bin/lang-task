@@ -2,4 +2,6 @@
 
 # import("task_runner")
 
-TaskRunner.new().run(Process.argv)
+result = TaskRunner.new().run(Process.argv)
+
+IO.puts(result)

@@ -10,6 +10,8 @@ TaskRunner = Object.new(
   run: { |argv: []|
     retVal = null
 
+    argv.isEmpty().do(ifTrue: { argv.push("default") })
+
     argv.each({ |arg|
       tasks.hasSlot(arg).do(
         ifTrue: { retVal = tasks.send(arg).block() },
@@ -22,6 +24,7 @@ TaskRunner = Object.new(
 
   unknownTask: { |taskName|
     IO.puts("Don't know how to run task '" + taskName + "'")
+    # TODO: Raise exception
   }
 )
 

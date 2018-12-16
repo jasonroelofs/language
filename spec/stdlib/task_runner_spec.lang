@@ -19,5 +19,12 @@ Test.describe("TaskRunner", as: { |test|
 
   test("outputs the list of defined tasks when --help given")
 
-  test("runs the 'default' task if no arguments provided")
+  test("runs the 'default' task if no arguments provided", is: { |assert|
+    runner = TaskRunner.new()
+    runner.define("task", is: { 1 })
+    runner.define("default", is: { "default" })
+
+    result = runner.run()
+    assert(result == "default")
+  })
 })

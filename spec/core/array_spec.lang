@@ -25,6 +25,14 @@ Test.describe("Array", as: { |test|
     assert(a.length() == 3)
   })
 
+  test("isEmpty", is: { |assert|
+    a = []
+    b = [1]
+
+    assert(a.isEmpty())
+    assert(!b.isEmpty())
+  })
+
   test("push", is: { |assert|
     a = []
     a.push(1)

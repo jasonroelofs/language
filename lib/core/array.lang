@@ -10,7 +10,7 @@ Array.addSlots(
   # Callable with the syntax: array[index] = to
   "[]=": { |index, to|
     BuiltIn.arraySet(array: self, index: index, to: to)
-  }
+  },
 
   # Iterate over each entry in the array, evaluating the passed-in block
   # for every element.
@@ -27,11 +27,16 @@ Array.addSlots(
   # Returns Null if the array is empty.
   pop: {
     BuiltIn.arrayPop(array: self)
-  }
+  },
 
   # Return the number of elements in this array
   length: {
     BuiltIn.arrayLength(array: self)
+  },
+
+  # Is this array empty?
+  isEmpty: {
+    length() == 0
   },
 
   "==": { |other|
@@ -41,7 +46,7 @@ Array.addSlots(
       { length() == other.length() } &&
       { allElementsEqual(other) }
     }
-  }
+  },
 
   allElementsEqual: { |other|
     i = 0
@@ -59,7 +64,7 @@ Array.addSlots(
     })
 
     equal
-  }
+  },
 
   toString: {
     buf = "["
@@ -75,5 +80,5 @@ Array.addSlots(
     })
 
     buf + "]"
-  }
+  },
 )

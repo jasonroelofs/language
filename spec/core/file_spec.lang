@@ -1,0 +1,48 @@
+# import("test")
+
+Test.describe("File", as: { |test|
+
+  test("search finds direct matches", is: { |assert|
+    files = File.search("spec/fixtures/file/file1.txt")
+
+    assert(files.length() == 1)
+    assert(files[0].path == "spec/fixtures/file/file1.txt")
+  })
+
+  test("search can find multiple explicit files", is: { |assert|
+    files = File.search([
+      "spec/fixtures/file/file1.txt",
+      "spec/fixtures/file/file2.txt",
+    ])
+
+    assert(files.length() == 2)
+    assert(files[0].path == "spec/fixtures/file/file1.txt")
+    assert(files[1].path == "spec/fixtures/file/file2.txt")
+  })
+
+  test("search can find based off a glob", is: { |assert|
+    files = File.search("spec/fixtures/file/*")
+
+    assert(files.length() == 2)
+    assert(files[0].path == "spec/fixtures/file/file1.txt")
+    assert(files[1].path == "spec/fixtures/file/file2.txt")
+  })
+
+  test("search can find from multiple globs", is: { |assert|
+    files = File.search([
+      "spec/fixtures/**/*1.txt",
+      "spec/fixtures/**/*2.txt",
+    ])
+
+    assert(files.length() == 2)
+    assert(files[0].path == "spec/fixtures/file/file1.txt")
+    assert(files[1].path == "spec/fixtures/file/file2.txt")
+  })
+
+  test("search returns empty if no file found", is: { |assert|
+    files = File.search("spec/fixtures/file/not_found.txt")
+
+    assert(files == [])
+  })
+
+})

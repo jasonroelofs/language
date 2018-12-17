@@ -173,8 +173,8 @@ class ArgumentMismatchError extends RuntimeError {
       return `${prefix} expected ${paramCount} argument${plural} but received ${this.args.length}`
     }
 
-    let argNames = this.args.map((arg) => { return arg.name })
-    let unusedArgs = argNames.filter((argName) => { return !paramNames.includes(argName) })
+    let argNames = this.args.map(arg => arg.name)
+    let unusedArgs = argNames.filter(argName => !paramNames.includes(argName))
 
     if(unusedArgs.length > 0) {
       let plural = unusedArgs.length > 1 ? "s" : ""
@@ -182,7 +182,7 @@ class ArgumentMismatchError extends RuntimeError {
       return `${prefix} does not accept the argument${plural} ${unusedArgs.join(", ")}`
     }
 
-    let unfilledParams = paramNames.filter((paramName) => { return !argNames.includes(paramName) })
+    let unfilledParams = paramNames.filter(paramName => !argNames.includes(paramName))
 
     if(unfilledParams.length > 0) {
       let plural = unfilledParams.length > 1 ? "s" : ""

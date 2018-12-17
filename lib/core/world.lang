@@ -1,0 +1,10 @@
+World.addSlots(
+  # Explicit halt the current process, setting the exist status to the
+  # given number.
+  #
+  # A status of 0 is considered a successful, clean run
+  # A status of any other number is considered a failure
+  exit: { |status|
+    BuiltIn.exit(status)
+  }
+)

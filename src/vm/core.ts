@@ -1,3 +1,4 @@
+import * as fastGlob from "fast-glob"
 import {
   NewObject, toObject, IObject, ObjectBase, Objekt,
   Number, String, Array,
@@ -5,8 +6,7 @@ import {
   AddSlot, GetSlot, EachParent, FindIn,
   SendMessage,
 } from "@vm/object"
-
-import { arrayFrom } from "@vm/js_core"
+import { isArray, arrayFrom } from "@vm/js_core"
 
 //
 // Our core set of built-ins
@@ -133,6 +133,16 @@ AddSlot(Objekt, toObject("send"), builtInFunc(function(args, meta = {}, vm): IOb
  * Container object for all built-in methods we will be exposing to the user.
  */
 let BuiltIn = NewObject(Objekt, null, {objectName: "BuiltIn", objectId: 99})
+
+/**
+ * World / Global BuiltIns
+ */
+
+AddSlot(BuiltIn, toObject("exit"), builtInFunc(function(args): IObject {
+  let status = args["status"] || args["0"]
+  process.exit(status.data)
+  return Null
+}))
 
 /**
  * Object BuiltIns
@@ -308,11 +318,11 @@ AddSlot(BuiltIn, toObject("arraySet"), builtInFunc(function(args): IObject {
 }))
 
 AddSlot(BuiltIn, toObject("arrayEach"), builtInFunc(function(args, meta = {}, vm): IObject {
-  let [array] = extractParams(args, "array")
+  let [array, blockAR] = extractParams(args, "array", "block")
 
   // Block as passed in from the language is actually an ActivationRecord
   // which we need to unwrap to get the actual block to evaluate.
-  let block = SendMessage(args["block"], toObject("block"))
+  let block = SendMessage(blockAR, toObject("block"))
   let parameters = SendMessage(block, toObject("parameters")).data
   let paramName = toObject(parameters[0].name)
 
@@ -357,6 +367,26 @@ AddSlot(BuiltIn, toObject("arrayLength"), builtInFunc(function(args): IObject {
 // Return the current unix timestamp (milliseconds since epoc: Jan 1, 1970)
 AddSlot(BuiltIn, toObject("timeUTC"), builtInFunc(function(): IObject {
   return toObject(Date.now())
+}))
+
+/**
+ * File BuiltIns
+ */
+
+// Supports a single path, multiple paths, a single glob, or multiple globs.
+// Returns an array of file paths.
+AddSlot(BuiltIn, toObject("fileSearch"), builtInFunc(function(args): IObject {
+  let [glob] = extractParams(args, "glob")
+  let rawEntries = []
+
+  // TODO Each entry needs to be a String or this will explody
+  if(isArray(glob.data)) {
+    rawEntries = glob.data.map(entry => entry.data)
+  } else {
+    rawEntries = [glob.data]
+  }
+
+  return toObject(fastGlob.sync(rawEntries))
 }))
 
 /**
@@ -419,6 +449,17 @@ AddSlot(World, toObject("Array"),  Array)
 AddSlot(World, toObject("True"),   True)
 AddSlot(World, toObject("False"),  False)
 AddSlot(World, toObject("Null"),   Null)
+
+// World.load is implemented as a direct built-in instead of a wrapped call because
+// we want `load` to evaluate the file in the current space as the call to `load`.
+// This may not be the best path here but I don't know if there is a "correct" expectation
+// on how something like `load` should work.
+AddSlot(World, toObject("load"), builtInFunc(function(args, meta = {}, vm): IObject {
+  let path = args["path"] || args["0"]
+
+  return vm.evalFile(path.data)
+}))
+
 
 // If anything changes on our base objects, make sure they get
 // re-exported here.

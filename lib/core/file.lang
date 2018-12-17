@@ -1,0 +1,19 @@
+File = Object.new(
+  # Providing either explicit paths to files or a set of glob strings
+  # returns the list of files that match the glob.
+  #
+  #   File.search(["file1.txt", "file2.txt"])  # => ["file1.txt", "file2.txt"]
+  #   File.search("*.txt")                     # => ["file1.txt", "file2.txt"]
+  #
+  # Globs can also recursively search into all nested directories
+  #
+  #   File.search("**/*.txt")
+  #
+  # If paths and globs given are relative paths, the search starts
+  # at the location of the current working directory.
+  search: { |glob|
+    BuiltIn.fileSearch(glob: glob).map({ |filePath|
+      File.new(path: filePath)
+    })
+  }
+)

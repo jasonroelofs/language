@@ -1,7 +1,44 @@
 #!/usr/bin/env lang-cli
 
 # import("task_runner")
+# import("test")
 
-result = TaskRunner.new().run(Process.argv)
+runner = TaskRunner.new()
 
-IO.puts(result)
+runner.define("test", is: { |pathGlob: []|
+  # Find all files that match _spec or _test inside of pathGlob
+  # Load each file into the VM to build up our test suite
+  # Instantiate the test runner
+  # Run the tests
+  # Report the result as success or failure (exit(0) / exit(1))
+
+  pathGlob.isEmpty().do({
+    pathGlob = ["test/**/*_test.lang", "spec/**/*_spec.lang"]
+  })
+
+  filesFound = File.search(pathGlob)
+
+  filesFound.isEmpty().do({
+    IO.puts("No test files matching *_spec.lang or *_test.lang found in spec/ or test/")
+    exit(1)
+  })
+
+  filesFound.each({ |file|
+    load(file.path)
+  })
+
+  # At this point, Test.suites should be populated with all of the
+  # suites we should run. Now we just need to run and report on the results!
+
+  runner = Runner.new(
+    suites: Test.suites,
+    reporter: Reporter.new(),
+  )
+
+  runner.run().do(
+    ifTrue: { exit(0) },
+    ifFalse: { exit(1) }
+  )
+})
+
+IO.puts(runner.run(Process.argv))

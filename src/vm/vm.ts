@@ -30,7 +30,7 @@ export default class VM {
     this.loadedFiles = new Map<string, string>()
     this.argv = argv
 
-    this.interpreter = new Interpreter(World)
+    this.interpreter = new Interpreter(this, World)
 
     this.loadCoreLib()
 
@@ -57,10 +57,10 @@ export default class VM {
     })
   }
 
-  loadFile(filePath: string) {
+  loadFile(filePath: string): IObject {
     let script = fs.readFileSync(filePath)
     // console.log("Loading file %o", filePath)
-    this.eval(script.toString(), filePath)
+    return this.eval(script.toString(), filePath)
   }
 
   eval(program: string, filePath: string = null): IObject {

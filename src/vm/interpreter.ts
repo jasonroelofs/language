@@ -31,6 +31,9 @@ import {
 
 export default class Interpreter {
 
+  // Hack-ish link back to the VM that created us
+  vm = null
+
   currentSpace: IObject
 
   // Keep a callstack that's a list of in-language objects
@@ -42,7 +45,8 @@ export default class Interpreter {
   Sender: IObject
   ActivationRecord: IObject
 
-  constructor(baseSpace: IObject) {
+  constructor(vm, baseSpace: IObject) {
+    this.vm = vm
     this.callStack = []
 
     this.currentSpace = baseSpace
@@ -61,6 +65,12 @@ export default class Interpreter {
     // Expose static values from the runtime into the language
     let Process = SendMessage(this.currentSpace, toObject("Process"))
     AddSlot(Process, toObject("argv"), toObject(argv))
+  }
+
+  // TODO: Find a better path of handling things between the VM itself and the Interpreter
+  // regarding loading code from files at runtime
+  evalFile(path: string): IObject {
+    return this.vm.loadFile(path)
   }
 
   eval(expressions: Array<Expression>): IObject {

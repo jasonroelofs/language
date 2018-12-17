@@ -1,0 +1,29 @@
+# import("test")
+
+Test.describe("World", as: { |test|
+
+  test("load", is: { |assert|
+    load("spec/fixtures/world/load.lang")
+
+    assert(space.hasSlot("LoadedObject"))
+
+    obj = LoadedObject.new()
+    assert(obj.name() == "loaded object")
+  })
+
+  test("load evaluates into the current space only", is: { |assert|
+    {
+      {
+        load("spec/fixtures/world/load.lang")
+        assert(space.hasSlot("LoadedObject"))
+      }()
+
+      assert(!space.hasSlot("LoadedObject"))
+    }()
+
+    assert(!space.hasSlot("LoadedObject"))
+  })
+
+  test("load handles parsing errors")
+
+})

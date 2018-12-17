@@ -12,16 +12,6 @@ Test = Object.new(
     suite = Suite.new(name: name)
     as(suite.test)
     suites.push(suite)
-
-    # TODO: The actual running of tests should happen in a different object
-    # Need something here because we have nothing else at this time.
-    # Especially when we get to live development, this needs to be something
-    # callable at any time.
-    runner = Runner.new(
-      suites: Test.suites,
-      reporter: Reporter.new(),
-    )
-    runner.run()
   },
 )
 
@@ -74,7 +64,7 @@ Runner = Object.new(
   },
 
   run: {
-    reporter.start(suite)
+    reporter.start()
 
     suites.each({ |suite|
       suite.run(reporter)
@@ -104,10 +94,10 @@ Reporter = Object.new(
 
   currentTest: null,
 
-  start: { |suite|
+  start: {
     startTime = Time.utc()
 
-    IO.puts("Running " + suite.name)
+    IO.puts("Running ")
     IO.puts()
   },
 
@@ -177,5 +167,8 @@ Reporter = Object.new(
     IO.puts()
     IO.puts(results)
     IO.puts()
+
+    # Return a boolean flag signaling a successful or failed test suite run
+    failures.length() == 0
   }
 )

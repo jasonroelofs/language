@@ -28,7 +28,8 @@ fix-shebang:
 # installed into the build area, but we don't want to have to constantly copy
 # files around as these files are being worked on. Instead, lets symlink it!
 link-lib:
-	ln -shf `pwd`/lib dist/lib
+	rm -f dist/lib
+	ln -sf `pwd`/lib dist/lib
 
 test: unit-tests specs
 

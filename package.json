@@ -12,7 +12,7 @@
     "lang-task": "bin/lang-task"
   },
   "scripts": {
-    "test": "make"
+    "test": "make ci"
   },
   "dependencies": {
     "@ef-carbon/tspm": "^2.2.5",

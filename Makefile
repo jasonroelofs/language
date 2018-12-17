@@ -1,9 +1,14 @@
 PATH  := dist/bin:node_modules/.bin:$(PATH)
 SHELL := env PATH=$(PATH) /bin/bash
 
-.PHONY: clean all
+.PHONY: clean all ci
 
 all: build test
+
+# Provide a slightly different task for CI to make sure
+# that `npm link` is called. This call takes a noticable
+# amount of time so its not something we want to always execute
+ci: build setup test
 
 build: compile rewrite-paths link-lib fix-shebang
 
@@ -30,6 +35,9 @@ fix-shebang:
 link-lib:
 	@rm -f dist/lib
 	@ln -sf `pwd`/lib dist/lib
+
+setup:
+	@npm link
 
 test: unit-tests specs
 

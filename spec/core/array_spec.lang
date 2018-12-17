@@ -76,6 +76,13 @@ Test.describe("Array", as: { |test|
     assert(b == [2, 4, 6])
   })
 
+  test("map", is: { |assert|
+    a = [1, 2, 3]
+    b = a.map({ |num| num * 2 })
+
+    assert(b == [2, 4, 6])
+  })
+
   test("==", is: { |assert|
     assert([] == [])
 

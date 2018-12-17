@@ -18,6 +18,18 @@ Array.addSlots(
     BuiltIn.arrayEach(array: self, block: block)
   },
 
+  # Iterate over each element of this array applying the given block to
+  # that element and returning a new array with the resulting values.
+  map: { |block|
+    accum = []
+
+    each({ |entry|
+      accum.push(block(entry))
+    })
+
+    accum
+  },
+
   # Append a value to the end of the array
   push: { |object|
     BuiltIn.arrayPush(array: self, object: object)

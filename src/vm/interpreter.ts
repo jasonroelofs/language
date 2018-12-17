@@ -234,20 +234,21 @@ export default class Interpreter {
       throw new errors.ArgumentMismatchError(receiverNode, parameters, args)
     }
 
-    // Check for plain first argument and fix it up to match the name
-    // of the first parameter
-    if(args.length > 0 && args[0].name == null && parameters[0]) {
-      args[0].name = parameters[0].name
-    }
-
     let evaldArgs = []
     let unusedParams: Array<ParameterNode> = []
     let usedArgs: Array<ArgumentNode> = []
 
     // Check that arguments match expected parameters and evaluate all
     // provided arguments or default parameter values in the current Space
-    for(var param of parameters) {
-      let arg = args.find((a) => { return a.name == param.name })
+    for(var i = 0; i < parameters.length; i++) {
+      let arg
+      let param = parameters[i]
+
+      if(i == 0 && args[0] && args[0].name == null) {
+        arg = args[0]
+      } else {
+        arg = args.find((a) => { return a.name == param.name })
+      }
 
       if(arg) {
         evaldArgs.push([toObject(param.name), this.evalNode(arg.value), toObject(arg.comment)])

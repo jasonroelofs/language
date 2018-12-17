@@ -1,4 +1,6 @@
 import * as fastGlob from "fast-glob"
+import * as fs from "fs"
+import * as path from "path"
 import {
   NewObject, toObject, IObject, ObjectBase, Objekt,
   Number, String, Array,
@@ -381,12 +383,24 @@ AddSlot(BuiltIn, toObject("fileSearch"), builtInFunc(function(args): IObject {
 
   // TODO Each entry needs to be a String or this will explody
   if(isArray(glob.data)) {
-    rawEntries = glob.data.map(entry => entry.data)
+    rawEntries = glob.data.map(entry => path.normalize(entry.data))
   } else {
-    rawEntries = [glob.data]
+    rawEntries = [path.normalize(glob.data)]
   }
 
   return toObject(fastGlob.sync(rawEntries))
+}))
+
+AddSlot(BuiltIn, toObject("fileIsDirectory"), builtInFunc(function(args): IObject {
+  let path = args["path"] || args["0"]
+
+  try {
+    let stats = fs.lstatSync(path.data)
+    return toObject(stats.isDirectory())
+  } catch {
+    // If nothing exists at the given path...
+    return False
+  }
 }))
 
 /**

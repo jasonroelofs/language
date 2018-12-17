@@ -1,4 +1,9 @@
 File = Object.new(
+
+  isDirectory: { |path|
+    BuiltIn.fileIsDirectory(path: path)
+  },
+
   # Providing either explicit paths to files or a set of glob strings
   # returns the list of files that match the glob.
   #

@@ -2,6 +2,15 @@
 
 Test.describe("File", as: { |test|
 
+  test("isDirectory", is: { |assert|
+    assert(File.isDirectory("spec"))
+    assert(File.isDirectory("spec/fixtures"))
+    assert(File.isDirectory("spec/fixtures/file"))
+
+    assert(!File.isDirectory("spec/fixtures/file/file1.txt"))
+    assert(!File.isDirectory("spec/invalid"))
+  })
+
   test("search finds direct matches", is: { |assert|
     files = File.search("spec/fixtures/file/file1.txt")
 

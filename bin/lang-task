@@ -13,13 +13,22 @@ runner.define("test", is: { |pathGlob: []|
   # Report the result as success or failure (exit(0) / exit(1))
 
   pathGlob.isEmpty().do({
-    pathGlob = ["test/**/*_test.lang", "spec/**/*_spec.lang"]
+    pathGlob = ["{spec,test}/**/*_{spec,test}.lang"]
   })
 
-  filesFound = File.search(pathGlob)
+  # Check what we've got now and see if there were any directories
+  # passed in, updating those to include the globbing we want.
+  cleanGlobs = pathGlob.map({ |entry|
+    File.isDirectory(entry).do(
+      ifTrue: { entry + "/**/*_{spec,test}.lang" },
+      ifFalse: { entry }
+    )
+  })
+
+  filesFound = File.search(cleanGlobs)
 
   filesFound.isEmpty().do({
-    IO.puts("No test files matching *_spec.lang or *_test.lang found in spec/ or test/")
+    IO.puts("No files matching *_spec.lang or *_test.lang found in " + pathGlob)
     exit(1)
   })
 

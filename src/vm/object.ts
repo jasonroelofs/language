@@ -218,6 +218,18 @@ function AddParent(receiver: IObject, obj: IObject) {
 }
 
 /**
+ * Is the given object a child of the object in `expected`?
+ */
+function ObjectIs(obj: IObject, expected: IObject): IObject {
+  if(FindIn(obj, (test) => test.objectId == expected.objectId)) {
+    return True
+  }
+
+  return False
+}
+
+
+/**
  * The base of all objects. Should not ever be used directly.
  * Provides the slots for Object, through which everything else should build off of.
  */
@@ -288,6 +300,7 @@ export {
   AddParent,
   EachParent,
   FindIn,
+  ObjectIs,
   toObject,
   ObjectBase,
   Objekt,

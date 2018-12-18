@@ -24,7 +24,7 @@ try {
   // Catch and throw away so we don't get weird stack traces
   // Need to figure out a better pattern for where and when
   // to report on errors.
-  if('chunk' in error) {
+  if(error.data) {
     // Do nothing
   } else {
     // This is an unknown error type, throw it for debugging

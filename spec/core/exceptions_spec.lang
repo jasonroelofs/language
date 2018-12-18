@@ -1,0 +1,90 @@
+# import("test")
+
+Test.describe("Exceptions", as: { |test|
+
+  test("try, throw, catch, finally", is: { |assert|
+    caught = null
+    finally = null
+    after = null
+
+    result = try(
+      {
+        throw("An Exception")
+        after = "after hit"
+      },
+      catch: {|error| caught = error; "Caught!" },
+      finally: { finally = "finally ran" }
+    )
+
+    # Try returns the value of the catch block
+    assert(result == "Caught!")
+
+    # `throw` stops execution
+    assert(after == null)
+
+    # Catch block is evaluated
+    assert(caught == "An Exception")
+
+    # Finally clause called after any catch
+    assert(finally == "finally ran")
+  })
+
+  test("try with no exception returns the value of the block", is: { |assert|
+    result = try({
+      "success!"
+    })
+
+    assert(result == "success!")
+  })
+
+  test("nested try handle exceptions at the lowest point", is: { |assert|
+    caught = null
+
+    result = try(
+      {
+        try(
+          {
+            throw("Inner")
+          },
+          catch: { |error| caught = "Inner" }
+        )
+      },
+      catch: { |error| caught = "Outer" }
+    )
+
+    assert(result == "Inner")
+    assert(caught == "Inner")
+  })
+
+  test("exceptions bubble up until a try() block exists with a catch", is: { |assert|
+    result = try(
+      {
+        try({
+          try({
+            throw("Inner")
+          })
+        })
+      },
+      catch: { |error| error }
+    )
+
+    assert(result == "Inner")
+  })
+
+  test("throwing actual Exception objects includes a language stack trace", is: { |assert|
+    result = try(
+      {
+        try({
+          try({
+            throw(Exception.new(message: "Hi Mom!"))
+          })
+        })
+      },
+      catch: { |error| error }
+    )
+
+    assert(result.is(Exception))
+    assert(result.message == "Hi Mom!")
+    assert(result.backtrace.length() > 3)
+  })
+})

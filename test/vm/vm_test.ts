@@ -371,7 +371,7 @@ describe("VM", () => {
         try {
           vm.eval(test)
         } catch(e) {
-          error = e
+          error = e.data
         }
 
         let expected = tests[test]
@@ -390,7 +390,7 @@ describe("VM", () => {
       try {
         vm.eval(`a = Object.new(m: 1); a.m()`)
       } catch(e) {
-        error = e
+        error = e.data
       }
 
       assertErrorType(error, errors.NotABlockError)
@@ -407,7 +407,7 @@ describe("VM", () => {
       try {
         vm.eval(`a = 1; a.call()`)
       } catch(e) {
-        error = e
+        error = e.data
       }
 
       assertErrorType(error, errors.NotABlockError)
@@ -419,7 +419,7 @@ describe("VM", () => {
       try {
         vm.eval(`a = 1; a()`)
       } catch(e) {
-        error = e
+        error = e.data
       }
 
       assertErrorType(error, errors.NotABlockError)
@@ -463,7 +463,7 @@ describe("VM", () => {
         try {
           vm.eval(test)
         } catch(e) {
-          error = e
+          error = e.data
         }
 
         assertErrorType(error, errors.ArgumentMismatchError)

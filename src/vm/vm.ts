@@ -94,9 +94,9 @@ export default class VM {
     try {
       return this.interpreter.eval(expressions)
     } catch(error) {
-      // Are we one of the SystemError type or something else?
-      if('chunk' in error) {
-        this.reportError(error)
+      // Are we a language exception or something else?
+      if(error.data) {
+        this.reportError(error.data)
       }
 
       throw error

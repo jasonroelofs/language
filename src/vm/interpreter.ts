@@ -19,6 +19,7 @@ import {
   AddSlot,
   AddParent,
   FindIn,
+  ObjectIs,
   toObject,
   Objekt,
   Number,
@@ -45,6 +46,8 @@ export default class Interpreter {
   Sender: IObject
   ActivationRecord: IObject
 
+  Exception: IObject
+
   constructor(vm, baseSpace: IObject) {
     this.vm = vm
     this.callStack = []
@@ -61,6 +64,7 @@ export default class Interpreter {
     this.Block = SendMessage(this.currentSpace, toObject("Block"))
     this.Sender = SendMessage(this.currentSpace, toObject("Sender"))
     this.ActivationRecord = SendMessage(this.currentSpace, toObject("ActivationRecord"))
+    this.Exception = SendMessage(this.currentSpace, toObject("Exception"))
 
     // Expose static values from the runtime into the language
     let Process = SendMessage(this.currentSpace, toObject("Process"))
@@ -382,5 +386,15 @@ export default class Interpreter {
     AddParent(this.currentSpace, previousSpace)
 
     return previousSpace
+  }
+
+  wrapAndThrowException(exception) {
+    // Apply our language-level call stack to the new exception
+    if(ObjectIs(exception, this.Exception)) {
+      AddSlot(exception, toObject("backtrace"), toObject(this.callStack))
+    }
+
+    // We just piggy-back on javascript's own exception handling!
+    throw(exception)
   }
 }

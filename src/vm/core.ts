@@ -5,7 +5,7 @@ import {
   NewObject, toObject, IObject, ObjectBase, Objekt,
   Number, String, Array,
   True, False, Null,
-  AddSlot, GetSlot, EachParent, FindIn,
+  AddSlot, GetSlot, EachParent, FindIn, ObjectIs,
   SendMessage,
 } from "@vm/object"
 import { isArray, arrayFrom } from "@vm/js_core"
@@ -193,11 +193,7 @@ AddSlot(BuiltIn, toObject("objectHasSlot"), builtInFunc(function(args): IObject 
 AddSlot(BuiltIn, toObject("objectIs"), builtInFunc(function(args): IObject {
   let [obj, expected] = extractParams(args, "object", "type")
 
-  if(FindIn(obj, (test) => test.objectId == expected.objectId)) {
-    return True
-  }
-
-  return False
+  return ObjectIs(obj, expected)
 }))
 
 
@@ -474,6 +470,44 @@ AddSlot(World, toObject("load"), builtInFunc(function(args, meta = {}, vm): IObj
   return vm.evalFile(path.data)
 }))
 
+// World.try is our exception handling catching and handling tool.
+// It takes a block in which to execute that may throw an exception.
+// If `catch` is provided, it is called with the error.
+// If `finally` is provided, it is called after any `catch`.
+// Finally the value is returned from `try` or `catch` if there was an error.
+AddSlot(World, toObject("try"), builtInFunc(function(args, meta = {}, vm): IObject {
+  let block = args["block"] || args["0"]
+  let catchBlock = args["catch"]
+  let finallyBlock = args["finally"]
+  let result = Null
+
+  try {
+    result = vm.evalBlockWithArgs(null, block, [])
+  } catch(e) {
+    if(catchBlock) {
+      result = vm.evalBlockWithArgs(null, catchBlock, [[toObject("error"), e]])
+    } else {
+      throw(e)
+    }
+  } finally {
+    if(finallyBlock) {
+      vm.evalBlockWithArgs(null, finallyBlock, [])
+    }
+  }
+
+  return result
+}))
+
+// Use World.throw to throw an exception.
+// The exception can be any object and does not have to explicitly be an Exception
+// object or one of its children.
+AddSlot(World, toObject("throw"), builtInFunc(function(args, meta = {}, vm): IObject {
+  let exception = args["0"]
+
+  vm.wrapAndThrowException(exception)
+
+  return Null
+}))
 
 // If anything changes on our base objects, make sure they get
 // re-exported here.

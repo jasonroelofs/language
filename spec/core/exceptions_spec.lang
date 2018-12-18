@@ -87,4 +87,15 @@ Test.describe("Exceptions", as: { |test|
     assert(result.message == "Hi Mom!")
     assert(result.backtrace.length() > 3)
   })
+
+  test("internal VM exceptions are wrapped in language exceptions and are catchable", is: { |assert|
+    result = try(
+      { 1.notASlot },
+      catch: { |error| error }
+    )
+
+    assert(result.is(Exception))
+    assert(result.message != null)
+    assert(result.backtrace.length() > 3)
+  })
 })

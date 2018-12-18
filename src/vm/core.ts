@@ -504,7 +504,7 @@ AddSlot(World, toObject("try"), builtInFunc(function(args, meta = {}, vm): IObje
 AddSlot(World, toObject("throw"), builtInFunc(function(args, meta = {}, vm): IObject {
   let exception = args["0"]
 
-  vm.wrapAndThrowException(exception)
+  vm.throwException(exception)
 
   return Null
 }))

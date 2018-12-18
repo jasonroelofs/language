@@ -112,7 +112,7 @@ export default class Interpreter {
         let found = SendMessage(this.currentSpace, slotName)
 
         if(found == null) {
-          throw new errors.SlotNotFoundError(node, slotName)
+          this.throwException(new errors.SlotNotFoundError(node, slotName))
         }
 
         if(found.codeBlock) {
@@ -140,7 +140,7 @@ export default class Interpreter {
         return this.evalMessageSend(node as MessageSendNode)
 
       default:
-        throw new Error(util.format("[Eval] Don't know how to evaluate node %o of type %o", node, node.type))
+        this.throwException(new Error(util.format("[Eval] Don't know how to evaluate node %o of type %o", node, node.type)))
         return Null
     }
   }
@@ -168,7 +168,7 @@ export default class Interpreter {
 
     if(node.message.name == "call") {
       if(!receiver.codeBlock) {
-        throw new errors.NotABlockError(node.receiver)
+        this.throwException(new errors.NotABlockError(node.receiver))
       }
 
       // We're an activation record wrapping the actual code block to execute
@@ -220,9 +220,9 @@ export default class Interpreter {
 
     if(slotValue == null) {
       if(receiver) {
-        throw new errors.NoSuchMessageError(node, message)
+        this.throwException(new errors.NoSuchMessageError(node, message))
       } else {
-        throw new errors.SlotNotFoundError(node, message)
+        this.throwException(new errors.SlotNotFoundError(node, message))
       }
     }
 
@@ -245,7 +245,7 @@ export default class Interpreter {
 
     // Gave us arguments, but we don't have parameters
     if(args.length > 0 && parameters.length == 0) {
-      throw new errors.ArgumentMismatchError(receiverNode, parameters, args)
+      this.throwException(new errors.ArgumentMismatchError(receiverNode, parameters, args))
     }
 
     let evaldArgs = []
@@ -277,7 +277,7 @@ export default class Interpreter {
     let unusedArgs = args.filter((a) => { return !usedArgs.includes(a) })
 
     if(unusedParams.length > 0 || unusedArgs.length > 0) {
-      throw new errors.ArgumentMismatchError(receiverNode, parameters, args)
+      this.throwException(new errors.ArgumentMismatchError(receiverNode, parameters, args))
     }
 
     return this.evalBlockWithArgs(receiver, codeBlock, evaldArgs)
@@ -388,10 +388,36 @@ export default class Interpreter {
     return previousSpace
   }
 
-  wrapAndThrowException(exception) {
+  throwException(exception) {
+    let orig = exception
+
+    // If we've got a Javascript-level exception, built a new Exception object
+    // providing the JS exception as its `data` field.
+    if(orig instanceof Error) {
+      exception = NewObject(this.Exception, exception)
+      AddSlot(exception, toObject("message"), toObject(orig.message))
+    }
+
+    // Try to get our message exposed as well, which is different depending on
+    // a JS-level error or one of our own custom errors
+    if(orig instanceof errors.RuntimeError) {
+      AddSlot(exception, toObject("message"), toObject(orig.errorType()))
+    }
+
     // Apply our language-level call stack to the new exception
-    if(ObjectIs(exception, this.Exception)) {
+    // but only if there isn't already a callstack. We don't want to clobber if
+    // this exception goes through multiple handlers!
+    if(ObjectIs(exception, this.Exception) == True) {
+      // TODO: If this exception is re-thrown, do we need to make sure the
+      // backtrace isn't clobbered?
+
+      // By default the call stack is just the series of calls that led to
+      // the current line, and does not include the current line.
+      // We have to push one more time at the point of failure to make sure
+      // the top of the exceptions backtrace points to the actual line of failure/throw.
+      this.pushCallStack(exception.data || exception.astNode)
       AddSlot(exception, toObject("backtrace"), toObject(this.callStack))
+      this.popCallStack()
     }
 
     // We just piggy-back on javascript's own exception handling!

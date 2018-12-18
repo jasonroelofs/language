@@ -29,13 +29,25 @@ Suite = Object.new(
       reporter.startTest(test)
 
       test.test.do(
-        ifTrue: { test.test(assert) },
+        ifTrue: { runOneTest(reporter, test: test) },
         ifFalse: { reporter.pending(test) }
       )
 
       reporter.endTest()
     })
+  },
+
+  runOneTest: { |reporter, test|
+    try(
+      {
+        test.test(assert)
+      },
+      catch: { |error|
+        reporter.errored(error)
+      }
+    )
   }
+
 )
 
 Unit = Object.new(
@@ -77,8 +89,15 @@ Runner = Object.new(
 TestResult = Object.new(
   test: null,
   result: false,
+  error: null,
   message: "",
   location: null,
+
+  toString: {
+    testDetails = test.suite.name + " " + test.name + ": " + message
+
+    "\n" + testDetails + "\n\t" + testResult.location
+  }
 )
 
 Reporter = Object.new(
@@ -119,6 +138,13 @@ Reporter = Object.new(
     IO.print("F")
   },
 
+  errored: { |error|
+    assertions = assertions + 1
+    failures.push(TestResult.new(test: currentTest, result: false, location: error.backtrace[0], message: error.message))
+
+    IO.print("E")
+  },
+
   endTest: {
     currentTest = null
   },
@@ -150,10 +176,7 @@ Reporter = Object.new(
       IO.puts()
       IO.puts("Test failures:")
       failures.each({ |testResult|
-        test = testResult.test
-        IO.puts()
-        IO.puts(test.suite.name + " " + test.name + ": " + testResult.message)
-        IO.puts("\t" + testResult.location)
+        IO.puts(testResult.toString())
       })
     })
 

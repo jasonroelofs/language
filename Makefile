@@ -37,6 +37,7 @@ link-lib:
 	@ln -sf `pwd`/lib dist/lib
 
 setup:
+	@npm upgrade
 	@npm link
 
 test: unit-tests specs

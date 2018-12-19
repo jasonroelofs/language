@@ -1,0 +1,35 @@
+# import("test")
+
+Test.describe("Syntax Errors", as: { |test|
+
+  # List of syntax error tests, formatted:
+  # [base file name, error message, line #]
+  errorTests = [
+    ["chained_statements", "Expected End of Expression", 5],
+    ["incomplete_expression", "Incomplete Expression", 5],
+    ["invalid_parameter", "Missing Parameter Name", 5],
+    ["invalid_statement", "Invalid Start of Expression", 5],
+    ["unclosed_block_params", "Expected , or | but found }", 6],
+    ["unclosed_blocks", "Missing Closing '}'", 9],
+    ["unclosed_groups", "Missing Closing ')'", 8],
+    ["unterminated_string", "Unterminated String", 5],
+  ]
+
+  errorTests.each({ |toTest|
+    test(toTest[0], is: { |assert|
+      testFile = "spec/errors/" + toTest[0] + ".lang"
+
+      error = try({
+        load(testFile)
+      }, catch: { |error| error })
+
+      assert(error)
+      assert(error.message == toTest[1])
+      assert(error.file() == testFile)
+      assert(error.line() == toTest[2])
+    })
+  })
+
+  test("all files in spec/errors are covered here")
+
+})

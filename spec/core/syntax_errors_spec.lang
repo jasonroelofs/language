@@ -17,7 +17,7 @@ Test.describe("Syntax Errors", as: { |test|
 
   errorTests.each({ |toTest|
     test(toTest[0], is: { |assert|
-      testFile = "spec/errors/" + toTest[0] + ".lang"
+      testFile = "spec/errors/syntax/" + toTest[0] + ".lang"
 
       error = try({
         load(testFile)
@@ -30,6 +30,13 @@ Test.describe("Syntax Errors", as: { |test|
     })
   })
 
-  test("all files in spec/errors are covered here")
+  # As a precautionary measure, more files will be added to spec/errors
+  # over time and I want the system to warn me when I forget to update this
+  # file with the appropriate tests. See spec/errors/README for more information.
+  test("all files in spec/errors/syntax are covered here", is: { |assert|
+    errorFiles = File.search("spec/errors/syntax/*.lang")
+
+    assert(errorFiles.length() == errorTests.length(), message: "There is a mismatch between the syntax error files and the cases in syntax_errors_spec.lang")
+  })
 
 })

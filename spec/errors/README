@@ -1,0 +1,4 @@
+This directory contains files that exhibit failure cases in the syntax and the language runtime. These files serve two purposes:
+
+1. Provide a way for anyone to easily render out all current error messages to make sure they are correct and well formatted.
+2. Provide a way for the test suite to ensure that all of these cases are properly handled.

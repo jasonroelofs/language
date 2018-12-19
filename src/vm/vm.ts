@@ -74,37 +74,13 @@ export default class VM {
     this.loadedFiles.set(filePath, program)
 
     let l = new Lexer(program, {filePath: filePath})
-    var {tokens, errors} = l.tokenize()
-
-    if(errors.length > 0) {
-      this.reportError(errors[0])
-      return
-    }
+    var tokens = l.tokenize()
 
     let p = new Parser(tokens)
-    var {expressions, errors} = p.parse()
-
-    if(errors.length > 0) {
-      this.reportError(errors[0])
-      return
-    }
+    var expressions = p.parse()
 
     // console.log(util.inspect(expressions, {depth: null}))
 
-    try {
-      return this.interpreter.eval(expressions)
-    } catch(error) {
-      // Are we a language exception or something else?
-      if(error.data) {
-        this.reportError(error.data)
-      }
-
-      throw error
-    }
-  }
-
-  reportError(error: SystemError) {
-    let report = new ErrorReport(error, this.loadedFiles)
-    console.log(report.buildReport())
+    return this.interpreter.eval(expressions)
   }
 }

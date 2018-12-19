@@ -12,6 +12,7 @@ import {
   Expression,
 } from "@compiler/ast"
 import * as errors from "@vm/errors"
+import { SyntaxError } from "@compiler/errors"
 import {
   IObject,
   NewObject,
@@ -73,8 +74,12 @@ export default class Interpreter {
 
   // TODO: Find a better path of handling things between the VM itself and the Interpreter
   // regarding loading code from files at runtime
-  evalFile(path: string): IObject {
-    return this.vm.loadFile(path)
+  evalFile(path: IObject): IObject {
+    try {
+      return this.vm.loadFile(path.data)
+    } catch(e) {
+      this.throwException(e, path)
+    }
   }
 
   eval(expressions: Array<Expression>): IObject {
@@ -388,19 +393,29 @@ export default class Interpreter {
     return previousSpace
   }
 
-  throwException(exception) {
+  throwException(exception, trigger = null) {
     let orig = exception
 
     // If we've got a Javascript-level exception, built a new Exception object
     // providing the JS exception as its `data` field.
     if(orig instanceof Error) {
-      exception = NewObject(this.Exception, exception)
+      exception = NewObject(this.Exception, orig)
       AddSlot(exception, toObject("message"), toObject(orig.message))
+
+      // For non-lanuage exceptions, we can also be given an explicit AST node
+      // that triggerd this call, letting us link our exception wrapper back
+      // to the language line and file.
+      if(trigger) {
+        exception.astNode = trigger.astNode
+      }
     }
 
     // Try to get our message exposed as well, which is different depending on
     // a JS-level error or one of our own custom errors
-    if(orig instanceof errors.RuntimeError) {
+    //
+    // TODO This is a little messy checking for lexer/parser errors
+    // at this level. Possibly a place for pulling out logic.
+    if((orig instanceof errors.RuntimeError) || (orig instanceof SyntaxError)) {
       AddSlot(exception, toObject("message"), toObject(orig.errorType()))
     }
 

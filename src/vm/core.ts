@@ -467,7 +467,7 @@ AddSlot(World, toObject("Null"),   Null)
 AddSlot(World, toObject("load"), builtInFunc(function(args, meta = {}, vm): IObject {
   let path = args["path"] || args["0"]
 
-  return vm.evalFile(path.data)
+  return vm.evalFile(path)
 }))
 
 // World.try is our exception handling catching and handling tool.

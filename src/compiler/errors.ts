@@ -10,28 +10,45 @@ class SyntaxError extends Error {
 
   token: Token
 
-  // The following are provided to create parity between
-  // these errors and Tokens, as errors are created instead
-  // of tokens.
-
-  value: string
-
-  line: number
-
-  ch: number
-
-  pos: number
-
-  file: string
-
   constructor(token: Token) {
     super()
     this.token = token
-    this.value = token.value
-    this.line = token.line
-    this.ch = token.ch
-    this.pos = token.pos
-    this.file = token.file
+  }
+
+  get value(): string {
+    return this.token.value
+  }
+
+  get line(): number {
+    return this.token.line
+  }
+
+  set line(to: number) {
+    this.token.line = to
+  }
+
+  get ch(): number {
+    return this.token.ch
+  }
+
+  set ch(to: number) {
+    this.token.ch = to
+  }
+
+  get file(): string {
+    return this.token.file
+  }
+
+  set file(to: string) {
+    this.token.file = to
+  }
+
+  get pos(): number {
+    return this.token.pos
+  }
+
+  set pos(to: number) {
+    this.token.pos = to
   }
 
   baseType(): string {

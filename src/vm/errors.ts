@@ -18,22 +18,38 @@ class RuntimeError extends Error {
 
   token: Token
 
-  chunk: string
-
-  line: number
-
-  ch: number
-
-  file: string
-
   constructor(token: Token) {
     super()
 
     this.token = token
-    this.chunk = token.value
-    this.line = token.line
-    this.ch = token.ch
-    this.file = token.file
+  }
+
+  get chunk(): string {
+    return this.token.value
+  }
+
+  get line(): number {
+    return this.token.line
+  }
+
+  set line(to: number) {
+    this.token.line = to
+  }
+
+  get ch(): number {
+    return this.token.ch
+  }
+
+  set ch(to: number) {
+    this.token.ch = to
+  }
+
+  get file(): string {
+    return this.token.file
+  }
+
+  set file(to: string) {
+    this.token.file = to
   }
 
   baseType(): string {

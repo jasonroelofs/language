@@ -196,10 +196,10 @@ describe("Parser", () => {
     })
 
     let lexer = new Lexer(test)
-    let {tokens} = lexer.tokenize()
+    let tokens = lexer.tokenize()
 
     let parser = new Parser(tokens)
-    let {expressions} = parser.parse()
+    let expressions = parser.parse()
 
     assert.equal(expressions.length, 2)
     assert.deepEqual(removeStrayKeys(expressions[0].node), expected, `Comparison failed for ''${test}''`)
@@ -474,10 +474,10 @@ describe("Parser", () => {
     `
 
     let lexer = new Lexer(test)
-    let {tokens} = lexer.tokenize()
+    let tokens = lexer.tokenize()
 
     let parser = new Parser(tokens)
-    let {expressions} = parser.parse()
+    let expressions = parser.parse()
 
     assert.equal(expressions.length, 4)
 
@@ -520,10 +520,10 @@ describe("Parser", () => {
     `
 
     let lexer = new Lexer(test)
-    let {tokens} = lexer.tokenize()
+    let tokens = lexer.tokenize()
 
     let parser = new Parser(tokens)
-    let {expressions} = parser.parse()
+    let expressions = parser.parse()
 
     assert.equal(expressions.length, 0)
   })
@@ -539,10 +539,10 @@ describe("Parser", () => {
     `
 
     let lexer = new Lexer(test)
-    let {tokens} = lexer.tokenize()
+    let tokens = lexer.tokenize()
 
     let parser = new Parser(tokens)
-    let {expressions} = parser.parse()
+    let expressions = parser.parse()
 
     assert.equal(expressions.length, 1)
   })
@@ -556,10 +556,10 @@ describe("Parser", () => {
     `
 
     let lexer = new Lexer(test)
-    let {tokens} = lexer.tokenize()
+    let tokens = lexer.tokenize()
 
     let parser = new Parser(tokens)
-    let {expressions} = parser.parse()
+    let expressions = parser.parse()
 
     assert.equal(expressions.length, 1)
   })
@@ -573,10 +573,10 @@ describe("Parser", () => {
     `
 
     let lexer = new Lexer(test)
-    let {tokens} = lexer.tokenize()
+    let tokens = lexer.tokenize()
 
     let parser = new Parser(tokens)
-    let {expressions} = parser.parse()
+    let expressions = parser.parse()
 
     assert.equal(expressions.length, 1)
   })
@@ -598,10 +598,10 @@ describe("Parser", () => {
     `
 
     let lexer = new Lexer(test)
-    let {tokens} = lexer.tokenize()
+    let tokens = lexer.tokenize()
 
     let parser = new Parser(tokens)
-    let {expressions} = parser.parse()
+    let expressions = parser.parse()
 
     assert.equal(expressions.length, 1)
 
@@ -748,19 +748,20 @@ describe("Parser", () => {
 
     function assertError(input, {errorType, position}) {
       let lexer = new Lexer(input)
-      var {tokens, errors} = lexer.tokenize()
+      var tokens = lexer.tokenize()
 
-      assert.equal(errors.length, 0, `Lexer found errors in ${input}`)
+      try {
+        let parser = new Parser(tokens)
+        var expressions = parser.parse()
 
-      let parser = new Parser(tokens)
-      var {expressions, errors} = parser.parse()
+        assert.fail("Expected parser to throw an exception but non thrown")
+      } catch(error) {
+        assert(error instanceof errorType, `Wrong error type for '${input}' got: ${error.errorType()}`)
+        assert.equal(error.pos, position, `Wrong position for '${input}'`)
 
-      assert.equal(errors.length, 1, `Parser should have thrown errors in ${input}`)
-      assert(errors[0] instanceof errorType, `Wrong error type for '${input}' got: ${errors[0].errorType()}`)
-      assert.equal(errors[0].pos, position, `Wrong position for '${input}'`)
-
-      // Let tests do further checks against the error object
-      return errors[0]
+        // Let tests do further checks against the error object
+        return error
+      }
     }
   })
 })
@@ -800,18 +801,19 @@ function messageSendNode({receiver, message, args}) {
 }
 
 function assertExpression(input, expected) {
-  let lexer = new Lexer(input)
-  var {tokens, errors} = lexer.tokenize()
+  try {
+    let lexer = new Lexer(input)
+    var tokens = lexer.tokenize()
 
-  assert.equal(errors.length, 0, util.format("Lexer returned some errors: %o", errors))
+    let parser = new Parser(tokens)
+    var expressions = parser.parse()
 
-  let parser = new Parser(tokens)
-  var {expressions, errors} = parser.parse()
+    assert.equal(expressions.length, 1, "Wrong number of expressions returned")
 
-  assert.equal(errors.length, 0, util.format("Parser returned some errors: %o", errors))
-  assert.equal(expressions.length, 1, "Wrong number of expressions returned")
-
-  assert.deepEqual(removeStrayKeys(expressions[0].node), expected, `Comparison failed for ''${input}''`)
+    assert.deepEqual(removeStrayKeys(expressions[0].node), expected, `Comparison failed for ''${input}''`)
+  } catch(e) {
+    assert.fail(e)
+  }
 }
 
 // There are some things that get added to AST nodes that we don't want to deal with

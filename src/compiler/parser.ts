@@ -46,11 +46,6 @@ let Precedences = {
   [TokenType.OpenSquare]: Precedence.Index,
 }
 
-interface ParserResults {
-  expressions: Array<Expression>
-  errors: Array<errors.SyntaxError>
-}
-
 export default class Parser {
 
   tokens: Array<Token>
@@ -102,29 +97,22 @@ export default class Parser {
     }
   }
 
-  parse(): ParserResults {
+  parse() {
     var expressions = []
     var errors = []
     var stmt = null
 
-    try {
-      while (this.index < this.tokens.length) {
-        stmt = this.parseStatement()
+    while (this.index < this.tokens.length) {
+      stmt = this.parseStatement()
 
-        if(!stmt) {
-          break
-        }
-
-        expressions.push({node: stmt})
+      if(!stmt) {
+        break
       }
-    } catch (error) {
-      errors.push(error)
+
+      expressions.push({node: stmt})
     }
 
-    return {
-      expressions: expressions,
-      errors: errors
-    }
+    return expressions
   }
 
   parseStatement() {

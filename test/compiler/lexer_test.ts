@@ -420,7 +420,7 @@ describe("Lexer", () => {
     `
 
     let lexer = new Lexer(input)
-    let {tokens} = lexer.tokenize()
+    let tokens = lexer.tokenize()
 
     assert.equal(tokens[0].pos, 7, "Wrong position for a")
     assert.equal(tokens[1].pos, 8, "Wrong position for EOS after a")
@@ -499,15 +499,7 @@ describe("Lexer", () => {
       ]
 
       for(var test of tests) {
-        let lexer = new Lexer(test)
-        let {tokens, errors} = lexer.tokenize()
-
-        assert.equal(tokens.length, 0, `Returned real tokens for ${test}`)
-        assert.equal(errors.length, 1, `Returned the wrong number of errors for ${test}`)
-
-        assert.equal(errors[0].errorType(), "Unterminated String")
-
-        assert.equal(errors[0].pos, 0)
+        assertError(test, "Unterminated String", 0)
       }
     })
 
@@ -518,15 +510,7 @@ describe("Lexer", () => {
       ]
 
       for(var test of tests) {
-        let lexer = new Lexer(test)
-        let {tokens, errors} = lexer.tokenize()
-
-        assert.equal(tokens.length, 0, `Returned real tokens for ${test}`)
-        assert.equal(errors.length, 1, `Returned the wrong number of errors for ${test}`)
-
-        assert.equal(errors[0].errorType(), "Unknown Escape Sequence")
-
-        assert.equal(errors[0].pos, 0)
+        assertError(test, "Unknown Escape Sequence", 0)
       }
     })
 
@@ -539,33 +523,39 @@ describe("Lexer", () => {
       ]
 
       for(var test of tests) {
-        let lexer = new Lexer(test)
-        let {tokens, errors} = lexer.tokenize()
-
-        assert.equal(tokens.length, 0, `Returned real tokens for ${test}`)
-        assert.equal(errors.length, 1, `Returned the wrong number of errors for ${test}`)
-
-        assert.equal(errors[0].errorType(), `Unknown Token '${test[0]}'`)
-
-        assert.equal(errors[0].pos, 0)
+        assertError(test, `Unknown Token '${test}'`, 0)
       }
     })
+
+    function assertError(input, expectedType, expectedPos) {
+      try {
+        let lexer = new Lexer(input)
+        let tokens = lexer.tokenize()
+
+        assert.fail("Expected lexer to throw an error, none thrown")
+      } catch(error) {
+        assert.equal(error.errorType(), expectedType)
+        assert.equal(error.pos, expectedPos)
+      }
+    }
   })
 })
 
 function assertTokens(input, expected) {
-  let lexer = new Lexer(input, {filePath: "[test file]"})
-  let {tokens, errors} = lexer.tokenize()
+  try {
+    let lexer = new Lexer(input, {filePath: "[test file]"})
+    let tokens = lexer.tokenize()
 
-  //console.log("Expected: %o", expected)
-  //console.log("Got: %o", tokens)
-  //console.log("Errors: %o", errors)
-  assert.equal(tokens.length, expected.length, "Wrong token lengths recorded")
-  assert.equal(errors.length, 0)
+    //console.log("Expected: %o", expected)
+    //console.log("Got: %o", tokens)
+    assert.equal(tokens.length, expected.length, "Wrong token lengths recorded")
 
-  for(var i = 0; i < tokens.length; i++) {
-    assert.equal(tokens[i].type, expected[i].type, `Wrong type on index ${i}`)
-    assert.equal(tokens[i].value, expected[i].value, `Wrong value on index ${i}`)
-    assert.equal(tokens[i].file, "[test file]", `Did not store the source file path on ${i}`)
+    for(var i = 0; i < tokens.length; i++) {
+      assert.equal(tokens[i].type, expected[i].type, `Wrong type on index ${i}`)
+      assert.equal(tokens[i].value, expected[i].value, `Wrong value on index ${i}`)
+      assert.equal(tokens[i].file, "[test file]", `Did not store the source file path on ${i}`)
+    }
+  } catch(e) {
+    assert.fail(e)
   }
 }

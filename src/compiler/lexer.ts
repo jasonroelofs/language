@@ -6,11 +6,6 @@ import {
   UnknownTokenError
 } from "@compiler/errors"
 
-interface LexerResults {
-  tokens: Array<Token>
-  errors: Array<SyntaxError>
-}
-
 interface LexerOptions {
   // Path to the file that gave us the input we're parsing.
   filePath?: string
@@ -34,7 +29,7 @@ export default class Lexer {
     this.errors = []
   }
 
-  tokenize(): LexerResults {
+  tokenize() {
     // Bypass any leading whitespace
     this.skipWhitespace(true)
 
@@ -57,11 +52,8 @@ export default class Lexer {
           this.unknownToken(chunk)
       } catch(error) {
         this.applyPositionInfo(error)
-        // TODO There's probably a better way to
-        // clean up errors here to better match runtime error structures.
-        error.token.file = this.filePath
-        this.errors.push(error)
-        break
+        this.calcLineInfo([error])
+        throw(error)
       }
 
       this.applyPositionInfo(token)
@@ -89,12 +81,9 @@ export default class Lexer {
     }
 
     // Run through our tokens one more time to fill out the `line` and `ch` fields
-    this.calcLineInfo()
+    this.calcLineInfo(this.tokens)
 
-    return {
-      tokens: this.tokens,
-      errors: this.errors
-    }
+    return this.tokens
   }
 
   applyPositionInfo(token: Token) {
@@ -103,8 +92,8 @@ export default class Lexer {
   }
 
   // Post-process the tokens list to fill in line and character information
-  calcLineInfo() {
-    if(this.tokens.length == 0) {
+  calcLineInfo(tokens = []) {
+    if(tokens.length == 0) {
       return
     }
 
@@ -113,22 +102,15 @@ export default class Lexer {
     let currLine = 0
     let currCh = 0
 
-    let topToken = this.tokens[0]
-    // TODO: Update when we have more than one error returning
-    let topError = this.errors[0]
+    let topToken = tokens[0]
 
     while(inputIdx < this.input.length) {
-      if(topError && topError.pos == inputIdx) {
-        topError.token.line = currLine
-        topError.token.ch = currCh
-      }
-
       if(topToken.pos == inputIdx) {
         topToken.line = currLine
         topToken.ch = currCh
 
         tokenIdx += 1
-        topToken = this.tokens[tokenIdx]
+        topToken = tokens[tokenIdx]
 
         if(!topToken) {
           return

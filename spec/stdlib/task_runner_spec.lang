@@ -3,14 +3,14 @@
 Test.describe("TaskRunner", as: { |test|
   test("defining tasks", is: { |assert|
     runner = TaskRunner.new()
-    runner.define("task", is: { 1 })
+    runner.define("task", is: { |args| 1 })
 
     assert(runner.taskNames() == ["task"])
   })
 
   test("executes task that matches argv", is: { |assert|
     runner = TaskRunner.new()
-    runner.define("task", is: { 1 })
+    runner.define("task", is: { |args| 1 })
 
     result = runner.run(["task"])
 
@@ -32,8 +32,8 @@ Test.describe("TaskRunner", as: { |test|
 
   test("runs the 'default' task if no arguments provided", is: { |assert|
     runner = TaskRunner.new()
-    runner.define("task", is: { 1 })
-    runner.define("default", is: { "default" })
+    runner.define("task", is: { |args| 1 })
+    runner.define("default", is: { |args| "default" })
 
     result = runner.run()
     assert(result == "default")

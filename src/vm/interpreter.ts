@@ -30,13 +30,28 @@ import {
   True,
   False,
 } from "@vm/object"
+import {
+  World
+} from "@vm/core"
 
 export default class Interpreter {
 
   // Hack-ish link back to the VM that created us
   vm = null
 
+  // A VM starts up with three spaces:
+  // - World is where the core libraries (built-ins and lib/core) are loaded
+  //   All core libraries are always loaded and made available at boot.
+  // - StdLib is then a child of Core and is where all of the standard libraries
+  //   are loaded (lib/stdlib). These are loaded on-demand (TODO)
+  // - The Runtime/Current space is then a child of stdlib and created for each
+  //   self contained chunk of code (usually each file).
+  worldSpace: IObject
+  stdLibSpace: IObject
   currentSpace: IObject
+
+  // TODO: Temp, remove this when we import stdlibs
+  stdLibLoaded = false
 
   // Keep a callstack that's a list of in-language objects
   // For each space we make this list available as a snapshot of the call stack
@@ -49,37 +64,70 @@ export default class Interpreter {
 
   Exception: IObject
 
-  constructor(vm, baseSpace: IObject) {
+  constructor(vm) {
     this.vm = vm
     this.callStack = []
 
-    this.currentSpace = baseSpace
+    this.worldSpace = World
+    this.currentSpace = this.worldSpace
+  }
+
+  coreLoaded() {
+    this.Block = SendMessage(this.worldSpace, toObject("Block"))
+    this.Sender = SendMessage(this.worldSpace, toObject("Sender"))
+    this.ActivationRecord = SendMessage(this.worldSpace, toObject("ActivationRecord"))
+    this.Exception = SendMessage(this.worldSpace, toObject("Exception"))
+
+    this.pushSpace(this.worldSpace)
+    this.stdLibSpace = this.currentSpace
   }
 
   ready(argv = []) {
-    // Initialize our initial execution space and we are ready to go
-    this.pushSpace(this.currentSpace)
-
-    // Grab a hold of some objects that we make use of that are defined
-    // in the core lib
-    this.Block = SendMessage(this.currentSpace, toObject("Block"))
-    this.Sender = SendMessage(this.currentSpace, toObject("Sender"))
-    this.ActivationRecord = SendMessage(this.currentSpace, toObject("ActivationRecord"))
-    this.Exception = SendMessage(this.currentSpace, toObject("Exception"))
+    this.stdLibLoaded = true
 
     // Expose static values from the runtime into the language
     let Process = SendMessage(this.currentSpace, toObject("Process"))
     AddSlot(Process, toObject("argv"), toObject(argv))
   }
 
+  // Parse and eval the given file.
+  // The file will be eval'd in the same top-level space as the rest of the
+  // currently executing code. This means that regardless of the block depth in
+  // which `load` is executed, the code will not have access to any values in
+  // the sender's current space.
+  //
+  // For such functionality, you'll want to use evalFile instead.
+  //
+  // TODO: Also implement evalFile :D
+  //
   // TODO: Find a better path of handling things between the VM itself and the Interpreter
   // regarding loading code from files at runtime
-  evalFile(path: IObject): IObject {
+  loadFile(path: IObject): IObject {
     try {
       return this.vm.loadFile(path.data)
     } catch(e) {
       this.throwException(e, path)
     }
+  }
+
+  // Given a set of expressions from the Parser, evaluate them.
+  // This will create a new Space just for this evaluation to protect
+  // from code leakage across files and spaces.
+  evalFile(expressions: Array<Expression>): IObject {
+    let previousSpace
+
+    if(this.stdLibLoaded) {
+      previousSpace = this.currentSpace
+      this.currentSpace = this.stdLibSpace
+    }
+
+    let results = this.eval(expressions)
+
+    if(this.stdLibLoaded) {
+      this.currentSpace = previousSpace
+    }
+
+    return results
   }
 
   eval(expressions: Array<Expression>): IObject {
@@ -306,7 +354,7 @@ export default class Interpreter {
 
     // Set up our own execution space for this block call to the scope
     // that was stored when the block was defined.
-    // To make sure the stored scope it's itself corrupted by the block execution
+    // To make sure the stored scope isn't itself corrupted by the block execution
     // we wrap that scope in a new object for this execution.
     let previousSpace = this.pushSpace(scope)
 
@@ -388,7 +436,9 @@ export default class Interpreter {
 
     // Link this space back to the previous space so we can keep a proper
     // stack of spaces, ensuring correct scoping at all times.
-    AddParent(this.currentSpace, previousSpace)
+    if(newSpace != previousSpace) {
+      AddParent(this.currentSpace, previousSpace)
+    }
 
     return previousSpace
   }

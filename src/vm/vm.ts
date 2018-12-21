@@ -3,7 +3,7 @@ import * as glob from "fast-glob"
 import * as path from "path"
 import * as util from "util"
 
-import { IObject, NewObject } from "@vm/object"
+import { IObject } from "@vm/object"
 import { World } from "@vm/core"
 
 import Lexer from "@compiler/lexer"
@@ -30,7 +30,7 @@ export default class VM {
     this.loadedFiles = new Map<string, string>()
     this.argv = argv
 
-    this.interpreter = new Interpreter(this, World)
+    this.interpreter = new Interpreter(this)
 
     this.loadCoreLib()
 
@@ -46,7 +46,7 @@ export default class VM {
       this.loadFile(path)
     })
 
-    this.interpreter.ready(this.argv)
+    this.interpreter.coreLoaded()
   }
 
   loadStdLib() {
@@ -55,6 +55,8 @@ export default class VM {
       let path = (typeof(file) == "string") ? file : file.path
       this.loadFile(path)
     })
+
+    this.interpreter.ready(this.argv)
   }
 
   loadFile(filePath: string): IObject {
@@ -81,6 +83,6 @@ export default class VM {
 
     // console.log(util.inspect(expressions, {depth: null}))
 
-    return this.interpreter.eval(expressions)
+    return this.interpreter.evalFile(expressions)
   }
 }

@@ -3,9 +3,26 @@
 # import("task_runner")
 # import("test")
 
-runner = TaskRunner.new()
+# Apologize for the weird name but have a small issue regarding loading
+# files and scoping. This variable should just be `runner` but due to
+# the scoping issues, this clashes with the TestRunner test suite.
+#
+# Right now all files are loaded into the stdlib space
+# which means this variable is accessible to everyone else. It will take
+# a few steps to fix this.
+#
+# 1) A packaging system that lets us explicitly export symbols to be applied
+#    to the stdlib space.
+# 2) Updating the task runner itself to load files in its own context.
+#
+theTaskRunner = TaskRunner.new()
 
-runner.define("test", is: { |pathGlob: []|
+theTaskRunner.define("test", is: { |pathGlob: []|
+  theTaskRunner.runTask("test:load", args: pathGlob)
+  theTaskRunner.runTask("test:run")
+})
+
+theTaskRunner.define("test:load", is: { |pathGlob: []|
   # Find all files that match _spec or _test inside of pathGlob
   # Load each file into the VM to build up our test suite
   # Instantiate the test runner
@@ -36,18 +53,33 @@ runner.define("test", is: { |pathGlob: []|
     load(file.path)
   })
 
-  # At this point, Test.suites should be populated with all of the
-  # suites we should run. Now we just need to run and report on the results!
+  true
+})
 
-  runner = Runner.new(
+theTaskRunner.define("test:run", is: { |args|
+  testRunner = Runner.new(
     suites: Test.suites,
     reporter: Reporter.new(),
   )
 
-  runner.run().do(
-    ifTrue: { exit(0) },
-    ifFalse: { exit(1) }
-  )
+  testRunner.run()
 })
 
-IO.puts(runner.run(Process.argv))
+theTaskRunner.define("bench", is: { |args|
+  theTaskRunner.runTask("test:load", args: [])
+
+  BuiltIn.debugger()
+
+  100.times({
+    theTaskRunner.runTask("test:run")
+  })
+
+  true
+})
+
+result = theTaskRunner.run(Process.argv)
+
+result.do(
+  ifTrue: { exit(0) },
+  ifFalse: { exit(1) }
+)

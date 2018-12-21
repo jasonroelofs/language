@@ -11,17 +11,17 @@ Test.describe("World", as: { |test|
     assert(obj.name() == "loaded object")
   })
 
-  test("load evaluates into the current space only", is: { |assert|
+  test("load evaluates into the top-level space", is: { |assert|
     {
       {
-        load("spec/fixtures/world/load.lang")
-        assert(space.hasSlot("LoadedObject"))
+        load("spec/fixtures/world/load2.lang")
+        assert(space.hasSlot("LoadedObject2"))
       }()
 
-      assert(!space.hasSlot("LoadedObject"))
+      assert(space.hasSlot("LoadedObject2"))
     }()
 
-    assert(!space.hasSlot("LoadedObject"))
+    assert(space.hasSlot("LoadedObject2"))
   })
 
 })

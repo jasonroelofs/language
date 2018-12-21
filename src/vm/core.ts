@@ -456,6 +456,12 @@ function printObjSlots(obj: IObject, depth: number) {
   }
 }
 
+// Requires running the system through `node --inspect` to do anything.
+AddSlot(BuiltIn, toObject("debugger"), builtInFunc(function(): IObject {
+  debugger
+  return Null
+}))
+
 /**
  * The World is the top-level, global object and context.
  * All main constants are defined here.
@@ -482,7 +488,7 @@ AddSlot(World, toObject("Null"),   Null)
 AddSlot(World, toObject("load"), builtInFunc(function(args, meta = {}, vm): IObject {
   let path = args["path"] || args["0"]
 
-  return vm.evalFile(path)
+  return vm.loadFile(path)
 }))
 
 // World.try is our exception handling catching and handling tool.

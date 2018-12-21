@@ -24,16 +24,13 @@ TaskRunner = Object.new(
     )
   },
 
-  runTask: { |taskName, args|
+  runTask: { |taskName, args: []|
     task = tasks.send(taskName)
 
     # TODO: Test against method arity so we can provide a more
     # task-oriented error message and documentation when args and
     # parameters don't match up.
-    (args.length() > 0).do(
-      ifTrue: { task.is(args) },
-      ifFalse: { task.is() }
-    )
+    task.is(args)
   },
 
   unknownTask: { |taskName|

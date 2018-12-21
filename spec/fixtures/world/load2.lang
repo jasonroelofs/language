@@ -1,0 +1,3 @@
+LoadedObject2 = Object.new(
+  name: { "loaded object 2" }
+)

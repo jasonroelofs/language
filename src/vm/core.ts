@@ -232,6 +232,21 @@ AddSlot(BuiltIn, toObject("numberOp"), builtInFunc(function(args): IObject {
   }
 }))
 
+AddSlot(BuiltIn, toObject("numberTimes"), builtInFunc(function(args, meta = {}, vm): IObject {
+  let [count, blockAR] = extractParams(args, "count", "block")
+  // TODO Need to figure out a way to clean up activation records for built-in arguments.
+  // This is a huge GOTCHA!
+  // Or maybe evalBlockWithArgs can handle this for us?
+  let block = SendMessage(blockAR, toObject("block"))
+  let rawCount = count.data
+
+  for(let i = 0; i < rawCount; i++) {
+    vm.evalBlockWithArgs(null, block, [])
+  }
+
+  return count
+}))
+
 AddSlot(BuiltIn, toObject("numberToString"), builtInFunc(function(args): IObject {
   let num = args["number"]
   return toObject("" + num.data)

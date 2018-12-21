@@ -195,11 +195,7 @@ describe("Parser", () => {
       ]
     })
 
-    let lexer = new Lexer(test)
-    let tokens = lexer.tokenize()
-
-    let parser = new Parser(tokens)
-    let expressions = parser.parse()
+    let expressions = parse(test)
 
     assert.equal(expressions.length, 2)
     assert.deepEqual(removeStrayKeys(expressions[0].node), expected, `Comparison failed for ''${test}''`)
@@ -473,11 +469,7 @@ describe("Parser", () => {
       d = Object.new()
     `
 
-    let lexer = new Lexer(test)
-    let tokens = lexer.tokenize()
-
-    let parser = new Parser(tokens)
-    let expressions = parser.parse()
+    let expressions = parse(test)
 
     assert.equal(expressions.length, 4)
 
@@ -519,11 +511,7 @@ describe("Parser", () => {
       # want running.
     `
 
-    let lexer = new Lexer(test)
-    let tokens = lexer.tokenize()
-
-    let parser = new Parser(tokens)
-    let expressions = parser.parse()
+    let expressions = parse(test)
 
     assert.equal(expressions.length, 0)
   })
@@ -538,11 +526,7 @@ describe("Parser", () => {
       }
     `
 
-    let lexer = new Lexer(test)
-    let tokens = lexer.tokenize()
-
-    let parser = new Parser(tokens)
-    let expressions = parser.parse()
+    let expressions = parse(test)
 
     assert.equal(expressions.length, 1)
   })
@@ -555,11 +539,7 @@ describe("Parser", () => {
       }
     `
 
-    let lexer = new Lexer(test)
-    let tokens = lexer.tokenize()
-
-    let parser = new Parser(tokens)
-    let expressions = parser.parse()
+    let expressions = parse(test)
 
     assert.equal(expressions.length, 1)
   })
@@ -572,11 +552,7 @@ describe("Parser", () => {
       )
     `
 
-    let lexer = new Lexer(test)
-    let tokens = lexer.tokenize()
-
-    let parser = new Parser(tokens)
-    let expressions = parser.parse()
+    let expressions = parse(test)
 
     assert.equal(expressions.length, 1)
   })
@@ -597,11 +573,7 @@ describe("Parser", () => {
       )
     `
 
-    let lexer = new Lexer(test)
-    let tokens = lexer.tokenize()
-
-    let parser = new Parser(tokens)
-    let expressions = parser.parse()
+    let expressions = parse(test)
 
     assert.equal(expressions.length, 1)
 
@@ -610,6 +582,24 @@ describe("Parser", () => {
     assert.equal(message.arguments[0].comment, "This is the first method")
     assert.equal(message.arguments[1].comment, "This is the second method")
     assert.equal(message.arguments[2].comment, "\nThis is the third method\n")
+  })
+
+  it("supports whitespace in arguments", () => {
+    let test = `
+      run = { |block|
+        block()
+      }
+
+      run(
+        {
+          "Hi"
+        }
+      )
+    `
+
+    let expressions = parse(test)
+
+    assert.equal(expressions.length, 2)
   })
 
   describe("Error handling", () => {
@@ -802,11 +792,7 @@ function messageSendNode({receiver, message, args}) {
 
 function assertExpression(input, expected) {
   try {
-    let lexer = new Lexer(input)
-    var tokens = lexer.tokenize()
-
-    let parser = new Parser(tokens)
-    var expressions = parser.parse()
+    let expressions = parse(input)
 
     assert.equal(expressions.length, 1, "Wrong number of expressions returned")
 
@@ -814,6 +800,14 @@ function assertExpression(input, expected) {
   } catch(e) {
     assert.fail(e)
   }
+}
+
+function parse(input: string) {
+  let lexer = new Lexer(input)
+  let tokens = lexer.tokenize()
+
+  let parser = new Parser(tokens)
+  return parser.parse()
 }
 
 // There are some things that get added to AST nodes that we don't want to deal with

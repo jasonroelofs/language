@@ -604,6 +604,12 @@ export default class Parser {
         return callMsg
       }
 
+      if (this.currTokenIs(TokenType.EOS) && this.peekTokenIs(TokenType.CloseParen)) {
+        this.nextToken()
+        this.nextToken()
+        return callMsg
+      }
+
       // Prepare for more arguments!
       if(this.currTokenIs(TokenType.Comma)) {
         this.nextToken()

@@ -22,6 +22,11 @@ class RuntimeError extends Error {
     super()
 
     this.token = token
+
+    // Hook back into Javascript's error reporting
+    // to get a meaningful message from the default output
+    // Most often used in the test suite
+    this.name = this.constructor.name
   }
 
   get chunk(): string {

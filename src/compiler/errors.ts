@@ -13,6 +13,18 @@ class SyntaxError extends Error {
   constructor(token: Token) {
     super()
     this.token = token
+
+    // Give Javascript the name of this error class
+    this.name = this.constructor.name
+  }
+
+  // Hook back into Javascript's error reporting
+  // to get a meaningful message from the default output
+  // Most often used in the test suite.
+  // Still gets called at the wrong time and may not include
+  // all of the pertinent information.
+  get message(): string {
+    return this.errorType()
   }
 
   get value(): string {

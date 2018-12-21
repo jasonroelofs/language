@@ -1,14 +1,14 @@
 Exception = Object.new(
-  backtrace: []
-  message: ""
+  backtrace: [],
+  message: "",
 
   # Pull the file that triggered this exception from the backtrace
   file: {
     backtrace[0].file
-  }
+  },
 
   # Pull the line of the file that triggered this exception from the backtrace
   line: {
     backtrace[0].line
-  }
+  },
 )

@@ -11,5 +11,5 @@ Null.addSlots(
 
   toString: {
     "null"
-  }
+  },
 )

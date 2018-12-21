@@ -39,7 +39,7 @@ TaskRunner = Object.new(
   unknownTask: { |taskName|
     # TODO: Raise exception?
     "Don't know how to run task '" + taskName + "'"
-  }
+  },
 )
 
 Task = Object.new(

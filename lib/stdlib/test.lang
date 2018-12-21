@@ -3,7 +3,7 @@
 #
 
 Test = Object.new(
-  suites: []
+  suites: [],
 
   # All tests start with a `describe` block, which defines a test suite.
   # describe should be given a string `name` for the suite
@@ -46,8 +46,7 @@ Suite = Object.new(
         reporter.errored(error)
       }
     )
-  }
-
+  },
 )
 
 Unit = Object.new(
@@ -97,7 +96,7 @@ TestResult = Object.new(
     testDetails = test.suite.name + " " + test.name + ": " + message
 
     "\n" + testDetails + "\n\t" + testResult.location
-  }
+  },
 )
 
 Reporter = Object.new(
@@ -193,5 +192,5 @@ Reporter = Object.new(
 
     # Return a boolean flag signaling a successful or failed test suite run
     failures.length() == 0
-  }
+  },
 )

@@ -527,6 +527,11 @@ export default class Parser {
   parseCallSite(left: Node): Node {
     let start = this.currToken()
 
+    // We use this to help track where a comma should be
+    // and if we need to error when there are missing commas between
+    // arguments.
+    let prevComma = null
+
     // Check to see if we need to upgrade the `left` node to a MessageSend,
     // as this could be an Identifier in the case of implicit `self` usage.
     // However the AST will mark the `receiver` as null and let the interpreter
@@ -612,6 +617,7 @@ export default class Parser {
 
       // Prepare for more arguments!
       if(this.currTokenIs(TokenType.Comma)) {
+        prevComma = this.currToken()
         this.nextToken()
       } else {
         // No colon, no comma, no close paren. Something else is here
@@ -623,6 +629,11 @@ export default class Parser {
 
     // Alright we are keywording it up!
     while(this.peekToken()) {
+      if(callMsg.message.arguments.length > 0 && !prevComma) {
+        throw new errors.ExpectedTokenMissingError(this.currToken(), ",")
+      }
+      prevComma = null
+
       this.checkForComments()
 
       // The second argument and onward must be in the form of `name: value` or `"name": value`
@@ -663,6 +674,8 @@ export default class Parser {
 
       // Skip past our comma if it exists
       if(this.currTokenIs(TokenType.Comma)) {
+        prevComma = this.currToken()
+
         this.nextToken()
         this.checkForComments()
       }
@@ -749,7 +762,7 @@ export default class Parser {
   }
 
   peekToken(): Token {
-    if (this.index >= this.tokens.length) {
+    if(this.index >= this.tokens.length) {
       return null
     } else {
       return this.tokens[this.index + 1]

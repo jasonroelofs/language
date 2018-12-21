@@ -20,5 +20,5 @@ File = Object.new(
     BuiltIn.fileSearch(glob: glob).map({ |filePath|
       File.new(path: filePath)
     })
-  }
+  },
 )

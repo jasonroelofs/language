@@ -6,5 +6,5 @@ World.addSlots(
   # A status of any other number is considered a failure
   exit: { |status|
     BuiltIn.exit(status)
-  }
+  },
 )

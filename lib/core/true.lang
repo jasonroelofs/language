@@ -6,5 +6,5 @@ True.addSlots(
 
   toString: {
     "true"
-  }
+  },
 )

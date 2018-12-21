@@ -11,5 +11,5 @@ False.addSlots(
 
   toString: {
     "false"
-  }
+  },
 )

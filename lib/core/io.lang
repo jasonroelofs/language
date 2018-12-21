@@ -10,5 +10,5 @@ IO = Object.new(
   # The `toString` message is called on `message` to get a String value.
   puts: { |message: ""|
     BuiltIn.puts(message: message.toString())
-  }
+  },
 )

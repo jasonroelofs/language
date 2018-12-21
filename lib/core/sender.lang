@@ -6,5 +6,5 @@ Sender = Object.new(
 
   toString: {
     file + ":" + line
-  }
+  },
 )

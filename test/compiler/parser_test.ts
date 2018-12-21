@@ -717,6 +717,21 @@ describe("Parser", () => {
       }
     })
 
+    it("errors if commas are missing in multi-line argument lists", () => {
+      let test = `
+        obj = Object.new(
+          value1: 1
+
+          value2: 2
+        )
+      `
+
+      assertError(test, {
+        errorType: errors.ExpectedTokenMissingError,
+        position: 58
+      })
+    })
+
     it("errors on invalid or incomplete static array syntax", () => {
       // [input, position, errorType]
       let tests = [
@@ -740,17 +755,24 @@ describe("Parser", () => {
       let lexer = new Lexer(input)
       var tokens = lexer.tokenize()
 
+      let errorThrown = true
+
       try {
         let parser = new Parser(tokens)
         var expressions = parser.parse()
+        errorThrown = false
 
-        assert.fail("Expected parser to throw an exception but non thrown")
       } catch(error) {
         assert(error instanceof errorType, `Wrong error type for '${input}' got: ${error.errorType()}`)
         assert.equal(error.pos, position, `Wrong position for '${input}'`)
 
         // Let tests do further checks against the error object
         return error
+      }
+
+      if(!errorThrown) {
+        // assert.fail itself throws an exception so we can't put it in our try block.
+        assert.fail("Expected parser to throw an exception but none thrown")
       }
     }
   })

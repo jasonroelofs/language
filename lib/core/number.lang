@@ -41,5 +41,5 @@ Number.addSlots(
 
   toString: {
     BuiltIn.numberToString(number: self)
-  }
+  },
 )

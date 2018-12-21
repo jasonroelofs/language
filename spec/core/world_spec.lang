@@ -24,6 +24,4 @@ Test.describe("World", as: { |test|
     assert(!space.hasSlot("LoadedObject"))
   })
 
-  test("load handles parsing errors")
-
 })

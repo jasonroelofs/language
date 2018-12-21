@@ -39,6 +39,11 @@ Number.addSlots(
     BuiltIn.numberOp(left: self, op: "!=", right: other)
   },
 
+  # Execute the provided block this number of times.
+  times: { |block|
+    BuiltIn.numberTimes(count: self, block: block)
+  },
+
   toString: {
     BuiltIn.numberToString(number: self)
   },

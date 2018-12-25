@@ -1,6 +1,7 @@
 import * as fs from "fs"
 
 import VM from "@vm/vm"
+import REPL from "@vm/repl"
 import { SyntaxError } from "@compiler/errors"
 import { ErrorReport } from "@vm/error_report"
 
@@ -20,6 +21,9 @@ let vm = new VM(rest)
 try {
   if(toRun) {
     vm.loadFile(toRun)
+  } else {
+    let repl = new REPL(vm)
+    repl.run()
   }
 } catch(error) {
   let report = null

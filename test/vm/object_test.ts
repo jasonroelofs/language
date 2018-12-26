@@ -1,7 +1,7 @@
 import "mocha"
 import * as assert from "assert"
 import {
-  IObject, ToObject, Objekt,
+  IObject, ToObject, AsString, Objekt,
   Number, String,
   NewObject, SendMessage, AddSlot, GetSlot, AddParent,
 } from "@vm/object"
@@ -122,5 +122,24 @@ describe("Object", () => {
     let slot = GetSlot(str, ToObject("count"))
 
     assert.equal(SendMessage(slot, ToObject("comments")), comment)
+  })
+
+  it("supports interning strings", () => {
+    let str1 = AsString("testing")
+    let str2 = AsString("testing")
+
+    assert.equal(str1.objectId, str2.objectId)
+  })
+
+  it("looks up but, doesn't store, strings via ToObject", () => {
+    let str1 = ToObject("uncached")
+    let str2 = ToObject("uncached")
+
+    assert.notEqual(str1.objectId, str2.objectId)
+
+    let str3 = AsString("cached")
+    let str4 = ToObject("cached")
+
+    assert.equal(str3.objectId, str4.objectId)
   })
 })

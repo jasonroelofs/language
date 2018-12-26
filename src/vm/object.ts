@@ -43,10 +43,6 @@ interface IObject {
 }
 
 interface ObjectAttrs {
-  // What's the user-visible name of this object?
-  // At run-time, set on assignment. In the core, set via this option to NewObject.
-  objectName?: string
-
   // Should this object have an explicit objectId?
   objectId?: number
 }
@@ -62,7 +58,7 @@ let baseToString = function() {
   } else if(this === Null) {
     return "null"
   } else {
-    let objName = SendMessage(this, ToObject("objectName"))
+    let objName = SendMessage(this, AsString("objectName"))
     if(objName) {
       return objName.data
     } else {
@@ -76,6 +72,10 @@ let baseToString = function() {
 // The first 100 are reserved for internal use
 // TODO Not multi-interpreter or thread safe at all :D
 var objectIdSeq = 100;
+
+// Global memoization of String objects
+// Make use of the AsString helper method to make use of this cache.
+var cachedStrings: Map<string, IObject> = new Map();
 
 /**
  * Create a new object from a given parent.
@@ -100,10 +100,6 @@ function NewObject(parent: IObject, data = null, attrs: ObjectAttrs = null): IOb
     codeBlock: false,
     builtIn: false,
     toString: baseToString,
-  }
-
-  if(attrs && attrs.objectName) {
-    AddSlot(obj, ToObject("objectName"), ToObject(attrs.objectName))
   }
 
   return obj
@@ -230,26 +226,35 @@ function ObjectIs(obj: IObject, expected: IObject): IObject {
 
 
 /**
- * The base of all objects. Should not ever be used directly.
- * Provides the slots for Object, through which everything else should build off of.
+ * The base of all objects.
+ * Sorry, this can't be "Object" in javascript land. That name is already taken
+ * and causes weird compilation problems if we try to reuse it.
+ * This will be properly renamed back to "Object" when in the language.
  */
-var ObjectBase = NewObject(null, null, {objectId: 0})
+var Objekt = NewObject(null, null, {objectId: 1})
 
-// Sorry, this can't be "Object" in javascript land. That name is already taken
-// and will cause weird problems if we try to reuse it.
-// This will be properly renamed back to "Object" when in the language.
-var Objekt = NewObject(ObjectBase, null, {objectName: "Object", objectId: 1})
+var Null = NewObject(Objekt, null, {objectId: 2})
+var True = NewObject(Objekt, true, {objectId: 3})
+var False = NewObject(Objekt, false, {objectId: 4})
 
-var Null = NewObject(Objekt, null, {objectName: "Null", objectId: 2})
-var True = NewObject(Objekt, true, {objectName: "True", objectId: 3})
-var False = NewObject(Objekt, false, {objectName: "False", objectId: 4})
+var Number = NewObject(Objekt, 0, {objectId: 5})
+var String = NewObject(Objekt, "", {objectId: 6})
 
-var Number = NewObject(Objekt, 0, {objectName: "Number", objectId: 5})
-var String = NewObject(Objekt, "", {objectName: "String", objectId: 6})
+var Array = NewObject(Objekt, [], {objectId: 7})
 
-var Array = NewObject(Objekt, [], {objectName: "Array", objectId: 7})
+var Slot = NewObject(Objekt, null, {objectId: 8})
 
-var Slot = NewObject(Objekt, null, {objectName: "Slot", objectId: 8})
+// Assign objectName values for each of our built-ins
+// Order of operations is important here as we need to not try to use String
+// before it's been defined.
+AddSlot(Objekt, AsString("objectName"), AsString("Object"))
+AddSlot(Null, AsString("objectName"), AsString("Null"))
+AddSlot(True, AsString("objectName"), AsString("True"))
+AddSlot(False, AsString("objectName"), AsString("False"))
+AddSlot(Number, AsString("objectName"), AsString("Number"))
+AddSlot(String, AsString("objectName"), AsString("String"))
+AddSlot(Array, AsString("objectName"), AsString("Array"))
+AddSlot(Slot, AsString("objectName"), AsString("Slot"))
 
 function ToObject(nativeValue: any): IObject {
   if(nativeValue === true) {
@@ -269,6 +274,10 @@ function ToObject(nativeValue: any): IObject {
   }
 
   if((typeof nativeValue) == "string") {
+    if(cachedStrings.has(nativeValue)) {
+      return cachedStrings.get(nativeValue)
+    }
+
     return NewObject(String, nativeValue)
   }
 
@@ -290,6 +299,21 @@ function ToObject(nativeValue: any): IObject {
   throw new Error(util.format("Don't know how to convert from native type %o", typeof nativeValue))
 }
 
+// Given a Javascript string, look first in the cache of intern'd strings
+// that match the value, otherwise make a new String and put it in the cache.
+//
+// NOTE: Only use this method where it is ok for the String to be intern'd,
+// and to NOT use it anywhere else or memory leaks will be possible.
+function AsString(str: string): IObject {
+  if(cachedStrings.has(str)) {
+    return cachedStrings.get(str)
+  }
+
+  let strObj = NewObject(String, str)
+  cachedStrings.set(str, strObj)
+  return strObj
+}
+
 export {
   IObject,
   NewObject,
@@ -302,7 +326,7 @@ export {
   FindIn,
   ObjectIs,
   ToObject,
-  ObjectBase,
+  AsString,
   Objekt,
   Slot,
   Null,

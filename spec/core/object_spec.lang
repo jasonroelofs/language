@@ -37,6 +37,17 @@ Test.describe("Object", as: { |test|
     assert(obj3.list3 == [3])
   })
 
+  test("parents", is: { |assert|
+    assert(String.parents() == [Object])
+    assert(Object.parents() == [])
+
+    obj = Object.new()
+    assert(obj.parents() == [Object])
+
+    str = "Stringy!"
+    assert(str.parents() == [String])
+  })
+
   test("slotNames", is: { |assert|
     obj = Object.new(slot: "value")
 

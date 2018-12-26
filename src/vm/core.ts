@@ -155,6 +155,12 @@ AddSlot(BuiltIn, ToObject("objectId"), builtInFunc(function(args): IObject {
   return ToObject(obj.objectId)
 }))
 
+AddSlot(BuiltIn, ToObject("objectParents"), builtInFunc(function(args): IObject {
+  let [obj] = extractParams(args, "object")
+
+  return ToObject(obj.parents)
+}))
+
 AddSlot(BuiltIn, ToObject("objectAddSlot"), builtInFunc(function(args): IObject {
   let [obj, slotName, slotValue] = extractParams(args, "object", "name", "as")
 

@@ -1,5 +1,10 @@
 Object.addSlots(
 
+  # Return the list of parent objects to this object
+  parents: {
+    BuiltIn.objectParents(object: self)
+  },
+
   # Add a single slot to this object.
   addSlot: { |name, as|
     BuiltIn.objectAddSlot(object: self, name: name, as: as)

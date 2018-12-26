@@ -62,7 +62,7 @@ let baseToString = function() {
   } else if(this === Null) {
     return "null"
   } else {
-    let objName = SendMessage(this, toObject("objectName"))
+    let objName = SendMessage(this, ToObject("objectName"))
     if(objName) {
       return objName.data
     } else {
@@ -103,7 +103,7 @@ function NewObject(parent: IObject, data = null, attrs: ObjectAttrs = null): IOb
   }
 
   if(attrs && attrs.objectName) {
-    AddSlot(obj, toObject("objectName"), toObject(attrs.objectName))
+    AddSlot(obj, ToObject("objectName"), ToObject(attrs.objectName))
   }
 
   return obj
@@ -251,7 +251,7 @@ var Array = NewObject(Objekt, [], {objectName: "Array", objectId: 7})
 
 var Slot = NewObject(Objekt, null, {objectName: "Slot", objectId: 8})
 
-function toObject(nativeValue: any): IObject {
+function ToObject(nativeValue: any): IObject {
   if(nativeValue === true) {
     return True
   }
@@ -276,7 +276,7 @@ function toObject(nativeValue: any): IObject {
     let array = []
 
     for(var entry of nativeValue) {
-      array.push(toObject(entry))
+      array.push(ToObject(entry))
     }
 
     return NewObject(Array, array)
@@ -301,7 +301,7 @@ export {
   EachParent,
   FindIn,
   ObjectIs,
-  toObject,
+  ToObject,
   ObjectBase,
   Objekt,
   Slot,

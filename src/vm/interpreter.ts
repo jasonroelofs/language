@@ -21,7 +21,7 @@ import {
   AddParent,
   FindIn,
   ObjectIs,
-  toObject,
+  ToObject,
   Objekt,
   Number,
   String,
@@ -73,10 +73,10 @@ export default class Interpreter {
   }
 
   coreLoaded() {
-    this.Block = SendMessage(this.worldSpace, toObject("Block"))
-    this.Sender = SendMessage(this.worldSpace, toObject("Sender"))
-    this.ActivationRecord = SendMessage(this.worldSpace, toObject("ActivationRecord"))
-    this.Exception = SendMessage(this.worldSpace, toObject("Exception"))
+    this.Block = SendMessage(this.worldSpace, ToObject("Block"))
+    this.Sender = SendMessage(this.worldSpace, ToObject("Sender"))
+    this.ActivationRecord = SendMessage(this.worldSpace, ToObject("ActivationRecord"))
+    this.Exception = SendMessage(this.worldSpace, ToObject("Exception"))
 
     this.pushSpace(this.worldSpace)
     this.stdLibSpace = this.currentSpace
@@ -86,8 +86,8 @@ export default class Interpreter {
     this.stdLibLoaded = true
 
     // Expose static values from the runtime into the language
-    let Process = SendMessage(this.currentSpace, toObject("Process"))
-    AddSlot(Process, toObject("argv"), toObject(argv))
+    let Process = SendMessage(this.currentSpace, ToObject("Process"))
+    AddSlot(Process, ToObject("argv"), ToObject(argv))
   }
 
   // Parse and eval the given file.
@@ -149,19 +149,19 @@ export default class Interpreter {
   _evalNode(node: Node): IObject {
     switch(node.type) {
       case NodeType.Assignment:
-        let varName = toObject(node.name)
+        let varName = ToObject(node.name)
         let varValue = this.evalNode(node.right)
-        AddSlot(varValue, toObject("objectName"), varName)
+        AddSlot(varValue, ToObject("objectName"), varName)
 
         // Look up the space stack to find the first scope that already has this
         // slot defined and assume that is the scope we should also be changing values in
         let owningObject = FindIn(this.currentSpace, (obj) => obj.slots.has(node.name))
-        AddSlot(owningObject || this.currentSpace, varName, varValue, toObject(node.comment))
+        AddSlot(owningObject || this.currentSpace, varName, varValue, ToObject(node.comment))
 
         return varValue
 
       case NodeType.Identifier:
-        let slotName = toObject(node.value)
+        let slotName = ToObject(node.value)
         let found = SendMessage(this.currentSpace, slotName)
 
         if(found == null) {
@@ -200,9 +200,9 @@ export default class Interpreter {
 
   evalBlockLiteral(node: BlockNode): IObject {
     let block = NewObject(this.Block)
-    AddSlot(block, toObject("body"), NewObject(Objekt, node.body))
-    AddSlot(block, toObject("parameters"), NewObject(Objekt, node.parameters))
-    AddSlot(block, toObject("scope"), this.currentSpace)
+    AddSlot(block, ToObject("body"), NewObject(Objekt, node.body))
+    AddSlot(block, ToObject("parameters"), NewObject(Objekt, node.parameters))
+    AddSlot(block, ToObject("scope"), this.currentSpace)
 
     block.codeBlock = true
 
@@ -216,7 +216,7 @@ export default class Interpreter {
       receiver = this.evalNode(node.receiver)
     }
 
-    let message = toObject(node.message.name)
+    let message = ToObject(node.message.name)
     let args = node.message.arguments
 
     if(node.message.name == "call") {
@@ -226,8 +226,8 @@ export default class Interpreter {
 
       // We're an activation record wrapping the actual code block to execute
       // Unwrap this and pull out the intended receiver object.
-      let block = SendMessage(receiver, toObject("block"))
-      let context = SendMessage(receiver, toObject("receiver"))
+      let block = SendMessage(receiver, ToObject("block"))
+      let context = SendMessage(receiver, ToObject("receiver"))
       let result
 
       this.pushCallStack(node)
@@ -287,7 +287,7 @@ export default class Interpreter {
   }
 
   evalCodeBlock(receiverNode, receiver: IObject, codeBlock: IObject, args: ArgumentNode[]): IObject {
-    let parameters = SendMessage(codeBlock, toObject("parameters")).data
+    let parameters = SendMessage(codeBlock, ToObject("parameters")).data
 
     // Param/Arg agreement checks.
     // We need to make sure that the arguments given can match directly to
@@ -318,10 +318,10 @@ export default class Interpreter {
       }
 
       if(arg) {
-        evaldArgs.push([toObject(param.name), this.evalNode(arg.value), toObject(arg.comment)])
+        evaldArgs.push([ToObject(param.name), this.evalNode(arg.value), ToObject(arg.comment)])
         usedArgs.push(arg)
       } else if(param.default) {
-        evaldArgs.push([toObject(param.name), this.evalNode(param.default)])
+        evaldArgs.push([ToObject(param.name), this.evalNode(param.default)])
       } else {
         unusedParams.push(param)
       }
@@ -349,8 +349,8 @@ export default class Interpreter {
   //    ]
   //
   evalBlockWithArgs(receiver, block, args = []) {
-    let codeBody = SendMessage(block, toObject("body")).data
-    let scope = SendMessage(block, toObject("scope"))
+    let codeBody = SendMessage(block, ToObject("body")).data
+    let scope = SendMessage(block, ToObject("scope"))
 
     // Set up our own execution space for this block call to the scope
     // that was stored when the block was defined.
@@ -361,7 +361,7 @@ export default class Interpreter {
     // If this block is owned by an explicit object, we need to make sure
     // that the `self` slot is set appropriately to that object.
     if(receiver) {
-      AddSlot(this.currentSpace, toObject("self"), receiver)
+      AddSlot(this.currentSpace, ToObject("self"), receiver)
 
       // Also inject the receiver in the current scope to ensure slot lookups
       // properly check this object.
@@ -371,7 +371,7 @@ export default class Interpreter {
     }
 
     // Expose a copy of the call stack
-    AddSlot(this.currentSpace, toObject("sender"), toObject(this.callStack))
+    AddSlot(this.currentSpace, ToObject("sender"), ToObject(this.callStack))
 
     for(var parts of args) {
       AddSlot.call(null, this.currentSpace, ...parts)
@@ -397,10 +397,10 @@ export default class Interpreter {
     let activation = NewObject(this.ActivationRecord)
     activation.codeBlock = true
 
-    AddSlot(activation, toObject("block"), codeBlock)
+    AddSlot(activation, ToObject("block"), codeBlock)
 
     if(receiver) {
-      AddSlot(activation, toObject("receiver"), receiver)
+      AddSlot(activation, ToObject("receiver"), receiver)
     }
 
     return activation
@@ -411,8 +411,8 @@ export default class Interpreter {
 
     // TODO Something that lets us print out the name of the message?
     // Line is 0-based internally, so we push it to 1-based here for user readability
-    AddSlot(sender, toObject("line"), toObject(node.token.line + 1))
-    AddSlot(sender, toObject("file"), toObject(node.token.file))
+    AddSlot(sender, ToObject("line"), ToObject(node.token.line + 1))
+    AddSlot(sender, ToObject("file"), ToObject(node.token.file))
 
     // We make use of shift/unshift to keep a reverse order so that in the language
     // `sender` is in the order of most recent call stack first.
@@ -431,8 +431,8 @@ export default class Interpreter {
     let previousSpace = this.currentSpace
 
     this.currentSpace = NewObject(newSpace)
-    AddSlot(this.currentSpace, toObject("space"), this.currentSpace)
-    AddSlot(this.currentSpace, toObject("objectName"), toObject(`Space (${this.currentSpace.objectId})`))
+    AddSlot(this.currentSpace, ToObject("space"), this.currentSpace)
+    AddSlot(this.currentSpace, ToObject("objectName"), ToObject(`Space (${this.currentSpace.objectId})`))
 
     // Link this space back to the previous space so we can keep a proper
     // stack of spaces, ensuring correct scoping at all times.
@@ -450,7 +450,7 @@ export default class Interpreter {
     // providing the JS exception as its `data` field.
     if(orig instanceof Error) {
       exception = NewObject(this.Exception, orig)
-      AddSlot(exception, toObject("message"), toObject(orig.message))
+      AddSlot(exception, ToObject("message"), ToObject(orig.message))
 
       // For non-lanuage exceptions, we can also be given an explicit AST node
       // that triggerd this call, letting us link our exception wrapper back
@@ -466,7 +466,7 @@ export default class Interpreter {
     // TODO This is a little messy checking for lexer/parser errors
     // at this level. Possibly a place for pulling out logic.
     if((orig instanceof errors.RuntimeError) || (orig instanceof SyntaxError)) {
-      AddSlot(exception, toObject("message"), toObject(orig.errorType()))
+      AddSlot(exception, ToObject("message"), ToObject(orig.errorType()))
     }
 
     // Apply our language-level call stack to the new exception
@@ -481,7 +481,7 @@ export default class Interpreter {
       // We have to push one more time at the point of failure to make sure
       // the top of the exceptions backtrace points to the actual line of failure/throw.
       this.pushCallStack(exception.data || exception.astNode)
-      AddSlot(exception, toObject("backtrace"), toObject(this.callStack))
+      AddSlot(exception, ToObject("backtrace"), ToObject(this.callStack))
       this.popCallStack()
     }
 

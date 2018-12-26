@@ -7,7 +7,7 @@ import {
   IncompleteExpressionError,
 } from "@compiler/errors"
 import { ErrorReport } from "@vm/error_report"
-import { IObject, SendMessage, toObject } from "@vm/object"
+import { IObject, SendMessage, ToObject } from "@vm/object"
 
 import * as readline from "readline"
 
@@ -103,7 +103,7 @@ export default class REPL {
   }
 
   getStringOf(obj: IObject): IObject {
-    let toString = SendMessage(obj, toObject("toString"))
+    let toString = SendMessage(obj, ToObject("toString"))
     return this.vm.evalBlockWithArgs(obj, toString)
   }
 

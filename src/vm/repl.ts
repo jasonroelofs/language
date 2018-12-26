@@ -48,6 +48,17 @@ export default class REPL {
       this.tickPrompt()
     })
 
+    // If the user is in the middle of a multi-line input and they hit
+    // ctrl-C, we want to cancel the multi-line input, not the whole REPL
+    this.rl.on("SIGINT", () => {
+      if(this.inputBuffer.length > 0) {
+        this.inputBuffer = ""
+        this.tickPrompt()
+      } else {
+        this.rl.pause()
+      }
+    })
+
     this.rl.on("close", () => {
       process.exit(0)
     })
@@ -69,7 +80,7 @@ export default class REPL {
       // block that returns in one fell swoop? For now wrap the incoming
       // code in a contextual grouping and call toString on it so we
       // always have something legit to output
-      let result = this.vm.eval(`(${this.inputBuffer}).toString()`)
+      let result = this.vm.eval(`(${this.inputBuffer.trim()}).toString()`)
       console.log(" => %s", result)
     } catch(error) {
       if(this.expectingMoreInput(error)) {

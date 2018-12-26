@@ -311,6 +311,10 @@ export default class Parser {
 
     let node: BlockNode = { type: NodeType.Block, parameters: [], body: [], token: startToken }
 
+    if(this.isEndOfStatement()) {
+      throw new errors.UnmatchedClosingTagError(startToken, this.currOrPreviousToken(), "}")
+    }
+
     // Block parameters
     if(this.currTokenIs(TokenType.Pipe)) {
       let pipeStart = this.currToken()

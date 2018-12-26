@@ -1,5 +1,11 @@
 import VM from "@vm/vm"
-import { SyntaxError } from "@compiler/errors"
+import {
+  SyntaxError,
+  UnterminatedStringError,
+  ExpectedEndOfExpressionError,
+  UnmatchedClosingTagError,
+  IncompleteExpressionError,
+} from "@compiler/errors"
 import { ErrorReport } from "@vm/error_report"
 
 import * as readline from "readline"
@@ -10,9 +16,15 @@ export default class REPL {
 
   rl = null
 
+  // For multi-line entries, keep a buffer
+  // of the previous entries and keep filling this
+  // buffer until its parsing passes.
+  inputBuffer: string
+
   constructor(vm: VM) {
     this.vm = vm
     this.line = 0
+    this.inputBuffer = ""
 
     this.rl = readline.createInterface({
       input: process.stdin,
@@ -24,7 +36,7 @@ export default class REPL {
     this.tickPrompt()
 
     this.rl.on("line", (line) => {
-      switch(line.trim()) {
+      switch(line.trimEnd()) {
         case "quit":
         case "exit":
           this.rl.close();
@@ -42,20 +54,28 @@ export default class REPL {
   }
 
   tickPrompt() {
+    let more = this.inputBuffer.length == 0 ? " " : "? "
+
     this.line += 1
-    this.rl.setPrompt(`${this.line} > `)
+    this.rl.setPrompt(`${this.line}${more}> `)
     this.rl.prompt()
   }
 
   evalLine(line: string) {
+    this.inputBuffer += line + "\n"
+
     try {
       // TODO: Maybe some VM way to SendMessage and call the resulting
       // block that returns in one fell swoop? For now wrap the incoming
       // code in a contextual grouping and call toString on it so we
       // always have something legit to output
-      let result = this.vm.eval(`(${line}).toString()`)
-      console.log("%s", result)
+      let result = this.vm.eval(`(${this.inputBuffer}).toString()`)
+      console.log(" => %s", result)
     } catch(error) {
+      if(this.expectingMoreInput(error)) {
+        return
+      }
+
       let report = null
 
       if(error.data) {
@@ -70,5 +90,16 @@ export default class REPL {
         console.log(report.buildReport())
       }
     }
+
+    this.inputBuffer = ""
+  }
+
+  expectingMoreInput(error): boolean {
+    return (
+      (error instanceof UnterminatedStringError) ||
+      (error instanceof ExpectedEndOfExpressionError) ||
+      (error instanceof UnmatchedClosingTagError) ||
+      (error instanceof IncompleteExpressionError)
+    )
   }
 }

@@ -20,4 +20,8 @@ Block = Object.new(
   # Provided here for documentation purposes. The handling of the
   # "call" message is special-cased in the interpreter.
   call: null,
+
+  toString: {
+    "Block"
+  },
 )

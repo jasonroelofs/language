@@ -16,4 +16,8 @@ ActivationRecord = Object.new(
 
   # ActivationRecord needs to behave like a block
   call: null,
+
+  toString: {
+    block.toString()
+  },
 )

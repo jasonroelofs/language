@@ -7,6 +7,7 @@ import {
   IncompleteExpressionError,
 } from "@compiler/errors"
 import { ErrorReport } from "@vm/error_report"
+import { IObject, SendMessage, toObject } from "@vm/object"
 
 import * as readline from "readline"
 
@@ -76,12 +77,8 @@ export default class REPL {
     this.inputBuffer += line + "\n"
 
     try {
-      // TODO: Maybe some VM way to SendMessage and call the resulting
-      // block that returns in one fell swoop? For now wrap the incoming
-      // code in a contextual grouping and call toString on it so we
-      // always have something legit to output
-      let result = this.vm.eval(`(${this.inputBuffer.trim()}).toString()`)
-      console.log(" => %s", result)
+      let result = this.vm.eval(this.inputBuffer.trim())
+      console.log(" => %s", this.getStringOf(result))
     } catch(error) {
       if(this.expectingMoreInput(error)) {
         return
@@ -103,6 +100,11 @@ export default class REPL {
     }
 
     this.inputBuffer = ""
+  }
+
+  getStringOf(obj: IObject): IObject {
+    let toString = SendMessage(obj, toObject("toString"))
+    return this.vm.evalBlockWithArgs(obj, toString)
   }
 
   expectingMoreInput(error): boolean {

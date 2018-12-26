@@ -85,4 +85,8 @@ export default class VM {
 
     return this.interpreter.evalFile(expressions)
   }
+
+  evalBlockWithArgs(receiver, block, args = []) {
+    return this.interpreter.evalBlockWithArgs(receiver, block, args)
+  }
 }

@@ -69,10 +69,13 @@ theTaskRunner.define("bench", is: { |args|
   theTaskRunner.runTask("test:load", args: [])
 
   BuiltIn.debugger()
+  start = Time.utc()
 
   100.times({
     theTaskRunner.runTask("test:run")
   })
+
+  IO.puts("Benchmark took " + ((Time.utc() - start) / 100) + " seconds to run")
 
   true
 })

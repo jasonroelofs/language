@@ -91,7 +91,7 @@ function NewObject(parent: IObject, data = null, attrs: ObjectAttrs = null): IOb
     objId = objectIdSeq++
   }
 
-  let obj = {
+  return {
     parents: (parent ? [parent] : []),
     slots: new Map(),
     metaSlots: new Map(),
@@ -101,8 +101,6 @@ function NewObject(parent: IObject, data = null, attrs: ObjectAttrs = null): IOb
     builtIn: false,
     toString: baseToString,
   }
-
-  return obj
 }
 
 /**
@@ -257,16 +255,21 @@ AddSlot(Array, AsString("objectName"), AsString("Array"))
 AddSlot(Slot, AsString("objectName"), AsString("Slot"))
 
 function ToObject(nativeValue: any): IObject {
+  if(nativeValue === undefined || nativeValue === null) {
+    return Null
+  }
+
+  // Already an Object, pass it through
+  if(nativeValue.objectId) {
+    return nativeValue
+  }
+
   if(nativeValue === true) {
     return True
   }
 
   if(nativeValue === false) {
     return False
-  }
-
-  if(nativeValue === undefined || nativeValue === null) {
-    return Null
   }
 
   if((typeof nativeValue) == "number") {
@@ -289,11 +292,6 @@ function ToObject(nativeValue: any): IObject {
     }
 
     return NewObject(Array, array)
-  }
-
-  // Already an Object, pass it through
-  if('objectId' in nativeValue) {
-    return nativeValue
   }
 
   throw new Error(util.format("Don't know how to convert from native type %o", typeof nativeValue))

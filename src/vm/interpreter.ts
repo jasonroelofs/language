@@ -240,31 +240,33 @@ export default class Interpreter {
         block = receiver
       }
 
-      if(block.builtIn) {
-        // We're a built-in, call it directly
-        let toFunc = {}
-        let meta = {}
-        let argName: string
+      try {
+        if(block.builtIn) {
+          // We're a built-in, call it directly
+          let toFunc = {}
+          let meta = {}
+          let argName: string
 
-        for(var idx in args) {
-          // TODO: For things like addSlot, if the first parameter doesn't have a name,
-          // what should the name of the argument be?
-          // Maybe builtInFunc should take a list of the argument names we expect?
-          argName = args[idx].name ? args[idx].name : "0"
+          for(var idx in args) {
+            // TODO: For things like addSlot, if the first parameter doesn't have a name,
+            // what should the name of the argument be?
+            // Maybe builtInFunc should take a list of the argument names we expect?
+            argName = args[idx].name ? args[idx].name : "0"
 
-          toFunc[argName] = this.evalNode(args[idx].value)
-          meta[argName] = args[idx]
+            toFunc[argName] = this.evalNode(args[idx].value)
+            meta[argName] = args[idx]
+          }
+
+          // We don't apply as stringent argument error checking here as the intent
+          // is that all code that triggers a built-in should be itself wrapped in a code-level
+          // block that will check for argument / parameter mismatches.
+          result = block.data.call(context, toFunc, meta, this)
+        } else {
+          result = this.evalCodeBlock(node.receiver, context, block, args)
         }
-
-        // We don't apply as stringent argument error checking here as the intent
-        // is that all code that triggers a built-in should be itself wrapped in a code-level
-        // block that will check for argument / parameter mismatches.
-        result = block.data.call(context, toFunc, meta, this)
-      } else {
-        result = this.evalCodeBlock(node.receiver, context, block, args)
+      } finally {
+        this.popCallStack()
       }
-
-      this.popCallStack()
 
       return result
     }
@@ -413,7 +415,7 @@ export default class Interpreter {
     // TODO Something that lets us print out the name of the message?
     // Line is 0-based internally, so we push it to 1-based here for user readability
     AddSlot(sender, AsString("line"), ToObject(node.token.line + 1))
-    AddSlot(sender, AsString("file"), ToObject(node.token.file))
+    AddSlot(sender, AsString("file"), AsString(node.token.file))
 
     // We make use of shift/unshift to keep a reverse order so that in the language
     // `sender` is in the order of most recent call stack first.

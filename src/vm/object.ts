@@ -75,7 +75,11 @@ var objectIdSeq = 100;
 
 // Global memoization of String objects
 // Make use of the AsString helper method to make use of this cache.
-var cachedStrings: Map<string, IObject> = new Map();
+var cachedStrings: Map<string, IObject> = new Map()
+
+// TODO: WeakMap usage to allow these things to be garbage collected
+// over time.
+var cachedNumbers: Map<number, IObject> = new Map()
 
 /**
  * Create a new object from a given parent.
@@ -273,7 +277,7 @@ function ToObject(nativeValue: any): IObject {
   }
 
   if((typeof nativeValue) == "number") {
-    return NewObject(Number, nativeValue)
+    return AsNumber(nativeValue)
   }
 
   if((typeof nativeValue) == "string") {
@@ -310,6 +314,18 @@ function AsString(str: string): IObject {
   let strObj = NewObject(String, str)
   cachedStrings.set(str, strObj)
   return strObj
+}
+
+// As with strings, lets also memoize numbers so we aren't generating
+// thousands of equal objects for the number 1
+function AsNumber(num: number): IObject {
+  if(cachedNumbers.has(num)) {
+    return cachedNumbers.get(num)
+  }
+
+  let numObj = NewObject(Number, num)
+  cachedNumbers.set(num, numObj)
+  return numObj
 }
 
 export {

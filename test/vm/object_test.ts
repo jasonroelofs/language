@@ -142,4 +142,23 @@ describe("Object", () => {
 
     assert.equal(str3.objectId, str4.objectId)
   })
+
+  it("interns and re-uses numbers", () => {
+    let num1 = ToObject(1)
+    let num2 = ToObject(1)
+    let num3 = ToObject(1)
+
+    assert.equal(num1.objectId, num2.objectId)
+    assert.equal(num2.objectId, num3.objectId)
+
+    let neg1 = ToObject(-1)
+    let neg2 = ToObject(-1)
+
+    assert.equal(neg1.objectId, neg2.objectId)
+
+    let float1 = ToObject(12.7)
+    let float2 = ToObject(12.7)
+
+    assert.equal(float1.objectId, float2.objectId)
+  })
 })

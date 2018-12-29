@@ -483,7 +483,7 @@ export default class Interpreter {
       // the current line, and does not include the current line.
       // We have to push one more time at the point of failure to make sure
       // the top of the exceptions backtrace points to the actual line of failure/throw.
-      this.pushCallStack(exception.data || exception.astNode)
+      this.pushCallStack(exception.data.token ? exception.data : exception.astNode)
       AddSlot(exception, AsString("backtrace"), ToObject(this.callStack))
       this.popCallStack()
     }

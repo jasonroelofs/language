@@ -6,6 +6,7 @@ Test.describe("Runtime Errors", as: { |test|
   # [base file name, error message, line #]
   errorTests = [
     ["no_such_message", "'obj' does not respond to the 'invalidSlot' message", 2],
+    ["send_no_such_message", "'obj' does not respond to the 'invalidSlot' message", 2],
   ]
 
   errorTests.each({ |toTest|

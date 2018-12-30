@@ -7,7 +7,11 @@ import {
   ArgumentNode,
   ParameterNode,
 } from "@compiler/ast"
-import { IObject } from "@vm/object"
+import {
+  IObject,
+  SendMessage,
+  AsString,
+} from "@vm/object"
 
 /**
  * Define all errors related to execution.
@@ -93,16 +97,18 @@ class SlotNotFoundError extends RuntimeError {
 class NoSuchMessageError extends RuntimeError {
 
   message: string
-  receiver: Node
+  receiver: IObject
+  receiverName: string
 
-  constructor(node: Node, message: IObject) {
-    super(node.token)
+  constructor(receiver: IObject, message: IObject) {
+    super(receiver.astNode.token)
     this.message = message.data
-    this.receiver = node.receiver
+    this.receiver = receiver
+    this.receiverName = SendMessage(receiver, AsString("objectName")).data
   }
 
   errorType(): string {
-    return `'${this.receiver.token.value}' does not respond to the '${this.message}' message`
+    return `'${this.receiverName}' does not respond to the '${this.message}' message`
   }
 }
 

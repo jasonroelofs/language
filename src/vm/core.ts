@@ -9,6 +9,7 @@ import {
   AddSlot, GetSlot, EachParent, FindIn, ObjectIs,
   SendMessage,
 } from "@vm/object"
+import * as errors from "@vm/errors"
 import { isArray, arrayFrom } from "@vm/js_core"
 
 //
@@ -97,12 +98,11 @@ function addSlots(obj: IObject, args, meta = {}) {
  */
 AddSlot(Objekt, AsString("send"), builtInFunc(function(args, meta = {}, vm): IObject {
   let obj = this
-  let message = args["0"]
+  let message = args["message"] || args["0"]
   let slotValue = SendMessage(obj, message)
 
   if(!slotValue) {
-    // TODO: raise error: Object does not respond to the `message` message.
-    return Null
+    throw new errors.NoSuchMessageError(obj, message)
   }
 
   if(slotValue.codeBlock) {

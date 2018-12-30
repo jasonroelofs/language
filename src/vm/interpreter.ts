@@ -245,7 +245,7 @@ export default class Interpreter {
 
     if(slotValue == null) {
       if(receiver) {
-        this.throwException(new errors.NoSuchMessageError(node, message))
+        this.throwException(new errors.NoSuchMessageError(receiver, message))
       } else {
         this.throwException(new errors.SlotNotFoundError(node, message))
       }

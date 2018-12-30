@@ -66,9 +66,6 @@ Test.describe("Object", as: { |test|
 
     assert(obj.send("method call") == 1)
     assert(obj.send("with args", x: 2, y: 4) == 8)
-
-    # TODO: This should raise an error
-    assert(obj.send("unknown slot") == null)
   })
 
   test("== and !=", is: { |assert|

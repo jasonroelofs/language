@@ -362,7 +362,7 @@ describe("VM", () => {
       var error
 
       let tests = {
-        "World.unknownSlot": [errors.NoSuchMessageError, ".", 5],
+        "World.unknownSlot": [errors.NoSuchMessageError, "World", 0],
         "missing": [errors.SlotNotFoundError, "missing", 0],
         "{ missing() }()": [errors.SlotNotFoundError, "missing", 2],
       }

@@ -11,7 +11,7 @@ Test.describe("World", as: { |test|
     assert(obj.name() == "loaded object")
   })
 
-  test("load evaluates into the top-level space", is: { |assert|
+  test("load by default evaluates into the top-level space", is: { |assert|
     {
       {
         load("spec/fixtures/world/load2.lang")
@@ -22,6 +22,15 @@ Test.describe("World", as: { |test|
     }()
 
     assert(space.hasSlot("LoadedObject2"))
+  })
+
+  test("load can be told to load the file into a specific object", is: { |assert|
+    {
+      load("spec/fixtures/world/load3.lang", into: space)
+      assert(space.hasSlot("LoadedObject3"))
+    }()
+
+    assert(!space.hasSlot("LoadedObject3"))
   })
 
 })

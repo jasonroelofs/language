@@ -40,19 +40,9 @@ export default class Interpreter {
   // Hack-ish link back to the VM that created us
   vm = null
 
-  // A VM starts up with three spaces:
-  // - World is where the core libraries (built-ins and lib/core) are loaded
-  //   All core libraries are always loaded and made available at boot.
-  // - StdLib is then a child of Core and is where all of the standard libraries
-  //   are loaded (lib/stdlib). These are loaded on-demand (TODO)
-  // - The Runtime/Current space is then a child of stdlib and created for each
-  //   self contained chunk of code (usually each file).
-  worldSpace: IObject
-  stdLibSpace: IObject
+  // Keep track of the current execution Space, which is a normal object provided
+  // as the execution context of each block.
   currentSpace: IObject
-
-  // TODO: Temp, remove this when we import stdlibs
-  stdLibLoaded = false
 
   // Keep a callstack that's a list of in-language objects
   // For each space we make this list available as a snapshot of the call stack
@@ -69,66 +59,45 @@ export default class Interpreter {
     this.vm = vm
     this.callStack = []
 
-    this.worldSpace = World
-    this.currentSpace = this.worldSpace
-  }
-
-  coreLoaded() {
-    this.Block = SendMessage(this.worldSpace, AsString("Block"))
-    this.Sender = SendMessage(this.worldSpace, AsString("Sender"))
-    this.ActivationRecord = SendMessage(this.worldSpace, AsString("ActivationRecord"))
-    this.Exception = SendMessage(this.worldSpace, AsString("Exception"))
-
-    this.pushSpace(this.worldSpace)
-    this.stdLibSpace = this.currentSpace
+    // The World is our top-level storage space.
+    this.currentSpace = World
   }
 
   ready(argv = []) {
-    this.stdLibLoaded = true
+    this.Block = SendMessage(this.currentSpace, AsString("Block"))
+    this.Sender = SendMessage(this.currentSpace, AsString("Sender"))
+    this.ActivationRecord = SendMessage(this.currentSpace, AsString("ActivationRecord"))
+    this.Exception = SendMessage(this.currentSpace, AsString("Exception"))
 
     // Expose static values from the runtime into the language
     let Process = SendMessage(this.currentSpace, AsString("Process"))
     AddSlot(Process, AsString("argv"), ToObject(argv))
+
+    this.pushSpace(this.currentSpace)
   }
 
-  // Parse and eval the given file.
-  // The file will be eval'd in the same top-level space as the rest of the
-  // currently executing code. This means that regardless of the block depth in
-  // which `load` is executed, the code will not have access to any values in
-  // the sender's current space.
-  //
-  // For such functionality, you'll want to use evalFile instead.
-  //
-  // TODO: Also implement evalFile :D
+  // Parse and eval the given file in the context of an object.
+  // See `World.load` for more details.
   //
   // TODO: Find a better path of handling things between the VM itself and the Interpreter
   // regarding loading code from files at runtime
-  loadFile(path: IObject): IObject {
+  loadFile(path: IObject, into: IObject): IObject {
+    let previousSpace = this.currentSpace
+    this.currentSpace = into
+
     try {
       return this.vm.loadFile(path.data)
     } catch(e) {
       this.throwException(e, path)
+    } finally {
+      this.currentSpace = previousSpace
     }
   }
 
-  // Given a set of expressions from the Parser, evaluate them.
-  // This will create a new Space just for this evaluation to protect
-  // from code leakage across files and spaces.
+  // Given a set of expressions from the Parser, evaluate them in
+  // the context of the current space.
   evalFile(expressions: Array<Expression>): IObject {
-    let previousSpace
-
-    if(this.stdLibLoaded) {
-      previousSpace = this.currentSpace
-      this.currentSpace = this.stdLibSpace
-    }
-
-    let results = this.eval(expressions)
-
-    if(this.stdLibLoaded) {
-      this.currentSpace = previousSpace
-    }
-
-    return results
+    return this.eval(expressions)
   }
 
   eval(expressions: Array<Expression>): IObject {
@@ -483,7 +452,7 @@ export default class Interpreter {
       // the current line, and does not include the current line.
       // We have to push one more time at the point of failure to make sure
       // the top of the exceptions backtrace points to the actual line of failure/throw.
-      this.pushCallStack(exception.data.token ? exception.data : exception.astNode)
+      this.pushCallStack((exception.data && exception.data.token) ? exception.data : exception.astNode)
       AddSlot(exception, AsString("backtrace"), ToObject(this.callStack))
       this.popCallStack()
     }

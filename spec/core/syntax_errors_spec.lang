@@ -20,7 +20,7 @@ Test.describe("Syntax Errors", as: { |test|
       testFile = "spec/errors/syntax/" + toTest[0] + ".lang"
 
       error = try({
-        load(testFile)
+        load(testFile, into: space)
       }, catch: { |error| error })
 
       assert(error)

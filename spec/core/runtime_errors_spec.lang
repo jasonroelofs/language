@@ -1,0 +1,35 @@
+# import("test")
+
+Test.describe("Runtime Errors", as: { |test|
+
+  # List of runtime error tests, formatted:
+  # [base file name, error message, line #]
+  errorTests = [
+    ["no_such_message", "'obj' does not respond to the 'invalidSlot' message", 2],
+  ]
+
+  errorTests.each({ |toTest|
+    test(toTest[0], is: { |assert|
+      testFile = "spec/errors/core/" + toTest[0] + ".lang"
+
+      error = try({
+        load(testFile, into: space)
+      }, catch: { |error| error })
+
+      assert(error)
+      assert(error.message == toTest[1])
+      assert(error.file() == testFile)
+      assert(error.line() == toTest[2])
+    })
+  })
+
+  # As a precautionary measure, more files will be added to spec/errors
+  # over time and I want the system to warn me when I forget to update this
+  # file with the appropriate tests. See spec/errors/README for more information.
+  test("all files in spec/errors/core are covered here", is: { |assert|
+    errorFiles = File.search("spec/errors/core/*.lang")
+
+    assert(errorFiles.length() == errorTests.length(), message: "There is a mismatch between the syntax error files and the cases in runtime_errors_spec.lang")
+  })
+
+})

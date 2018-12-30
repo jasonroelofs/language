@@ -148,6 +148,13 @@ AddSlot(BuiltIn, AsString("exit"), builtInFunc(function(args): IObject {
   return Null
 }))
 
+// Load a language file into the space given in `into`.
+AddSlot(BuiltIn, AsString("load"), builtInFunc(function(args, meta = {}, vm): IObject {
+  let [filePath, into] = extractParams(args, "filePath", "into")
+
+  return vm.loadFile(filePath, into)
+}))
+
 /**
  * Object BuiltIns
  */
@@ -489,16 +496,6 @@ AddSlot(World, AsString("Array"),  Array)
 AddSlot(World, AsString("True"),   True)
 AddSlot(World, AsString("False"),  False)
 AddSlot(World, AsString("Null"),   Null)
-
-// World.load is implemented as a direct built-in instead of a wrapped call because
-// we want `load` to evaluate the file in the current space as the call to `load`.
-// This may not be the best path here but I don't know if there is a "correct" expectation
-// on how something like `load` should work.
-AddSlot(World, AsString("load"), builtInFunc(function(args, meta = {}, vm): IObject {
-  let path = args["path"] || args["0"]
-
-  return vm.loadFile(path)
-}))
 
 // World.try is our exception handling catching and handling tool.
 // It takes a block in which to execute that may throw an exception.

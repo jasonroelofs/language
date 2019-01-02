@@ -28,7 +28,6 @@ export default class VM {
 
   constructor(argv = []) {
     this.loadedFiles = new Map<string, string>()
-    this.argv = argv
 
     this.interpreter = new Interpreter(this)
 
@@ -37,6 +36,8 @@ export default class VM {
     // Eventually want this to be a package system
     // and explicit imports but that's for a future time
     this.loadStdLib()
+
+    this.interpreter.ready(argv)
   }
 
   loadCoreLib() {
@@ -53,8 +54,6 @@ export default class VM {
       let path = (typeof(file) == "string") ? file : file.path
       this.loadFile(path)
     })
-
-    this.interpreter.ready(this.argv)
   }
 
   loadFile(filePath: string): IObject {

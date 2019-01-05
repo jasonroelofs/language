@@ -10,7 +10,7 @@ web: build package-web webpack
 # Provide a slightly different task for CI to make sure
 # that `npm link` is called. This call takes a noticable
 # amount of time so its not something we want to always execute
-ci: setup build web test
+ci: build setup web test
 
 build: compile rewrite-paths link-lib fix-shebang
 

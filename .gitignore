@@ -3,3 +3,7 @@ dist
 
 # Package install location
 node_modules
+
+# Script-Built web files
+web/core.js
+web/stdlib.js

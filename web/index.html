@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Language Web Runner</title>
+    <style>
+      #workspace { width: 80em; }
+      textarea { width: 100%; height: 30em; }
+      #results { border: 1px solid black; width: 100%; height: 10em; }
+    </style>
+  </head>
+  <body>
+    <div id="workspace">
+      <textarea name="code" id="code" placeholder="Code goes here"></textarea>
+
+      <div id="results">
+      </div>
+    </div>
+
+    <script src="./dist/core.js"></script>
+    <script src="./dist/stdlib.js"></script>
+    <script src="./dist/vm.js"></script>
+  </body>
+</html>

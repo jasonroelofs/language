@@ -1,6 +1,6 @@
-import * as fastGlob from "fast-glob"
-import * as fs from "fs"
 import * as path from "path"
+
+import Platform from "@vm/platform"
 import {
   NewObject, ToObject, AsString,
   IObject, Objekt,
@@ -414,15 +414,14 @@ AddSlot(BuiltIn, AsString("fileSearch"), builtInFunc(function(args): IObject {
     rawEntries = [path.normalize(glob.data)]
   }
 
-  return ToObject(fastGlob.sync(rawEntries))
+  return ToObject(Platform.fileSearch(rawEntries))
 }))
 
 AddSlot(BuiltIn, AsString("fileIsDirectory"), builtInFunc(function(args): IObject {
   let path = args["path"] || args["0"]
 
   try {
-    let stats = fs.lstatSync(path.data)
-    return ToObject(stats.isDirectory())
+    return ToObject(Platform.isDirectory(path.data))
   } catch {
     // If nothing exists at the given path...
     return False

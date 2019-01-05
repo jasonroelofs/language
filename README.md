@@ -21,6 +21,14 @@ Still looking for a name! See the `docs/` directory for notes on what the langua
 ## Getting Started
 
 ```
-npm install
-npm test
+make setup
+make
+```
+
+## Building for the web
+
+```
+make setup
+make web
+open web/index.html
 ```

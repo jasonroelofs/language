@@ -1,0 +1,67 @@
+// Platform encapsulates the differences and hooks between running
+// the language on the web vs running it as a command line tool.
+
+var fs = require("fs")
+var glob = require("fast-glob")
+var path = require("path")
+
+var Platform: any = {
+  isNode: () => {
+    return (typeof window === "undefined")
+  },
+}
+
+var noop = () => {}
+
+if(Platform.isNode()) {
+
+  Platform.isDirectory = (path) => {
+    let stats = fs.lstatSync(path)
+    return stats.isDirectory()
+  }
+
+  Platform.readFile = (filePath) => {
+    return fs.readFileSync(filePath)
+  }
+
+  Platform.fileSearch = (entries) => {
+    return glob.sync(entries)
+  }
+
+  Platform.findCoreLibs = (callback) => {
+    let coreDir = path.resolve(__dirname + "/../../lib/core");
+    let entries = glob.sync([`${coreDir}/**/*.lang`]).forEach((file) => {
+      let path = (typeof(file) == "string") ? file : file.path
+      callback(path, fs.readFileSync(path).toString())
+    })
+  }
+
+  Platform.findStdLibs = (callback) => {
+    let stdlibDir = path.resolve(__dirname + "/../../lib/stdlib");
+    let entries = glob.sync([`${stdlibDir}/**/*.lang`]).forEach((file) => {
+      let path = (typeof(file) == "string") ? file : file.path
+      callback(path, fs.readFileSync(path).toString())
+    })
+  }
+
+} else {
+  Platform.isDirectory = noop
+  Platform.readFile = noop
+  Platform.fileSearch = noop
+
+  Platform.findCoreLibs = (callback) => {
+    let coreFiles = (<any>window).Core
+    coreFiles.forEach((path, content) => {
+      callback(content, path)
+    })
+  }
+
+  Platform.findStdLibs = (callback) => {
+    let stdlibFiles = (<any>window).StdLib
+    stdlibFiles.forEach((path, content) => {
+      callback(content, path)
+    })
+  }
+}
+
+export default Platform

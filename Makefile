@@ -5,6 +5,8 @@ SHELL := env PATH=$(PATH) /bin/bash
 
 all: build test
 
+web: build package-web webpack
+
 # Provide a slightly different task for CI to make sure
 # that `npm link` is called. This call takes a noticable
 # amount of time so its not something we want to always execute
@@ -18,6 +20,13 @@ compile:
 rewrite-paths:
 	ef-tspm --silent
 
+# Our core and standard libraries are written in the language and need to be
+# installed into the build area, but we don't want to have to constantly copy
+# files around as these files are being worked on. Instead, lets symlink it!
+link-lib:
+	@rm -f dist/lib
+	@ln -sf `pwd`/lib dist/lib
+
 # Due to the interaction of tsc and tspm, we don't get a nice clean
 # shebang line automatically, so we need to fix it in post
 # We also use this time to drop the .js extension from lang-cli, as that's
@@ -29,12 +38,17 @@ fix-shebang:
 	@mv .cli.tmp dist/bin/lang-cli.js
 	@chmod a+x dist/bin/lang-cli.js
 
-# Our core and standard libraries are written in the language and need to be
-# installed into the build area, but we don't want to have to constantly copy
-# files around as these files are being worked on. Instead, lets symlink it!
-link-lib:
-	@rm -f dist/lib
-	@ln -sf `pwd`/lib dist/lib
+# Trigger the script to take all of the core and stdlib files and
+# package them into a single js file under web/
+# I know webpack should be able to do this but I wasn't able to find something
+# that would do it easily. Will update when I find something or I break down and
+# build my own loader
+package-web:
+	@cd web && node package-web.js
+
+# Trigger webpack to create the final files for web-run of the language VM
+webpack:
+	@cd web && npx webpack
 
 setup:
 	@npm upgrade

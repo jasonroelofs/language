@@ -1,7 +1,4 @@
-import * as fs from "fs"
-import * as glob from "fast-glob"
-import * as path from "path"
-import * as util from "util"
+import Platform from "@vm/platform"
 
 import { IObject } from "@vm/object"
 import { World } from "@vm/core"
@@ -41,23 +38,19 @@ export default class VM {
   }
 
   loadCoreLib() {
-    let coreDir = path.resolve(__dirname + "/../../lib/core");
-    let entries = glob.sync([`${coreDir}/**/*.lang`]).forEach((file) => {
-      let path = (typeof(file) == "string") ? file : file.path
-      this.loadFile(path)
+    Platform.findCoreLibs((filePath, content) => {
+      this.eval(content, filePath)
     })
   }
 
   loadStdLib() {
-    let stdlibDir = path.resolve(__dirname + "/../../lib/stdlib");
-    let entries = glob.sync([`${stdlibDir}/**/*.lang`]).forEach((file) => {
-      let path = (typeof(file) == "string") ? file : file.path
-      this.loadFile(path)
+    Platform.findStdLibs((filePath, content) => {
+      this.eval(content, filePath)
     })
   }
 
   loadFile(filePath: string): IObject {
-    let script = fs.readFileSync(filePath)
+    let script = Platform.readFile(filePath)
     // console.log("Loading file %o", filePath)
     return this.eval(script.toString(), filePath)
   }
@@ -77,8 +70,6 @@ export default class VM {
 
     let p = new Parser(tokens)
     var expressions = p.parse()
-
-    // console.log(util.inspect(expressions, {depth: null}))
 
     return this.interpreter.evalFile(expressions)
   }

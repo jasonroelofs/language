@@ -16,11 +16,11 @@ import { isArray, arrayFrom } from "@vm/js_core"
 // Our core set of built-ins
 //
 
-type BuiltInFunction = (...args: any[]) => IObject
+type BuiltInFunctionT = (...args: any[]) => IObject
 
 // Define a Javascript function to properly expose it
 // to the language runtime as an executable block.
-function builtInFunc(func: BuiltInFunction): IObject {
+function BuiltInFunc(func: BuiltInFunctionT): IObject {
   let value = NewObject(Objekt, func)
   value.codeBlock = true
   value.builtIn = true
@@ -49,7 +49,7 @@ function extractParams(args, ...argKeys) {
  * Create and return a new object with the current object as the first
  * parent, and all provided slots added to the new object.
  */
-AddSlot(Objekt, AsString("new"), builtInFunc(function(args, meta = {}, vm): IObject {
+AddSlot(Objekt, AsString("new"), BuiltInFunc(function(args, meta = {}, vm): IObject {
   let obj = NewObject(this)
   let slot
 
@@ -76,7 +76,7 @@ AddSlot(Objekt, AsString("new"), builtInFunc(function(args, meta = {}, vm): IObj
   return obj
 }))
 
-AddSlot(Objekt, AsString("addSlots"), builtInFunc(function(args, meta = {}): IObject {
+AddSlot(Objekt, AsString("addSlots"), BuiltInFunc(function(args, meta = {}): IObject {
   addSlots(this, args, meta)
 
   return Null
@@ -96,7 +96,7 @@ function addSlots(obj: IObject, args, meta = {}) {
  * Use this to programmatically send messages to objects or to send messages
  * that aren't proper identifiers.
  */
-AddSlot(Objekt, AsString("send"), builtInFunc(function(args, meta = {}, vm): IObject {
+AddSlot(Objekt, AsString("send"), BuiltInFunc(function(args, meta = {}, vm): IObject {
   let obj = this
   let message = args["message"] || args["0"]
   let slotValue = SendMessage(obj, message)
@@ -142,14 +142,14 @@ AddSlot(BuiltIn, AsString("objectName"), AsString("BuiltIn"))
  * World / Global BuiltIns
  */
 
-AddSlot(BuiltIn, AsString("exit"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("exit"), BuiltInFunc(function(args): IObject {
   let status = args["status"] || args["0"]
   process.exit(status.data)
   return Null
 }))
 
 // Load a language file into the space given in `into`.
-AddSlot(BuiltIn, AsString("load"), builtInFunc(function(args, meta = {}, vm): IObject {
+AddSlot(BuiltIn, AsString("load"), BuiltInFunc(function(args, meta = {}, vm): IObject {
   let [filePath, into] = extractParams(args, "filePath", "into")
 
   return vm.loadFile(filePath, into)
@@ -158,19 +158,19 @@ AddSlot(BuiltIn, AsString("load"), builtInFunc(function(args, meta = {}, vm): IO
 /**
  * Object BuiltIns
  */
-AddSlot(BuiltIn, AsString("objectId"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("objectId"), BuiltInFunc(function(args): IObject {
   let [obj] = extractParams(args, "object")
 
   return ToObject(obj.objectId)
 }))
 
-AddSlot(BuiltIn, AsString("objectParents"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("objectParents"), BuiltInFunc(function(args): IObject {
   let [obj] = extractParams(args, "object")
 
   return ToObject(obj.parents)
 }))
 
-AddSlot(BuiltIn, AsString("objectAddSlot"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("objectAddSlot"), BuiltInFunc(function(args): IObject {
   let [obj, slotName, slotValue] = extractParams(args, "object", "name", "as")
 
   AddSlot(obj, slotName, slotValue)
@@ -178,12 +178,12 @@ AddSlot(BuiltIn, AsString("objectAddSlot"), builtInFunc(function(args): IObject 
   return Null
 }))
 
-AddSlot(BuiltIn, AsString("objectGetSlot"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("objectGetSlot"), BuiltInFunc(function(args): IObject {
   let [obj, slotName] = extractParams(args, "object", "name")
   return GetSlot(obj, slotName)
 }))
 
-AddSlot(BuiltIn, AsString("objectGetSlotNames"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("objectGetSlotNames"), BuiltInFunc(function(args): IObject {
   let [obj, includeParents] = extractParams(args, "object", "includeParents")
 
   if(includeParents == True) {
@@ -199,13 +199,13 @@ AddSlot(BuiltIn, AsString("objectGetSlotNames"), builtInFunc(function(args): IOb
   }
 }))
 
-AddSlot(BuiltIn, AsString("objectHasSlot"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("objectHasSlot"), BuiltInFunc(function(args): IObject {
   let [obj, slotName] = extractParams(args, "object", "slotName")
 
   return FindIn(obj, (o) => o.slots.has(slotName.data)) ? True : False
 }))
 
-AddSlot(BuiltIn, AsString("objectIs"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("objectIs"), BuiltInFunc(function(args): IObject {
   let [obj, expected] = extractParams(args, "object", "type")
 
   return ObjectIs(obj, expected)
@@ -216,7 +216,7 @@ AddSlot(BuiltIn, AsString("objectIs"), builtInFunc(function(args): IObject {
  * Number BuiltIns
  */
 
-AddSlot(BuiltIn, AsString("numberOp"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("numberOp"), BuiltInFunc(function(args): IObject {
   let left = args["left"]
   let op = args["op"]
   let right = args["right"]
@@ -247,7 +247,7 @@ AddSlot(BuiltIn, AsString("numberOp"), builtInFunc(function(args): IObject {
   }
 }))
 
-AddSlot(BuiltIn, AsString("numberTimes"), builtInFunc(function(args, meta = {}, vm): IObject {
+AddSlot(BuiltIn, AsString("numberTimes"), BuiltInFunc(function(args, meta = {}, vm): IObject {
   let [count, blockAR] = extractParams(args, "count", "block")
   // TODO Need to figure out a way to clean up activation records for built-in arguments.
   // This is a huge GOTCHA!
@@ -262,7 +262,7 @@ AddSlot(BuiltIn, AsString("numberTimes"), builtInFunc(function(args, meta = {}, 
   return count
 }))
 
-AddSlot(BuiltIn, AsString("numberToString"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("numberToString"), BuiltInFunc(function(args): IObject {
   let num = args["number"]
   return ToObject("" + num.data)
 }))
@@ -271,7 +271,7 @@ AddSlot(BuiltIn, AsString("numberToString"), builtInFunc(function(args): IObject
  * String BuiltIns
  */
 
-AddSlot(BuiltIn, AsString("stringOp"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("stringOp"), BuiltInFunc(function(args): IObject {
   let [left, op, right] = extractParams(args, "left", "op", "right")
 
   switch(op.data) {
@@ -288,12 +288,12 @@ AddSlot(BuiltIn, AsString("stringOp"), builtInFunc(function(args): IObject {
  * Other BuiltIns
  */
 
-AddSlot(BuiltIn, AsString("puts"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("puts"), BuiltInFunc(function(args): IObject {
   console.log(args["message"].toString())
   return Null
 }))
 
-AddSlot(BuiltIn, AsString("print"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("print"), BuiltInFunc(function(args): IObject {
   // TODO This is not web safe.
   process.stdout.write(args["message"].toString())
   return Null
@@ -317,7 +317,7 @@ AddSlot(BuiltIn, AsString("print"), builtInFunc(function(args): IObject {
  *   [1, 2, ...]
  *
  */
-AddSlot(Array, AsString("new"), builtInFunc(function(args): IObject {
+AddSlot(Array, AsString("new"), BuiltInFunc(function(args): IObject {
   let array = []
 
   for(var slotName in args) {
@@ -327,7 +327,7 @@ AddSlot(Array, AsString("new"), builtInFunc(function(args): IObject {
   return NewObject(Array, array)
 }))
 
-AddSlot(BuiltIn, AsString("arrayGet"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("arrayGet"), BuiltInFunc(function(args): IObject {
   let array = args["array"]
   let index = args["index"]
 
@@ -335,7 +335,7 @@ AddSlot(BuiltIn, AsString("arrayGet"), builtInFunc(function(args): IObject {
   return array.data[index.data]
 }))
 
-AddSlot(BuiltIn, AsString("arraySet"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("arraySet"), BuiltInFunc(function(args): IObject {
   let array = args["array"]
   let index = args["index"]
   let value = args["to"]
@@ -345,7 +345,7 @@ AddSlot(BuiltIn, AsString("arraySet"), builtInFunc(function(args): IObject {
   return value
 }))
 
-AddSlot(BuiltIn, AsString("arrayEach"), builtInFunc(function(args, meta = {}, vm): IObject {
+AddSlot(BuiltIn, AsString("arrayEach"), BuiltInFunc(function(args, meta = {}, vm): IObject {
   let [array, blockAR] = extractParams(args, "array", "block")
 
   // Block as passed in from the language is actually an ActivationRecord
@@ -361,18 +361,18 @@ AddSlot(BuiltIn, AsString("arrayEach"), builtInFunc(function(args, meta = {}, vm
   return Null
 }))
 
-AddSlot(BuiltIn, AsString("arrayPush"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("arrayPush"), BuiltInFunc(function(args): IObject {
   let array = args["array"]
   array.data.push(args["object"])
   return array
 }))
 
-AddSlot(BuiltIn, AsString("arrayPop"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("arrayPop"), BuiltInFunc(function(args): IObject {
   let array = args["array"]
   return array.data.pop() || Null
 }))
 
-AddSlot(BuiltIn, AsString("arraySlice"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("arraySlice"), BuiltInFunc(function(args): IObject {
   let [array, start, end] = extractParams(args, "array", "start", "end")
 
   if(end === Null) {
@@ -382,7 +382,7 @@ AddSlot(BuiltIn, AsString("arraySlice"), builtInFunc(function(args): IObject {
   }
 }))
 
-AddSlot(BuiltIn, AsString("arrayLength"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("arrayLength"), BuiltInFunc(function(args): IObject {
   let [array] = extractParams(args, "array")
 
   return ToObject(array.data.length)
@@ -393,7 +393,7 @@ AddSlot(BuiltIn, AsString("arrayLength"), builtInFunc(function(args): IObject {
  */
 
 // Return the current unix timestamp (milliseconds since epoc: Jan 1, 1970)
-AddSlot(BuiltIn, AsString("timeUTC"), builtInFunc(function(): IObject {
+AddSlot(BuiltIn, AsString("timeUTC"), BuiltInFunc(function(): IObject {
   return ToObject(Date.now())
 }))
 
@@ -403,7 +403,7 @@ AddSlot(BuiltIn, AsString("timeUTC"), builtInFunc(function(): IObject {
 
 // Supports a single path, multiple paths, a single glob, or multiple globs.
 // Returns an array of file paths.
-AddSlot(BuiltIn, AsString("fileSearch"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("fileSearch"), BuiltInFunc(function(args): IObject {
   let [glob] = extractParams(args, "glob")
   let rawEntries = []
 
@@ -417,7 +417,7 @@ AddSlot(BuiltIn, AsString("fileSearch"), builtInFunc(function(args): IObject {
   return ToObject(Platform.fileSearch(rawEntries))
 }))
 
-AddSlot(BuiltIn, AsString("fileIsDirectory"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("fileIsDirectory"), BuiltInFunc(function(args): IObject {
   let path = args["path"] || args["0"]
 
   try {
@@ -437,7 +437,7 @@ AddSlot(BuiltIn, AsString("fileIsDirectory"), builtInFunc(function(args): IObjec
  *  Should probably remove later
  *  Print a reverse-indented trace of the current scope stack
  */
-AddSlot(BuiltIn, AsString("debugObjectSlots"), builtInFunc(function(args): IObject {
+AddSlot(BuiltIn, AsString("debugObjectSlots"), BuiltInFunc(function(args): IObject {
   let obj = args["object"] || args["0"]
   let depth = 0
   let buffer = ""
@@ -470,7 +470,7 @@ function printObjSlots(obj: IObject, depth: number) {
 }
 
 // Requires running the system through `node --inspect` to do anything.
-AddSlot(BuiltIn, AsString("debugger"), builtInFunc(function(): IObject {
+AddSlot(BuiltIn, AsString("debugger"), BuiltInFunc(function(): IObject {
   debugger
   return Null
 }))
@@ -501,7 +501,7 @@ AddSlot(World, AsString("Null"),   Null)
 // If `catch` is provided, it is called with the error.
 // If `finally` is provided, it is called after any `catch`.
 // Finally the value is returned from `try` or `catch` if there was an error.
-AddSlot(World, AsString("try"), builtInFunc(function(args, meta = {}, vm): IObject {
+AddSlot(World, AsString("try"), BuiltInFunc(function(args, meta = {}, vm): IObject {
   let block = args["block"] || args["0"]
   let catchBlock = args["catch"]
   let finallyBlock = args["finally"]
@@ -527,7 +527,7 @@ AddSlot(World, AsString("try"), builtInFunc(function(args, meta = {}, vm): IObje
 // Use World.throw to throw an exception.
 // The exception can be any object and does not have to explicitly be an Exception
 // object or one of its children.
-AddSlot(World, AsString("throw"), builtInFunc(function(args, meta = {}, vm): IObject {
+AddSlot(World, AsString("throw"), BuiltInFunc(function(args, meta = {}, vm): IObject {
   let exception = args["0"]
 
   vm.throwException(exception)
@@ -541,4 +541,6 @@ export {
   Objekt,
   World,
   Array,
+  BuiltIn,
+  BuiltInFunc,
 }

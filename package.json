@@ -19,12 +19,12 @@
     "@types/mocha": "^5.2.5",
     "@types/node": "^10.12.18",
     "common-tags": "^1.8.0",
-    "fast-glob": "^2.2.4",
+    "fast-glob": "^2.2.6",
     "mocha": "^5.2.0",
     "typescript": "^3.2.2"
   },
   "devDependencies": {
     "webpack": "^4.28.3",
-    "webpack-cli": "^3.2.0"
+    "webpack-cli": "^3.2.1"
   }
 }

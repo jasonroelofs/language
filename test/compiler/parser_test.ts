@@ -671,6 +671,7 @@ describe("Parser", () => {
       let tests = [
         // Unfinished Block
         ["{", 1, errors.UnmatchedClosingTagError],
+        ["{|a|", 4, errors.UnmatchedClosingTagError],
         // Unclosed parameters
         ["{|a }", 4, errors.ExpectedTokenMissingError],
         // Invalid argument name

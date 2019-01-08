@@ -382,6 +382,10 @@ export default class Parser {
         break
       }
 
+      if(this.isEndOfStatement()) {
+        break
+      }
+
       node.body.push({ node: this.parseStatement() })
     }
 

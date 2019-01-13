@@ -9,34 +9,30 @@ var path = require("path")
 var fs = require("fs")
 var glob = require("fast-glob")
 
-var here = path.resolve(__dirname)
-var coreLib = path.resolve(here, "../lib/core")
-var stdLib = path.resolve(here, "../lib/stdlib")
-
-var coreFiles = glob.sync([`${coreLib}/**/*.lang`])
-var stdlibFiles = glob.sync([`${stdLib}/**/*.lang`])
-
-var writeTo = function(fileList, varName, fileName) {
+function writeTo(fileGlob, varName, fileName) {
+  var here = path.resolve(__dirname)
+  var codeHome = path.resolve(here, "..")
+  var fileList = glob.sync([path.resolve(here, fileGlob)])
 
   var body = `
 (function() {
-  var files = new Map()
 `
 
   fileList.forEach((filePath) => {
     var fileBody = fs.readFileSync(filePath)
     var clean = fileBody.toString().replace(/`/g, "\\`")
 
-    body += `files.set("${path.basename(filePath)}", \`${clean}\`)\n`
+    var localPath = filePath.slice(codeHome.length + 1)
+    body += `window.FakeFS.addFile("${localPath}", \`${clean}\`)\n`
   })
 
   body += `
-  window.${varName} = files
 }())
 `
 
   fs.writeFileSync(fileName, body)
 }
 
-writeTo(coreFiles, "Core", "core.js")
-writeTo(stdlibFiles, "StdLib", "stdlib.js")
+writeTo("../lib/core/**/*.lang", "Core", "core.js")
+writeTo("../lib/stdlib/**/*.lang", "StdLib", "stdlib.js")
+writeTo("../spec/**/*", "SystemSpecs", "specs.js")

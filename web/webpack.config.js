@@ -5,7 +5,9 @@ module.exports = {
   entry: {
     "vm.js": "./index.js",
     "core.js": "./core.js",
-    "stdlib.js": "./stdlib.js"
+    "stdlib.js": "./stdlib.js",
+    "specs.js": "./specs.js",
+    "fake_fs.js": "./fake_fs.js"
   },
   target: "web",
   node: {

@@ -4,21 +4,51 @@
     <meta charset="utf-8">
     <title>Language Web Runner</title>
     <style>
-      #workspace { width: 80em; }
-      textarea { width: 100%; height: 30em; }
-      #results { border: 1px solid black; width: 100%; min-height: 10em; max-height: 30em; overflow-y: auto; }
+      #workspace {
+        display: grid;
+        grid-template-columns: 25% 25% 25% 1fr;
+        grid-template-rows: 30vh 30vh 30vh;
+        grid-column-gap: 5px;
+        grid-row-gap: 5px;
+        grid-template-areas:
+          "left code-input code-input code-input"
+          "left code-input code-input code-input"
+          "left code-output code-output code-output"
+      }
+
+      #left-bar {
+        grid-area: left;
+        border: 1px solid black;
+      }
+
+      textarea {
+        grid-area: code-input;
+      }
+
+      #results {
+        grid-area: code-output;
+        border: 1px solid black;
+        overflow-y: auto;
+      }
+
     </style>
   </head>
   <body>
     <div id="workspace">
+      <div id="left-bar">
+        <button id="run-specs">Run Language Specs</button>
+      </div>
+
       <textarea name="code" id="code" placeholder="Code goes here"></textarea>
 
       <div id="results">
       </div>
     </div>
 
+    <script src="./dist/fake_fs.js"></script>
     <script src="./dist/core.js"></script>
     <script src="./dist/stdlib.js"></script>
+    <script src="./dist/specs.js"></script>
     <script src="./dist/vm.js"></script>
   </body>
 </html>

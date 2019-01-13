@@ -50,16 +50,16 @@ if(Platform.isNode()) {
   Platform.fileSearch = noop
 
   Platform.findCoreLibs = (callback) => {
-    let coreFiles = (<any>window).Core
-    coreFiles.forEach((path, content) => {
-      callback(content, path)
+    let coreFiles = (<any>window).FakeFS.all("lib/core")
+    coreFiles.forEach((content, path) => {
+      callback(path, content)
     })
   }
 
   Platform.findStdLibs = (callback) => {
-    let stdlibFiles = (<any>window).StdLib
-    stdlibFiles.forEach((path, content) => {
-      callback(content, path)
+    let stdlibFiles = (<any>window).FakeFS.all("lib/stdlib")
+    stdlibFiles.forEach((content, path) => {
+      callback(path, content)
     })
   }
 }

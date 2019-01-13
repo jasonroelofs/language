@@ -7,3 +7,4 @@ node_modules
 # Script-Built web files
 web/core.js
 web/stdlib.js
+web/specs.js

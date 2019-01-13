@@ -18,6 +18,10 @@ testRunner = Runner.new(
 testRunner.run()
 `
 
+/**
+ * Intercept stdout via IO.puts or IO.print to put those strings
+ * into our results field instead
+ */
 AddSlot(BuiltIn, ToObject("puts"), BuiltInFunc(function(args) {
   currentStdOut += args["message"].data + "<br>"
   return Null
@@ -67,6 +71,7 @@ codeEl.addEventListener("input", () => {
     currentStdOut = ""
   } catch(error) {
     console.log(error)
+    console.log("\t at %s:%s", error.file, error.line)
   }
 })
 

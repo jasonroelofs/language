@@ -20,6 +20,10 @@ class FakeFS {
     return toReturn
   }
 
+  get(path) {
+    return this.files.get(path)
+  }
+
   addFile(path, content) {
     this.files.set(path, content)
   }

@@ -11,8 +11,6 @@ var Platform: any = {
   },
 }
 
-var noop = () => {}
-
 if(Platform.isNode()) {
 
   Platform.isDirectory = (path) => {
@@ -45,9 +43,15 @@ if(Platform.isNode()) {
   }
 
 } else {
-  Platform.isDirectory = noop
-  Platform.readFile = noop
-  Platform.fileSearch = noop
+  Platform.isDirectory = () => {
+    return false
+  }
+
+  Platform.fileSearch = () => {}
+
+  Platform.readFile = (filePath) => {
+    return (<any>window).FakeFS.get(filePath)
+  }
 
   Platform.findCoreLibs = (callback) => {
     let coreFiles = (<any>window).FakeFS.all("lib/core")

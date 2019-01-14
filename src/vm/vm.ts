@@ -71,7 +71,7 @@ export default class VM {
     let p = new Parser(tokens)
     var expressions = p.parse()
 
-    return this.interpreter.evalFile(expressions)
+    return this.interpreter.eval(expressions)
   }
 
   evalBlockWithArgs(receiver, block, args = []) {

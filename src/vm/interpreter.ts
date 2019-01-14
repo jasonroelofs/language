@@ -94,12 +94,6 @@ export default class Interpreter {
     }
   }
 
-  // Given a set of expressions from the Parser, evaluate them in
-  // the context of the current space.
-  evalFile(expressions: Array<Expression>): IObject {
-    return this.eval(expressions)
-  }
-
   eval(expressions: Array<Expression>): IObject {
     var ret = Null
 

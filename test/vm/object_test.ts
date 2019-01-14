@@ -3,7 +3,7 @@ import * as assert from "assert"
 import {
   IObject, ToObject, AsString, Objekt,
   Number, String,
-  NewObject, SendMessage, AddSlot, GetSlot, AddParent,
+  NewObject, SendMessage, SetSlot, GetSlot, AddParent,
 } from "@vm/object"
 
 describe("Object", () => {
@@ -45,7 +45,7 @@ describe("Object", () => {
   it("sends messages to objects", () => {
     let one = ToObject(1)
     let obj = NewObject(Objekt)
-    AddSlot(obj, ToObject("one"), one)
+    SetSlot(obj, ToObject("one"), one)
 
     let result = SendMessage(obj, ToObject("one"))
 
@@ -73,7 +73,7 @@ describe("Object", () => {
     let child1 = NewObject(parent)
     let child2 = NewObject(parent)
 
-    AddSlot(parent, ToObject("test"), str)
+    SetSlot(parent, ToObject("test"), str)
 
     assert.equal(SendMessage(child2, ToObject("test")), str)
     assert.equal(SendMessage(child1, ToObject("test")), str)
@@ -85,12 +85,12 @@ describe("Object", () => {
     let gp1 = NewObject(Objekt)
     let p1 = NewObject(gp1)
 
-    AddSlot(gp1, ToObject("one"), ToObject(1))
+    SetSlot(gp1, ToObject("one"), ToObject(1))
 
     let gp2 = NewObject(Objekt)
-    AddSlot(gp2, ToObject("two"), ToObject(2))
+    SetSlot(gp2, ToObject("two"), ToObject(2))
     let p2 = NewObject(gp2)
-    AddSlot(p2, ToObject("three"), ToObject(3))
+    SetSlot(p2, ToObject("three"), ToObject(3))
 
     obj.parents.push(p1)
     obj.parents.push(p2)
@@ -106,7 +106,7 @@ describe("Object", () => {
   it("allows getting the Slot meta-object", () => {
     let str = ToObject("testing")
     let five = ToObject(5)
-    AddSlot(str, ToObject("count"), five)
+    SetSlot(str, ToObject("count"), five)
 
     let slot = GetSlot(str, ToObject("count"))
 
@@ -117,7 +117,7 @@ describe("Object", () => {
     let str = ToObject("testing")
     let five = ToObject(5)
     let comment = ToObject("The number of characters that might be in this string")
-    AddSlot(str, ToObject("count"), five, comment)
+    SetSlot(str, ToObject("count"), five, comment)
 
     let slot = GetSlot(str, ToObject("count"))
 

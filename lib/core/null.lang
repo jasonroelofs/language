@@ -1,4 +1,4 @@
-Null.addSlots(
+Null.setSlots(
   # Null is a falsey value and thus the `do` message will always run the `ifFalse` block.
   do: { |ifTrue: {}, ifFalse: {}|
     ifFalse()

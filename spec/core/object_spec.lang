@@ -57,9 +57,9 @@ Test.describe("Object", as: { |test|
 
   test("send", is: { |assert|
     obj = Object.new(slot1: "a value")
-    obj.addSlot("long slot name", as: "long slot value")
-    obj.addSlot("method call", as: { 1 })
-    obj.addSlot("with args", as: { |x, y| x * y })
+    obj.setSlot("long slot name", as: "long slot value")
+    obj.setSlot("method call", as: { 1 })
+    obj.setSlot("with args", as: { |x, y| x * y })
 
     assert(obj.send("slot1") == "a value")
     assert(obj.send("long slot name") == "long slot value")

@@ -17,7 +17,7 @@ import {
   IObject,
   NewObject,
   SendMessage,
-  AddSlot,
+  SetSlot,
   AddParent,
   FindIn,
   ObjectIs,
@@ -71,7 +71,7 @@ export default class Interpreter {
 
     // Expose static values from the runtime into the language
     let Process = SendMessage(this.currentSpace, AsString("Process"))
-    AddSlot(Process, AsString("argv"), ToObject(argv))
+    SetSlot(Process, AsString("argv"), ToObject(argv))
 
     this.pushSpace(this.currentSpace)
   }
@@ -115,12 +115,12 @@ export default class Interpreter {
       case NodeType.Assignment:
         let varName = AsString(node.name)
         let varValue = this.evalNode(node.right)
-        AddSlot(varValue, AsString("objectName"), varName)
+        SetSlot(varValue, AsString("objectName"), varName)
 
         // Look up the space stack to find the first scope that already has this
         // slot defined and assume that is the scope we should also be changing values in
         let owningObject = FindIn(this.currentSpace, (obj) => obj.slots.has(node.name))
-        AddSlot(owningObject || this.currentSpace, varName, varValue, ToObject(node.comment))
+        SetSlot(owningObject || this.currentSpace, varName, varValue, ToObject(node.comment))
 
         return varValue
 
@@ -164,9 +164,9 @@ export default class Interpreter {
 
   evalBlockLiteral(node: BlockNode): IObject {
     let block = NewObject(this.Block)
-    AddSlot(block, AsString("body"), NewObject(Objekt, node.body))
-    AddSlot(block, AsString("parameters"), NewObject(Objekt, node.parameters))
-    AddSlot(block, AsString("scope"), this.currentSpace)
+    SetSlot(block, AsString("body"), NewObject(Objekt, node.body))
+    SetSlot(block, AsString("parameters"), NewObject(Objekt, node.parameters))
+    SetSlot(block, AsString("scope"), this.currentSpace)
 
     block.codeBlock = true
 
@@ -211,7 +211,7 @@ export default class Interpreter {
           let argName: string
 
           for(var idx in args) {
-            // TODO: For things like addSlot, if the first parameter doesn't have a name,
+            // TODO: For things like setSlot, if the first parameter doesn't have a name,
             // what should the name of the argument be?
             // Maybe builtInFunc should take a list of the argument names we expect?
             argName = args[idx].name ? args[idx].name : "0"
@@ -327,7 +327,7 @@ export default class Interpreter {
     // If this block is owned by an explicit object, we need to make sure
     // that the `self` slot is set appropriately to that object.
     if(receiver) {
-      AddSlot(this.currentSpace, AsString("self"), receiver)
+      SetSlot(this.currentSpace, AsString("self"), receiver)
 
       // Also inject the receiver in the current scope to ensure slot lookups
       // properly check this object.
@@ -337,10 +337,10 @@ export default class Interpreter {
     }
 
     // Expose a copy of the call stack
-    AddSlot(this.currentSpace, AsString("sender"), ToObject(this.callStack))
+    SetSlot(this.currentSpace, AsString("sender"), ToObject(this.callStack))
 
     for(var parts of args) {
-      AddSlot.call(null, this.currentSpace, ...parts)
+      SetSlot.call(null, this.currentSpace, ...parts)
     }
 
     let result = this.eval(codeBody)
@@ -363,10 +363,10 @@ export default class Interpreter {
     let activation = NewObject(this.ActivationRecord)
     activation.codeBlock = true
 
-    AddSlot(activation, AsString("block"), codeBlock)
+    SetSlot(activation, AsString("block"), codeBlock)
 
     if(receiver) {
-      AddSlot(activation, AsString("receiver"), receiver)
+      SetSlot(activation, AsString("receiver"), receiver)
     }
 
     return activation
@@ -377,8 +377,8 @@ export default class Interpreter {
 
     // TODO Something that lets us print out the name of the message?
     // Line is 0-based internally, so we push it to 1-based here for user readability
-    AddSlot(sender, AsString("line"), ToObject(node.token.line + 1))
-    AddSlot(sender, AsString("file"), AsString(node.token.file))
+    SetSlot(sender, AsString("line"), ToObject(node.token.line + 1))
+    SetSlot(sender, AsString("file"), AsString(node.token.file))
 
     // We make use of shift/unshift to keep a reverse order so that in the language
     // `sender` is in the order of most recent call stack first.
@@ -397,8 +397,8 @@ export default class Interpreter {
     let previousSpace = this.currentSpace
 
     this.currentSpace = NewObject(newSpace)
-    AddSlot(this.currentSpace, AsString("space"), this.currentSpace)
-    AddSlot(this.currentSpace, AsString("objectName"), ToObject(`Space (${this.currentSpace.objectId})`))
+    SetSlot(this.currentSpace, AsString("space"), this.currentSpace)
+    SetSlot(this.currentSpace, AsString("objectName"), ToObject(`Space (${this.currentSpace.objectId})`))
 
     // Link this space back to the previous space so we can keep a proper
     // stack of spaces, ensuring correct scoping at all times.
@@ -416,7 +416,7 @@ export default class Interpreter {
     // providing the JS exception as its `data` field.
     if(orig instanceof Error) {
       exception = NewObject(this.Exception, orig)
-      AddSlot(exception, AsString("message"), ToObject(orig.message))
+      SetSlot(exception, AsString("message"), ToObject(orig.message))
 
       // For non-lanuage exceptions, we can also be given an explicit AST node
       // that triggerd this call, letting us link our exception wrapper back
@@ -432,7 +432,7 @@ export default class Interpreter {
     // TODO This is a little messy checking for lexer/parser errors
     // at this level. Possibly a place for pulling out logic.
     if((orig instanceof errors.RuntimeError) || (orig instanceof SyntaxError)) {
-      AddSlot(exception, AsString("message"), ToObject(orig.errorType()))
+      SetSlot(exception, AsString("message"), ToObject(orig.errorType()))
     }
 
     // Apply our language-level call stack to the new exception
@@ -447,7 +447,7 @@ export default class Interpreter {
       // We have to push one more time at the point of failure to make sure
       // the top of the exceptions backtrace points to the actual line of failure/throw.
       this.pushCallStack((exception.data && exception.data.token) ? exception.data : exception.astNode)
-      AddSlot(exception, AsString("backtrace"), ToObject(this.callStack))
+      SetSlot(exception, AsString("backtrace"), ToObject(this.callStack))
       this.popCallStack()
     }
 

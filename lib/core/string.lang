@@ -1,4 +1,4 @@
-String.addSlots(
+String.setSlots(
   # Concatenate multiple strings together into one string.
   # Calls `toString` on the concatenating object to ensure all values
   # are strings and can be combined.

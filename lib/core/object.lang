@@ -1,4 +1,4 @@
-Object.addSlots(
+Object.setSlots(
 
   # Return the list of parent objects to this object
   parents: {
@@ -6,8 +6,8 @@ Object.addSlots(
   },
 
   # Add a single slot to this object.
-  addSlot: { |name, as|
-    BuiltIn.objectAddSlot(object: self, name: name, as: as)
+  setSlot: { |name, as|
+    BuiltIn.objectSetSlot(object: self, name: name, as: as)
   },
 
   # Find a given slot in this object and instead of returning the value at that slot,

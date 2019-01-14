@@ -1,5 +1,5 @@
 import VM from "vm/vm.js"
-import { Null, SendMessage, ToObject, AddSlot } from "vm/object.js"
+import { Null, SendMessage, ToObject, SetSlot } from "vm/object.js"
 import { BuiltIn, BuiltInFunc } from "vm/core.js"
 
 var vm = new VM()
@@ -22,12 +22,12 @@ testRunner.run()
  * Intercept stdout via IO.puts or IO.print to put those strings
  * into our results field instead
  */
-AddSlot(BuiltIn, ToObject("puts"), BuiltInFunc(function(args) {
+SetSlot(BuiltIn, ToObject("puts"), BuiltInFunc(function(args) {
   currentStdOut += args["message"].data + "<br>"
   return Null
 }))
 
-AddSlot(BuiltIn, ToObject("print"), BuiltInFunc(function(args) {
+SetSlot(BuiltIn, ToObject("print"), BuiltInFunc(function(args) {
   currentStdOut += args["message"].data
   return Null
 }))

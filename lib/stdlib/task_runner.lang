@@ -4,7 +4,7 @@ TaskRunner = Object.new(
   tasks: Object.new(),
 
   define: { |name, is|
-    tasks.addSlot(name: name, as: Task.new(name: name, is: is))
+    tasks.setSlot(name: name, as: Task.new(name: name, is: is))
   },
 
   taskNames: {

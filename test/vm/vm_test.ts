@@ -262,17 +262,17 @@ describe("VM", () => {
     let vm = new VM()
 
     // Get raw values back
-    vm.eval(`obj = Object.new(); obj.addSlot("size", as: 3)`)
+    vm.eval(`obj = Object.new(); obj.setSlot("size", as: 3)`)
     var result = vm.eval("obj.size")
     assert.equal(result.data, 3)
 
     // Eval a block with no arguments
-    vm.eval(`obj = Object.new(); obj.addSlot("count", as: { 5 })`)
+    vm.eval(`obj = Object.new(); obj.setSlot("count", as: { 5 })`)
     var result = vm.eval("obj.count()")
     assert.equal(result.data, 5)
 
     // Call blocks at the slot with arguments
-    vm.eval(`obj = Object.new(); obj.addSlot("pow", as: { |x| x * x })`)
+    vm.eval(`obj = Object.new(); obj.setSlot("pow", as: { |x| x * x })`)
     result = vm.eval("obj.pow(3)")
     assert.equal(result.data, 9)
   })

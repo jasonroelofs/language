@@ -1,4 +1,4 @@
-Array.addSlots(
+Array.setSlots(
 
   # Access the value at the given 0-based index
   # Callable with the syntax: array[index]

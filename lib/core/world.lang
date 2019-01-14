@@ -1,4 +1,4 @@
-World.addSlots(
+World.setSlots(
   # Given a file path, evaluate the content of that file in the context
   # of this object. By default this will always load the content into the
   # top level World, but providing `into` lets the code specify a different

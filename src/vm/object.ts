@@ -182,7 +182,7 @@ function FindIn(obj: IObject, checkFunc: FindInCheckFunc, seen: Set<number> = nu
  * Apply a slot to the given Object.
  * Name of the slot needs to be a String. The value can be any object.
  */
-function AddSlot(receiver: IObject, message: IObject, value: IObject, comments: IObject = Null) {
+function SetSlot(receiver: IObject, message: IObject, value: IObject, comments: IObject = Null) {
   let metaSlot = NewObject(Slot)
   metaSlot.astNode = value.astNode
   metaSlot.slots.set("value", value)
@@ -249,14 +249,14 @@ var Slot = NewObject(Objekt, null, {objectId: 8})
 // Assign objectName values for each of our built-ins
 // Order of operations is important here as we need to not try to use String
 // before it's been defined.
-AddSlot(Objekt, AsString("objectName"), AsString("Object"))
-AddSlot(Null, AsString("objectName"), AsString("Null"))
-AddSlot(True, AsString("objectName"), AsString("True"))
-AddSlot(False, AsString("objectName"), AsString("False"))
-AddSlot(Number, AsString("objectName"), AsString("Number"))
-AddSlot(String, AsString("objectName"), AsString("String"))
-AddSlot(Array, AsString("objectName"), AsString("Array"))
-AddSlot(Slot, AsString("objectName"), AsString("Slot"))
+SetSlot(Objekt, AsString("objectName"), AsString("Object"))
+SetSlot(Null, AsString("objectName"), AsString("Null"))
+SetSlot(True, AsString("objectName"), AsString("True"))
+SetSlot(False, AsString("objectName"), AsString("False"))
+SetSlot(Number, AsString("objectName"), AsString("Number"))
+SetSlot(String, AsString("objectName"), AsString("String"))
+SetSlot(Array, AsString("objectName"), AsString("Array"))
+SetSlot(Slot, AsString("objectName"), AsString("Slot"))
 
 function ToObject(nativeValue: any): IObject {
   if(nativeValue === undefined || nativeValue === null) {
@@ -332,7 +332,7 @@ export {
   IObject,
   NewObject,
   SendMessage,
-  AddSlot,
+  SetSlot,
   RemoveSlot,
   GetSlot,
   AddParent,

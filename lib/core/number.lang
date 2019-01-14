@@ -1,4 +1,4 @@
-Number.addSlots(
+Number.setSlots(
   "+": { |other|
     BuiltIn.numberOp(left: self, op: "+", right: other)
   },

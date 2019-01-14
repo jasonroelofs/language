@@ -1,4 +1,4 @@
-True.addSlots(
+True.setSlots(
   # The `do` message on True will always execute the `ifTrue` block.
   do: { |ifTrue: {}, ifFalse: {}|
     ifTrue()

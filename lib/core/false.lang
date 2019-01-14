@@ -1,4 +1,4 @@
-False.addSlots(
+False.setSlots(
   # The `do` message on False will always execute the `ifFalse` block.
   do: { |ifTrue: {}, ifFalse: {}|
     ifFalse()

@@ -190,8 +190,8 @@ describe("Parser", () => {
       receiver: { type: NodeType.Identifier, value: "a" },
       message: "call",
       args: [
-        { value: { type: NodeType.Block, parameters: [], body: [] } },
-        { name: "c", value: { type: NodeType.Block, parameters: [], body: [] } },
+        { value: { type: NodeType.BlockLiteral, parameters: [], body: [] } },
+        { name: "c", value: { type: NodeType.BlockLiteral, parameters: [], body: [] } },
       ]
     })
 
@@ -377,7 +377,7 @@ describe("Parser", () => {
     let tests = {
       // Plain block, no parameters
       "{ 1 }": {
-        type: NodeType.Block,
+        type: NodeType.BlockLiteral,
         parameters: [],
         body: [
           { node: { type: NodeType.NumberLiteral, value: 1 } }
@@ -385,7 +385,7 @@ describe("Parser", () => {
       },
       // Block with one parameter
       "{ |a| a }": {
-        type: NodeType.Block,
+        type: NodeType.BlockLiteral,
         parameters: [
           { type: NodeType.Parameter, name: "a", default: null }
         ],
@@ -395,7 +395,7 @@ describe("Parser", () => {
       },
       // Multiple parameters
       "{ |a, b, c| a; b; c }": {
-        type: NodeType.Block,
+        type: NodeType.BlockLiteral,
         parameters: [
           { type: NodeType.Parameter, name: "a", default: null },
           { type: NodeType.Parameter, name: "b", default: null },
@@ -409,7 +409,7 @@ describe("Parser", () => {
       },
       // Parameters with defaults
       "{ |a: 1, b: 2 + 4, c: a + b| c }": {
-        type: NodeType.Block,
+        type: NodeType.BlockLiteral,
         parameters: [
           {
             type: NodeType.Parameter,
@@ -435,7 +435,7 @@ describe("Parser", () => {
       "{ 1 }()": {
         type: NodeType.MessageSend,
         receiver: {
-          type: NodeType.Block,
+          type: NodeType.BlockLiteral,
           parameters: [],
           body: [
             { node: { type: NodeType.NumberLiteral, value: 1 } }

@@ -5,6 +5,7 @@ export enum NodeType {
   StringLiteral = "StringLiteral",
   BooleanLiteral = "BooleanLiteral",
   NullLiteral = "NullLiteral",
+  BlockLiteral = "BlockLiteral",
 
   Identifier = "Identifier",
   Assignment = "Assignment",
@@ -13,7 +14,6 @@ export enum NodeType {
   Message = "Message",
   Argument = "Argument",
   Parameter = "Parameter",
-  Block = "Block",
 }
 
 export interface Node {

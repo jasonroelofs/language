@@ -309,7 +309,7 @@ export default class Parser {
     let startToken = this.currToken()
     this.nextToken()
 
-    let node: BlockNode = { type: NodeType.Block, parameters: [], body: [], token: startToken }
+    let node: BlockNode = { type: NodeType.BlockLiteral, parameters: [], body: [], token: startToken }
 
     if(this.isEndOfStatement()) {
       throw new errors.UnmatchedClosingTagError(startToken, this.currOrPreviousToken(), "}")

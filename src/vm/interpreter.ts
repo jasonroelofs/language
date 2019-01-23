@@ -150,7 +150,7 @@ export default class Interpreter {
       case NodeType.NullLiteral:
         return Null
 
-      case NodeType.Block:
+      case NodeType.BlockLiteral:
         return this.evalBlockLiteral(node as BlockNode)
 
       case NodeType.MessageSend:

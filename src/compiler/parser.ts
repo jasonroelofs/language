@@ -9,7 +9,6 @@ import {
   MessageNode,
   BlockNode,
   ParameterNode,
-  Expression,
   NodeType
 } from "@compiler/ast"
 import * as errors from "@compiler/errors"
@@ -103,19 +102,19 @@ export default class Parser {
     var stmt = null
 
     while (this.index < this.tokens.length) {
-      stmt = this.parseStatement()
+      stmt = this.parseNext()
 
       if(!stmt) {
         break
       }
 
-      expressions.push({node: stmt})
+      expressions.push(stmt)
     }
 
     return expressions
   }
 
-  parseStatement() {
+  parseNext() {
     this.checkForComments()
 
     // The file is all comments, abort this process
@@ -123,16 +122,16 @@ export default class Parser {
       return null
     }
 
-    let stmt = this.parseExpression(Precedence.Lowest)
+    let node = this.parseExpression(Precedence.Lowest)
 
     this.checkEndOfStatement()
 
     let comment = this.getAndClearCurrentComments()
     if(comment != "") {
-      stmt.comment = comment
+      node.comment = comment
     }
 
-    return stmt
+    return node
   }
 
   checkForComments() {
@@ -278,7 +277,7 @@ export default class Parser {
 
       arrayEntries.push({
         name: `${argCount}`,
-        value: this.parseStatement()
+        value: this.parseNext()
       })
       argCount += 1
 
@@ -386,7 +385,7 @@ export default class Parser {
         break
       }
 
-      node.body.push({ node: this.parseStatement() })
+      node.body.push(this.parseNext())
     }
 
     if(!this.currTokenIs(TokenType.CloseBlock)) {
@@ -664,7 +663,7 @@ export default class Parser {
       this.nextToken()
 
       // See if we have any comments for attaching,
-      // and if so grab them before parseStatement does.
+      // and if so grab them before parseNext does.
       if(this.currentComment.length > 0) {
         argNode['comment'] = this.currentComment.join("\n")
         this.clearCurrentComments()
@@ -676,7 +675,7 @@ export default class Parser {
         throw new errors.MissingArgumentValueError(this.currToken())
       }
 
-      argNode['value'] = this.parseStatement()
+      argNode['value'] = this.parseNext()
 
       callMsg.message.arguments.push(argNode)
 

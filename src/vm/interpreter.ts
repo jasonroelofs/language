@@ -9,7 +9,6 @@ import {
   ArgumentNode,
   ParameterNode,
   NodeType,
-  Expression,
 } from "@compiler/ast"
 import * as errors from "@vm/errors"
 import { SyntaxError } from "@compiler/errors"
@@ -94,11 +93,11 @@ export default class Interpreter {
     }
   }
 
-  eval(expressions: Array<Expression>): IObject {
+  eval(expressions: Array<Node>): IObject {
     var ret = Null
 
-    for(var expression of expressions) {
-      ret = this.evalNode(expression.node)
+    for(var node of expressions) {
+      ret = this.evalNode(node)
     }
 
     return ret

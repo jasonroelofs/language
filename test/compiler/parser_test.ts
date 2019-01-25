@@ -195,10 +195,10 @@ describe("Parser", () => {
       ]
     })
 
-    let expressions = parse(test)
+    let nodes = parse(test)
 
-    assert.equal(expressions.length, 2)
-    assert.deepEqual(removeStrayKeys(expressions[0].node), expected, `Comparison failed for ''${test}''`)
+    assert.equal(nodes.length, 2)
+    assert.deepEqual(removeStrayKeys(nodes[0]), expected, `Comparison failed for ''${test}''`)
   })
 
   it("parses array literals into message sends", () => {
@@ -380,7 +380,7 @@ describe("Parser", () => {
         type: NodeType.BlockLiteral,
         parameters: [],
         body: [
-          { node: { type: NodeType.NumberLiteral, value: 1 } }
+          { type: NodeType.NumberLiteral, value: 1 }
         ]
       },
       // Block with one parameter
@@ -390,7 +390,7 @@ describe("Parser", () => {
           { type: NodeType.Parameter, name: "a", default: null }
         ],
         body: [
-          { node: { type: NodeType.Identifier, value: "a" } }
+          { type: NodeType.Identifier, value: "a" }
         ]
       },
       // Multiple parameters
@@ -402,9 +402,9 @@ describe("Parser", () => {
           { type: NodeType.Parameter, name: "c", default: null },
         ],
         body: [
-          { node: { type: NodeType.Identifier, value: "a" } },
-          { node: { type: NodeType.Identifier, value: "b" } },
-          { node: { type: NodeType.Identifier, value: "c" } },
+          { type: NodeType.Identifier, value: "a" },
+          { type: NodeType.Identifier, value: "b" },
+          { type: NodeType.Identifier, value: "c" },
         ]
       },
       // Parameters with defaults
@@ -428,7 +428,7 @@ describe("Parser", () => {
           },
         ],
         body: [
-          { node: { type: NodeType.Identifier, value: "c" } }
+          { type: NodeType.Identifier, value: "c" }
         ]
       },
       // Direct calls to standalone blocks
@@ -438,7 +438,7 @@ describe("Parser", () => {
           type: NodeType.BlockLiteral,
           parameters: [],
           body: [
-            { node: { type: NodeType.NumberLiteral, value: 1 } }
+            { type: NodeType.NumberLiteral, value: 1 }
           ]
         },
         message: {
@@ -469,27 +469,27 @@ describe("Parser", () => {
       d = Object.new()
     `
 
-    let expressions = parse(test)
+    let nodes = parse(test)
 
-    assert.equal(expressions.length, 4)
+    assert.equal(nodes.length, 4)
 
     assert.deepEqual(
-      removeStrayKeys(expressions[0].node),
+      removeStrayKeys(nodes[0]),
       { type: NodeType.Identifier, value: "a", comment: "Attach to the next expression" }
     )
 
     assert.deepEqual(
-      removeStrayKeys(expressions[1].node),
+      removeStrayKeys(nodes[1]),
       { type: NodeType.Identifier, value: "b" }
     )
 
     assert.deepEqual(
-      removeStrayKeys(expressions[2].node),
+      removeStrayKeys(nodes[2]),
       { type: NodeType.Identifier, value: "c", comment: "Multi-line\nComments\nare re-combined" }
     )
 
     assert.deepEqual(
-      removeStrayKeys(expressions[3].node),
+      removeStrayKeys(nodes[3]),
       {
         type: NodeType.Assignment,
         name: "d",
@@ -511,9 +511,9 @@ describe("Parser", () => {
       # want running.
     `
 
-    let expressions = parse(test)
+    let nodes = parse(test)
 
-    assert.equal(expressions.length, 0)
+    assert.equal(nodes.length, 0)
   })
 
   it("handles blocks that are nothing but comments", () => {
@@ -526,9 +526,9 @@ describe("Parser", () => {
       }
     `
 
-    let expressions = parse(test)
+    let nodes = parse(test)
 
-    assert.equal(expressions.length, 1)
+    assert.equal(nodes.length, 1)
   })
 
   it("handles blocks that end with a comment", () => {
@@ -539,9 +539,9 @@ describe("Parser", () => {
       }
     `
 
-    let expressions = parse(test)
+    let nodes = parse(test)
 
-    assert.equal(expressions.length, 1)
+    assert.equal(nodes.length, 1)
   })
 
   it("handles argument lists that end with comments", () => {
@@ -552,9 +552,9 @@ describe("Parser", () => {
       )
     `
 
-    let expressions = parse(test)
+    let nodes = parse(test)
 
-    assert.equal(expressions.length, 1)
+    assert.equal(nodes.length, 1)
   })
 
   it("supports attaching comments to method arguments", () => {
@@ -573,11 +573,11 @@ describe("Parser", () => {
       )
     `
 
-    let expressions = parse(test)
+    let nodes = parse(test)
 
-    assert.equal(expressions.length, 1)
+    assert.equal(nodes.length, 1)
 
-    let message = expressions[0].node.message
+    let message = nodes[0].message
 
     assert.equal(message.arguments[0].comment, "This is the first method")
     assert.equal(message.arguments[1].comment, "This is the second method")
@@ -597,9 +597,9 @@ describe("Parser", () => {
       )
     `
 
-    let expressions = parse(test)
+    let nodes = parse(test)
 
-    assert.equal(expressions.length, 2)
+    assert.equal(nodes.length, 2)
   })
 
   describe("Error handling", () => {
@@ -762,7 +762,7 @@ describe("Parser", () => {
 
       try {
         let parser = new Parser(tokens)
-        var expressions = parser.parse()
+        var nodes = parser.parse()
         errorThrown = false
 
       } catch(error) {
@@ -817,11 +817,11 @@ function messageSendNode({receiver, message, args}) {
 
 function assertExpression(input, expected) {
   try {
-    let expressions = parse(input)
+    let nodes = parse(input)
 
-    assert.equal(expressions.length, 1, "Wrong number of expressions returned")
+    assert.equal(nodes.length, 1, "Wrong number of expressions returned")
 
-    assert.deepEqual(removeStrayKeys(expressions[0].node), expected, `Comparison failed for ''${input}''`)
+    assert.deepEqual(removeStrayKeys(nodes[0]), expected, `Comparison failed for ''${input}''`)
   } catch(e) {
     assert.fail(e)
   }

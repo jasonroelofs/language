@@ -61,9 +61,5 @@ export interface ParameterNode extends Node {
 
 export interface BlockNode extends Node {
   parameters: ParameterNode[]
-  body: Expression[]
-}
-
-export interface Expression {
-  node: Node
+  body: Node[]
 }

@@ -42,7 +42,12 @@ if(Platform.isNode()) {
     })
   }
 
+  Platform.nextTick = (callback) => {
+    setImmediate(callback)
+  }
+
 } else {
+
   Platform.isDirectory = () => {
     return false
   }
@@ -65,6 +70,10 @@ if(Platform.isNode()) {
     stdlibFiles.forEach((content, path) => {
       callback(path, content)
     })
+  }
+
+  Platform.nextTick = (callback) => {
+    setTimeout(callback, 0)
   }
 }
 

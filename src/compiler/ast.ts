@@ -14,6 +14,8 @@ export enum NodeType {
   Message = "Message",
   Argument = "Argument",
   Parameter = "Parameter",
+
+  ReturnValue = "ReturnValue",
 }
 
 export interface Node {

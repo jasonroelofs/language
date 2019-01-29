@@ -15,6 +15,8 @@ export enum NodeType {
   Argument = "Argument",
   Parameter = "Parameter",
 
+  EvalAssignment = "EvalAssignment",
+  EvalMessageSend = "EvalMessageSend",
   ReturnValue = "ReturnValue",
 }
 

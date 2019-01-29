@@ -14,6 +14,7 @@ import {
   SetSlot,
   ToObject,
   AsString,
+  FindIn,
   Number,
   True,
   False,
@@ -231,10 +232,11 @@ export default class WebSafeInterpreter {
        */
 
       case NodeType.EvalAssignment:
-        this.evalAssignment(node as EvalAssignmentNode)
+        this.evalAssignment(node as EvalNode)
         break
 
       case NodeType.EvalMessageSend:
+        this.evalMessageSend(node as EvalNode)
         break
 
       default:
@@ -258,24 +260,10 @@ export default class WebSafeInterpreter {
   }
 
   pushMessageSend(node: MessageSendNode) {
-    /*
-    this.eval([{
-      type: EvalMessageSend,
-      node: node,
-      message: node.message,
-      receiver: this.eval([node.receiver])
-    }])
-    if(node.message == "call") {
-      this.eval([{
-        
-      }])
-    } else {
-
-    }
-     */
+    this.pushEval(node, NodeType.EvalMessageSend, [node.receiver])
   }
 
-  evalAssignment(node: EvalAssignmentNode) {
+  evalAssignment(node: EvalNode) {
     let varName = AsString(node.node.name)
     let varValue = node.value.value
     SetSlot(varValue, AsString("objectName"), varName)
@@ -286,6 +274,14 @@ export default class WebSafeInterpreter {
 
     // Assignment always returns the value that was assigned
     this.pushData(varValue)
+  }
+
+  evalMessageSend(node: EvalNode) {
+    let receiver = node.value.value
+    let message = AsString(node.node.message.name)
+
+    let slotValue = SendMessage(receiver, message)
+    this.pushData(slotValue)
   }
 
   pushEval(node: Node, nodeType: NodeType, toEval: Node[]) {
@@ -385,7 +381,4 @@ interface EvalNode extends Node {
   // The underlying Promise so calls into the interpreter can
   // properly wait for a response
   promise: Promise<IObject>
-}
-
-interface EvalAssignmentNode extends EvalNode {
 }

@@ -7,6 +7,7 @@ import {
   False,
   Null,
   SendMessage,
+  AsString,
 } from "@vm/object"
 import Lexer from "@compiler/lexer"
 import Parser from "@compiler/parser"
@@ -74,6 +75,22 @@ describe("Web Safe VM", () => {
       "a = 1": ToObject(1),
       // Accessing the local slot returns the stored value
       "a = 2; a": ToObject(2),
+    }
+
+    for(var test in tests) {
+      await assertObjectEval(test, tests[test])
+    }
+  })
+
+  it("assigns object names to values stored in variables", async () => {
+    let tests = {
+      //"World.objectName": AsString("World"),
+      //"Object.objectName": AsString("Object"),
+      "a = 1; a.objectName": AsString("a"),
+      //"dog = Object.new(); dog.objectName": AsString("dog"),
+      // Make sure that multiple assignment to the same static value
+      // gets its own name (e.g. we aren't overwriting Number.objectName).
+      "a = 1; b = 1; a.objectName": AsString("a")
     }
 
     for(var test in tests) {

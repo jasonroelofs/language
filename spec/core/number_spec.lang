@@ -60,6 +60,12 @@ Test.describe("Number", as: { |test|
     assert(!(1 != 1))
   })
 
+  test("operator precedence", is: { |assert|
+    assert(1 + 2 * 3 == 7)
+    assert(2 / 1 + 4 == 6)
+    assert(1 * 2 + 3 - 4 / 2 == 3)
+  })
+
   test("times", is: { |assert|
     count = 0
 

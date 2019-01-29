@@ -1,6 +1,10 @@
 # import("test")
 
 Test.describe("Null", as: { |test|
+  test("!", is: { |assert|
+    assert(!null)
+  })
+
   test("toString", is: { |assert|
     assert(null.toString() == "null")
   })

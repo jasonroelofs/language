@@ -226,7 +226,6 @@ function ObjectIs(obj: IObject, expected: IObject): IObject {
   return False
 }
 
-
 /**
  * The base of all objects.
  * Sorry, this can't be "Object" in javascript land. That name is already taken

@@ -123,7 +123,6 @@ export default class WebSafeInterpreter {
     // Also, we also have to set up a Return expression that will
     // run as the last expression in the list, so it goes on first.
 
-    //let promise = new Promise<IObject>((resolve, reject) => {})
     let result = new ReturnValue()
     this.pushCode(result)
 
@@ -157,16 +156,20 @@ export default class WebSafeInterpreter {
 
     let next: Node
 
-    while((Date.now() - start) < window) {
-      next = this.popCode()
-      if(next) {
-        this._evalNode(next)
-      } else {
-        break
+    try {
+      while((Date.now() - start) < window) {
+        next = this.popCode()
+        if(next) {
+          this._evalNode(next)
+        } else {
+          break
+        }
       }
+    } catch (error) {
+      console.log(error)
+    } finally {
+      this._nextTick()
     }
-
-    this._nextTick()
   }
 
   _evalNode(node: Node) {
@@ -239,16 +242,23 @@ export default class WebSafeInterpreter {
         this.evalMessageSend(node as EvalNode)
         break
 
+      case NodeType.EvalBlock:
+        this.evalBlock(node as EvalNode)
+        break
+
       default:
         // Throw exception: don't now how to evaluate node type
     }
   }
 
   pushBlockLiteral(node: BlockNode) {
-    let block = NewObject(this.Block)
+    let block = NewObject(Objekt) // this.Block)
     SetSlot(block, AsString("body"), NewObject(Objekt, node.body))
     SetSlot(block, AsString("parameters"), NewObject(Objekt, node.parameters))
     SetSlot(block, AsString("scope"), this.currentSpace)
+
+    // TODO: TEMP Until we're loading the core library again
+    SetSlot(block, AsString("call"), block)
 
     block.codeBlock = true
 
@@ -260,16 +270,24 @@ export default class WebSafeInterpreter {
   }
 
   pushMessageSend(node: MessageSendNode) {
-    this.pushEval(node, NodeType.EvalMessageSend, [node.receiver])
+    let toEval = []
+
+    if(node.receiver) {
+      toEval.push(node.receiver)
+    }
+
+    this.pushEval(node, NodeType.EvalMessageSend, toEval)
   }
 
   evalAssignment(node: EvalNode) {
     let varName = AsString(node.node.name)
-    let varValue = node.value.value
+    let varValue = node.returnValue.value
     SetSlot(varValue, AsString("objectName"), varName)
 
-    // TODO The Ruby-esque scope / ownership lookup
-
+    // Look up the space stack to find the first scope that already has this
+    // slot defined and assume that is the scope we should also be changing values in
+    // let owningObject = FindIn(this.currentSpace, (obj) => obj.slots.has(node.name))
+    // SetSlot(owningObject || this.currentSpace, varName, varValue, ToObject(node.comment))
     SetSlot(this.currentSpace, varName, varValue)
 
     // Assignment always returns the value that was assigned
@@ -277,11 +295,24 @@ export default class WebSafeInterpreter {
   }
 
   evalMessageSend(node: EvalNode) {
-    let receiver = node.value.value
-    let message = AsString(node.node.message.name)
+    let receiver = node.returnValue.value || this.currentSpace
+    let message = node.node.message.name
 
-    let slotValue = SendMessage(receiver, message)
+    let slotValue = SendMessage(receiver, AsString(message))
+
     this.pushData(slotValue)
+
+    if(slotValue.codeBlock && message === "call") {
+      let codeBody = SendMessage(slotValue, AsString("body")).data
+      //let parameters = SendMessage(codeBlock, AsString("parameters")).data
+      //let scope = SendMessage(block, AsString("scope"))
+
+      this.pushEval(node, NodeType.EvalBlock, codeBody)
+    }
+  }
+
+  evalBlock(node: EvalNode) {
+    this.pushData(node.returnValue.value)
   }
 
   pushEval(node: Node, nodeType: NodeType, toEval: Node[]) {
@@ -291,7 +322,7 @@ export default class WebSafeInterpreter {
       token: node.token,
 
       // These will get filled in in a sec
-      value: null,
+      returnValue: null,
       promise: null,
     }
 
@@ -301,25 +332,24 @@ export default class WebSafeInterpreter {
     // This is done before we run toEval because we need our evalNode
     // to only run once all of its prequisites (toEval) are processed.
     this.pushCode(evalNode)
+    let returnValue
 
-    let returnValue = this.eval(toEval)
+    if(toEval.length > 0) {
+      returnValue = this.eval(toEval)
+    } else {
+      returnValue = new ImmediateReturnValue(null)
+    }
 
-    evalNode.value = returnValue
+    evalNode.returnValue = returnValue
     evalNode.promise = returnValue.promise
   }
 
   pushCode(node: Node) {
     this.codeStack.push(node)
-
-    // console.log("Code stack push %s. Stack now %o", node.type, this.codeStack.map((node) => node.type))
   }
 
   popCode(): Node {
-    let code = this.codeStack.pop()
-
-    // console.log("Popped %o", code.type)
-
-    return code
+    return this.codeStack.pop()
   }
 
   pushData(obj: IObject) {
@@ -355,10 +385,6 @@ class ReturnValue {
       this._resolve = resolve
       this._reject = reject
     })
-
-    this.promise.catch((error) => {
-      console.log(error)
-    })
   }
 
   resolve(value: IObject) {
@@ -368,6 +394,25 @@ class ReturnValue {
 
   get value() {
     return this._value
+  }
+
+  toString() {
+    return "ReturnValue"
+  }
+}
+
+/**
+ * For the cases that there isn't anything to evaluate but where
+ * there needs to be something returned, provide one of these
+ * with the value that's expected. The promise will be immediately resolved
+ * so there will be no waiting.
+ * This can be given Javascript's `null` in the case that you need to differentiate
+ * between `null` and the language's `Null`.
+ */
+class ImmediateReturnValue extends ReturnValue {
+  constructor(value: IObject) {
+    super()
+    this.resolve(value)
   }
 }
 

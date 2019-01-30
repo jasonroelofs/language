@@ -99,10 +99,35 @@ describe("Web Safe VM", () => {
   })
 
     /*
+  it("implements Ruby-esque scope lookup and re-assignment", async () => {
+    // What makes the most sense to me and what I think is the least surprising
+    // is when a variable is referenced that's defined in an outer scope, to default
+    // to accessing and updating that outer variable.
+    // This is how Ruby scoping works, but is not how Python scoping works. In Python
+    // I would need to say `global a` in the `b` block to enable such access.
+    // Thus I call this "Ruby-esque" scoping, not because Ruby invented it, but because
+    // Ruby is my most familiar example of this implementation.
+    let tests = {
+      "a = 1; b = { a = a + 1 }; b(); b(); b(); a": ToObject(4),
+      // depth doesn't matter
+      "a = 1; { a = 2; { a = 3; { a = 4; { a = 5 }() }() }() }(); a": ToObject(5),
+      // Object ownership and nested blocks are handled correctly
+      // Here `get` and `ifTrue` are nested scopes, which need to be linked back
+      // to outer scopes to properly find the right value of `a`.
+      "obj = Object.new(a: 1, get: { true.do(ifTrue: { a }) }); obj.get()": ToObject(1),
+    }
+
+    for(var test in tests) {
+      await assertObjectEval(test, tests[test])
+    }
+  })
+  */
+
   it("evaluates blocks", async () => {
     let tests = {
       "a = { 1 }; a.call()": ToObject(1),
 
+      /*
       // Single arguments
       "a = { |x| x }; a.call(1)": ToObject(1),
 
@@ -128,12 +153,16 @@ describe("Web Safe VM", () => {
       // be able to match the first parameter, and let further params be keyworded
       // to make it easy to add params later if you need more specificity.
       "a = { |x, y: 2| x * y }; a.call(5) + a.call(10, y: 10)": ToObject(110),
+       */
 
       // Blocks can be executed with just parens and without the explicit .call
       "a = { 1 }; a()": ToObject(1),
 
       // Blocks can be executed with just parens and without the explicit .call
       "{ 2 }()": ToObject(2),
+
+      // Objects with the `call` method can stand in as blocks
+      // "a = Object.new(call: { |x| x * 2 }); a(2)": ToObject(4)
     }
 
     for(var input in tests) {
@@ -142,7 +171,15 @@ describe("Web Safe VM", () => {
       await assertObjectEval(input, expected)
     }
   })
-  */
+
+  /**
+   * TO TEST:
+   *  - Assignment doesn't leave stray values on the stack.
+   *    Ala, clear stack data when the current space ends?
+   *    Use case: assignment is the last expression of the method so it needs to be
+   *    the return value. Yet if no-one uses it, is it a problem? Seems like a possible
+   *    memory leak.
+   */
 
   async function assertObjectEval(input: string, expected: IObject) {
     let result = await evalAndReturn(input)

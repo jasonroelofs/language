@@ -17,7 +17,9 @@ export enum NodeType {
 
   EvalAssignment = "EvalAssignment",
   EvalMessageSend = "EvalMessageSend",
-  EvalBlock = "EvalBlock",
+  PushArgument = "PushArgument",
+  StartBlock = "StartBlock",
+  FinishBlock = "FinishBlock",
   ReturnValue = "ReturnValue",
 }
 

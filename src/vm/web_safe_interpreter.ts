@@ -1,3 +1,4 @@
+import * as util from "util"
 import {
   Node,
   BlockNode,
@@ -56,7 +57,6 @@ export default class WebSafeInterpreter {
   // Pointers to some in-language objects that we make use of directly here.
   Block: IObject
   Sender: IObject
-  ActivationRecord: IObject
   Exception: IObject
 
   // Ensure we only set up a nextTick once per execution window
@@ -79,7 +79,6 @@ export default class WebSafeInterpreter {
     /*
     this.Block = SendMessage(this.currentSpace, AsString("Block"))
     this.Sender = SendMessage(this.currentSpace, AsString("Sender"))
-    this.ActivationRecord = SendMessage(this.currentSpace, AsString("ActivationRecord"))
     this.Exception = SendMessage(this.currentSpace, AsString("Exception"))
 
     // Expose static values from the runtime into the language
@@ -88,25 +87,6 @@ export default class WebSafeInterpreter {
     */
 
     this.pushSpace(this.currentSpace)
-  }
-
-  // Push a new Space onto the stack, building it off of the passed in object.
-  // Returns the previous currentSpace for restoration.
-  // Changes `this.currentSpace`
-  pushSpace(newSpace: IObject): IObject {
-    let previousSpace = this.currentSpace
-
-    this.currentSpace = NewObject(newSpace)
-    SetSlot(this.currentSpace, AsString("space"), this.currentSpace)
-    SetSlot(this.currentSpace, AsString("objectName"), ToObject(`Space (${this.currentSpace.objectId})`))
-
-    // Link this space back to the previous space so we can keep a proper
-    // stack of spaces, ensuring correct scoping at all times.
-    if(newSpace != previousSpace) {
-      AddParent(this.currentSpace, previousSpace)
-    }
-
-    return previousSpace
   }
 
   // Evaluate the given set of expressions and return the value of
@@ -235,15 +215,23 @@ export default class WebSafeInterpreter {
        */
 
       case NodeType.EvalAssignment:
-        this.evalAssignment(node as EvalNode)
+        this.finishAssignment(node as EvalNode)
         break
 
       case NodeType.EvalMessageSend:
-        this.evalMessageSend(node as EvalNode)
+        this.finishMessageSend(node as EvalNode)
         break
 
-      case NodeType.EvalBlock:
-        this.evalBlock(node as EvalNode)
+      case NodeType.PushArgument:
+        this.pushArgument(node as EvalArgumentNode)
+        break
+
+      case NodeType.StartBlock:
+        this.startBlock(node as StartBlockNode)
+        break
+
+      case NodeType.FinishBlock:
+        this.finishBlock(node as FinishBlockNode)
         break
 
       default:
@@ -266,7 +254,7 @@ export default class WebSafeInterpreter {
   }
 
   pushAssignment(node) {
-    this.pushEval(node, NodeType.EvalAssignment, [node.right])
+    this.pushEval(node, [node.right], NodeType.EvalAssignment)
   }
 
   pushMessageSend(node: MessageSendNode) {
@@ -276,25 +264,24 @@ export default class WebSafeInterpreter {
       toEval.push(node.receiver)
     }
 
-    this.pushEval(node, NodeType.EvalMessageSend, toEval)
+    this.pushEval(node, toEval, NodeType.EvalMessageSend)
   }
 
-  evalAssignment(node: EvalNode) {
+  finishAssignment(node: EvalNode) {
     let varName = AsString(node.node.name)
     let varValue = node.returnValue.value
     SetSlot(varValue, AsString("objectName"), varName)
 
     // Look up the space stack to find the first scope that already has this
     // slot defined and assume that is the scope we should also be changing values in
-    // let owningObject = FindIn(this.currentSpace, (obj) => obj.slots.has(node.name))
-    // SetSlot(owningObject || this.currentSpace, varName, varValue, ToObject(node.comment))
-    SetSlot(this.currentSpace, varName, varValue)
+    let owningObject = FindIn(this.currentSpace, (obj) => obj.slots.has(node.name))
+    SetSlot(owningObject || this.currentSpace, varName, varValue, ToObject(node.comment))
 
     // Assignment always returns the value that was assigned
     this.pushData(varValue)
   }
 
-  evalMessageSend(node: EvalNode) {
+  finishMessageSend(node: EvalNode) {
     let receiver = node.returnValue.value || this.currentSpace
     let message = node.node.message.name
 
@@ -304,26 +291,129 @@ export default class WebSafeInterpreter {
 
     if(slotValue.codeBlock && message === "call") {
       let codeBody = SendMessage(slotValue, AsString("body")).data
-      //let parameters = SendMessage(codeBlock, AsString("parameters")).data
-      //let scope = SendMessage(block, AsString("scope"))
+      let parameters = SendMessage(slotValue, AsString("parameters")).data
+      let scope = SendMessage(slotValue, AsString("scope"))
 
-      this.pushEval(node, NodeType.EvalBlock, codeBody)
+      // Order of operations here is tricky.
+      // Prepare the block itself to be evaluated.
+      // Set up the space that this block will run in and prep for that.
+      // For each argument
+      // - Evaluate it in the current space and assign to the block's space
+      // Finally push the call stack and let the block eval
+
+      // Figure out argument / parameter matching first so we know if we need
+      // to throw an error before trying to evaluate the block.
+      let args = node.node.message.arguments
+
+      if(args.length > 0 && parameters.length == 0) {
+        // TODO We weren't expecting arguments!
+      }
+
+      let arg, param
+      let toEval = []
+      let usedArgs = []
+      let unusedParams = []
+
+      for(let i = 0; i < parameters.length; i++) {
+        param = parameters[i]
+
+        if(i == 0 && args[0] && args[0].name == null) {
+          arg = args[0]
+        } else {
+          arg = args.find((a) => { return a.name == param.name })
+        }
+
+        if(arg) {
+          usedArgs.push(arg)
+          toEval.push([node.node, [arg.value], NodeType.PushArgument, { name: param.name, comment: arg.comment }])
+        } else if(param.default) {
+          toEval.push([node.node, [param.default], NodeType.PushArgument, { name: param.name }])
+        } else {
+          unusedParams.push(param)
+        }
+      }
+
+      // Push the block itself onto the stack and hook up the finisher
+      this.pushEval(node, codeBody, NodeType.FinishBlock, {previousSpace: this.currentSpace})
+
+      // Push the block starter which will set up the block's new space,
+      // take our arguments off the data stack, and apply them
+      this.pushEval(node, [], NodeType.StartBlock, {scope: scope, argumentCount: toEval.length})
+
+      // Push each argument evaluation
+      for(let code of toEval) {
+        // @ts-ignore
+        this.pushEval(...code)
+      }
     }
   }
 
-  evalBlock(node: EvalNode) {
-    this.pushData(node.returnValue.value)
+  pushArgument(node: EvalArgumentNode) {
+    let argValue = node.returnValue.value
+
+    // TODO There a better way to make sure the names of arguments
+    // properly flow through to the block?
+    let argWrapper = NewObject(Objekt)
+    SetSlot(argWrapper, AsString("name"), ToObject(node.name))
+    SetSlot(argWrapper, AsString("value"), argValue)
+    SetSlot(argWrapper, AsString("comment"), ToObject(node.comment))
+
+    this.pushData(argWrapper)
   }
 
-  pushEval(node: Node, nodeType: NodeType, toEval: Node[]) {
+  startBlock(node: StartBlockNode) {
+    let space = this.pushSpace(node.scope)
+    let argWrapper
+
+    for(let i = 0; i < node.argumentCount; i++) {
+      argWrapper = this.popData()
+
+      SetSlot(
+        this.currentSpace,
+        SendMessage(argWrapper, AsString("name")),
+        SendMessage(argWrapper, AsString("value")),
+        SendMessage(argWrapper, AsString("comment")),
+      )
+    }
+  }
+
+  finishBlock(node: FinishBlockNode) {
+    this.pushData(node.returnValue.value)
+    this.currentSpace = node.previousSpace
+  }
+
+  // Push a new Space onto the stack, building it off of the passed in object.
+  // Returns the previous currentSpace for restoration.
+  // Changes `this.currentSpace`
+  pushSpace(newSpace: IObject): IObject {
+    let previousSpace = this.currentSpace
+
+    this.currentSpace = NewObject(newSpace)
+    SetSlot(this.currentSpace, AsString("space"), this.currentSpace)
+    SetSlot(this.currentSpace, AsString("objectName"), ToObject(`Space (${this.currentSpace.objectId})`))
+
+    // Link this space back to the previous space so we can keep a proper
+    // stack of spaces, ensuring correct scoping at all times.
+    if(newSpace != previousSpace) {
+      AddParent(this.currentSpace, previousSpace)
+    }
+
+    return previousSpace
+  }
+
+  pushEval(node: Node, toEval: Node[], finishingNodeType: NodeType, extraOps = {}) {
     let evalNode = {
-      type: nodeType,
+      type: finishingNodeType,
       node: node,
       token: node.token,
 
       // These will get filled in in a sec
       returnValue: null,
       promise: null,
+    }
+
+    for(let key in extraOps) {
+      evalNode[key] = extraOps[key]
     }
 
     // Manually push this node onto the stack.
@@ -426,4 +516,25 @@ interface EvalNode extends Node {
   // The underlying Promise so calls into the interpreter can
   // properly wait for a response
   promise: Promise<IObject>
+}
+
+interface EvalArgumentNode extends EvalNode {
+  name: string
+
+  comment?: string
+}
+
+interface StartBlockNode extends EvalNode {
+  // Link to the block's scope, used to create a properly encapsulated
+  // Space for local assignment.
+  scope: IObject
+
+  // How many arguments will be on the stack to apply to this block?
+  argumentCount: number
+}
+
+interface FinishBlockNode extends EvalNode {
+  // Link to the space that was active before this block was ran
+  // so we know how to pop back out.
+  previousSpace: IObject
 }

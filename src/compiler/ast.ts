@@ -20,6 +20,7 @@ export enum NodeType {
   PushArgument = "PushArgument",
   StartBlock = "StartBlock",
   FinishBlock = "FinishBlock",
+  CallBuiltIn = "CallBuiltIn",
   ReturnValue = "ReturnValue",
 }
 

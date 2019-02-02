@@ -4,7 +4,7 @@ import Platform from "@vm/platform"
 import {
   NewObject, ToObject, AsString,
   IObject, Objekt,
-  Number, String, Array,
+  Number, String, Array, Block,
   True, False, Null,
   SetSlot, GetSlot, EachParent, FindIn, ObjectIs,
   SendMessage,
@@ -16,14 +16,16 @@ import { isArray, arrayFrom } from "@vm/js_core"
 // Our core set of built-ins
 //
 
-type BuiltInFunctionT = (...args: any[]) => IObject
+type BuiltInFunctionT = (space: IObject, vm) => IObject
 
 // Define a Javascript function to properly expose it
 // to the language runtime as an executable block.
-function BuiltInFunc(func: BuiltInFunctionT): IObject {
-  let value = NewObject(Objekt, func)
+function BuiltInFunc(func): IObject { // : BuiltInFunctionT): IObject {
+  let value = NewObject(Block, func)
   value.codeBlock = true
   value.builtIn = true
+
+  SetSlot(value, AsString("call"), value)
 
   return value
 }
@@ -49,8 +51,9 @@ function extractParams(args, ...argKeys) {
  * Create and return a new object with the current object as the first
  * parent, and all provided slots added to the new object.
  */
-SetSlot(Objekt, AsString("new"), BuiltInFunc(function(args, meta = {}, vm): IObject {
+SetSlot(Objekt, AsString("new"), BuiltInFunc(function(space, vm): IObject {
   let obj = NewObject(this)
+    /*
   let slot
 
   // Look for slots with defined default values and apply
@@ -68,27 +71,38 @@ SetSlot(Objekt, AsString("new"), BuiltInFunc(function(args, meta = {}, vm): IObj
       SetSlot(obj, ToObject(key), vm._evalNode(slot.astNode))
     }
   })
+     */
 
   // Then apply the values provided to us from the parameters to .new()
   // to ensure we overwrite any matching slots
-  setSlots(obj, args, meta)
+  setSlots(obj, space)
 
   return obj
 }))
 
-SetSlot(Objekt, AsString("setSlots"), BuiltInFunc(function(args, meta = {}): IObject {
-  setSlots(this, args, meta)
+SetSlot(Objekt, AsString("setSlots"), BuiltInFunc(function(space): IObject {
+  setSlots(this, space)
 
   return Null
 }))
 
-function setSlots(obj: IObject, args, meta = {}) {
-  var comment
+function setSlots(obj: IObject, space: IObject) {
+  let comment
 
-  for(var slotName in args) {
-    comment = meta[slotName] ? meta[slotName].comment : null
-    SetSlot(obj, AsString(slotName), args[slotName], ToObject(comment))
-  }
+  space.slots.forEach((value, key) => {
+    if(key === "self") {
+      return
+    }
+
+    if(space.metaSlots.has(key)) {
+      let mSlot = space.metaSlots.get(key)
+      comment = SendMessage(mSlot, AsString("comments"))
+    } else {
+      comment = null
+    }
+
+    SetSlot(obj, AsString(key), value, ToObject(comment))
+  })
 }
 
 /**
@@ -216,10 +230,10 @@ SetSlot(BuiltIn, AsString("objectIs"), BuiltInFunc(function(args): IObject {
  * Number BuiltIns
  */
 
-SetSlot(BuiltIn, AsString("numberOp"), BuiltInFunc(function(args): IObject {
-  let left = args["left"]
-  let op = args["op"]
-  let right = args["right"]
+SetSlot(BuiltIn, AsString("numberOp"), BuiltInFunc(function(scope): IObject {
+  let left = SendMessage(scope, AsString("left"))
+  let op = SendMessage(scope, AsString("op"))
+  let right = SendMessage(scope, AsString("right"))
 
   switch(op.data) {
     case "+":

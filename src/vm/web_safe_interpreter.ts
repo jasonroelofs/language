@@ -56,6 +56,7 @@ export default class WebSafeInterpreter {
 
   // Pointers to some in-language objects that we make use of directly here.
   Block: IObject
+  Array: IObject
   Sender: IObject
   Exception: IObject
 
@@ -76,15 +77,14 @@ export default class WebSafeInterpreter {
   }
 
   ready(argv = []) {
-    /*
     this.Block = SendMessage(this.currentSpace, AsString("Block"))
+    this.Array = SendMessage(this.currentSpace, AsString("Array"))
     this.Sender = SendMessage(this.currentSpace, AsString("Sender"))
     this.Exception = SendMessage(this.currentSpace, AsString("Exception"))
 
     // Expose static values from the runtime into the language
     let Process = SendMessage(this.currentSpace, AsString("Process"))
     SetSlot(Process, AsString("argv"), ToObject(argv))
-    */
 
     this.pushSpace(this.currentSpace)
   }
@@ -234,21 +234,24 @@ export default class WebSafeInterpreter {
         this.finishBlock(node as FinishBlockNode)
         break
 
+      case NodeType.CallBuiltIn:
+        this.callBuiltIn(node as BuiltInNode)
+        break
+
       default:
         // Throw exception: don't now how to evaluate node type
     }
   }
 
   pushBlockLiteral(node: BlockNode) {
-    let block = NewObject(Objekt) // this.Block)
-    SetSlot(block, AsString("body"), NewObject(Objekt, node.body))
-    SetSlot(block, AsString("parameters"), NewObject(Objekt, node.parameters))
+    let block = NewObject(this.Block)
+    SetSlot(block, AsString("body"), NewObject(this.Array, node.body))
+    SetSlot(block, AsString("parameters"), NewObject(this.Array, node.parameters))
     SetSlot(block, AsString("scope"), this.currentSpace)
-
-    // TODO: TEMP Until we're loading the core library again
-    SetSlot(block, AsString("call"), block)
-
     block.codeBlock = true
+
+    // TODO Need to get rid of this, probably need correct `self` handling
+    SetSlot(block, AsString("call"), block)
 
     this.pushData(block)
   }
@@ -282,69 +285,154 @@ export default class WebSafeInterpreter {
   }
 
   finishMessageSend(node: EvalNode) {
-    let receiver = node.returnValue.value || this.currentSpace
+    let receiver = node.returnValue.value
     let message = node.node.message.name
 
-    let slotValue = SendMessage(receiver, AsString(message))
+    let slotValue = SendMessage(receiver || this.currentSpace, AsString(message))
 
-    this.pushData(slotValue)
+    if(!slotValue) {
+      // TODO Actual error handling here
+      console.log("No value found for %s.%s", receiver || this.currentSpace, message)
+    }
 
-    if(slotValue.codeBlock && message === "call") {
-      let codeBody = SendMessage(slotValue, AsString("body")).data
-      let parameters = SendMessage(slotValue, AsString("parameters")).data
-      let scope = SendMessage(slotValue, AsString("scope"))
-
-      // Order of operations here is tricky.
-      // Prepare the block itself to be evaluated.
-      // Set up the space that this block will run in and prep for that.
-      // For each argument
-      // - Evaluate it in the current space and assign to the block's space
-      // Finally push the call stack and let the block eval
-
-      // Figure out argument / parameter matching first so we know if we need
-      // to throw an error before trying to evaluate the block.
-      let args = node.node.message.arguments
-
-      if(args.length > 0 && parameters.length == 0) {
-        // TODO We weren't expecting arguments!
-      }
-
-      let arg, param
-      let toEval = []
-      let usedArgs = []
-      let unusedParams = []
-
-      for(let i = 0; i < parameters.length; i++) {
-        param = parameters[i]
-
-        if(i == 0 && args[0] && args[0].name == null) {
-          arg = args[0]
+    if(slotValue.codeBlock) {
+      if(message === "call") {
+        if(slotValue.builtIn) {
+          this.evalBuiltIn(node.node as MessageSendNode, slotValue)
         } else {
-          arg = args.find((a) => { return a.name == param.name })
+          this.evalBlock(node.node as MessageSendNode, slotValue)
         }
 
-        if(arg) {
-          usedArgs.push(arg)
-          toEval.push([node.node, [arg.value], NodeType.PushArgument, { name: param.name, comment: arg.comment }])
-        } else if(param.default) {
-          toEval.push([node.node, [param.default], NodeType.PushArgument, { name: param.name }])
-        } else {
-          unusedParams.push(param)
+      } else {
+        // Keep track of the receiver / owner of this block for this call
+        // by using a child object. This then acts exactly like the parent
+        // block object without polluting that object with call-specific information.
+        if(receiver) {
+          let wrapper = NewObject(slotValue)
+          wrapper.codeBlock = true
+          wrapper.builtIn = slotValue.builtIn
+
+          SetSlot(wrapper, AsString("receiver"), receiver)
+
+          // TODO Remove this when `self` scoping is fixed again
+          SetSlot(wrapper, AsString("call"), wrapper)
+
+          // Should callBuiltIn be looking for our data or check the parent?
+          wrapper.data = slotValue.data
+
+          slotValue = wrapper
         }
+
+        this.pushData(slotValue)
+      }
+    } else {
+      this.pushData(slotValue)
+    }
+  }
+
+  /**
+   * TODO: For the sake of getting this working, argument handling is duplicated
+   * here and in evalBlock. I would like to get built-ins working even closer to
+   * language methods, but the lack of any explicit parameter definition makes that harder.
+   * So for built-ins, we just take the list of arguments given, eval those, and pass them
+   * in as the currentSpace, without any validation checking.
+   */
+  evalBuiltIn(node: MessageSendNode, block: IObject) {
+    let scope = SendMessage(block, AsString("scope"))
+    let receiver = SendMessage(block, AsString("receiver"))
+    let toEval = [], arg, argName
+
+    for(let arg of node.message.arguments) {
+      argName = arg.name || "0"
+      toEval.push([node, [arg.value], NodeType.PushArgument, { name: argName, comment: arg.comment }])
+    }
+
+    this.pushEval(
+      node,
+      [],
+      NodeType.CallBuiltIn,
+      {
+        builtIn: block,
+        previousSpace: this.currentSpace,
+      }
+    )
+
+    // Push the block starter which will set up the block's new space,
+    // take our arguments off the data stack, and apply them
+    this.pushEval(node, [], NodeType.StartBlock, {
+      receiver: receiver,
+      scope: scope,
+      argumentCount: toEval.length,
+    })
+
+    // Push each argument evaluation
+    for(let code of toEval) {
+      // @ts-ignore
+      this.pushEval(...code)
+    }
+  }
+
+  evalBlock(node: MessageSendNode, block: IObject) {
+    let codeBody = SendMessage(block, AsString("body")).data
+    let parameters = SendMessage(block, AsString("parameters")).data
+    let scope = SendMessage(block, AsString("scope"))
+    let receiver = SendMessage(block, AsString("receiver"))
+
+    // Order of operations here is tricky.
+    // Prepare the block itself to be evaluated.
+    // Set up the space that this block will run in and prep for that.
+    // For each argument
+    // - Evaluate it in the current space and assign to the block's space
+    // Finally push the call stack and let the block eval
+
+    // Figure out argument / parameter matching first so we know if we need
+    // to throw an error before trying to evaluate the block.
+    let args = node.message.arguments
+
+    if(args.length > 0 && parameters.length == 0) {
+      // TODO We weren't expecting arguments!
+    }
+
+    let arg, param
+    let toEval = []
+    let usedArgs = []
+    let unusedParams = []
+
+    for(let i = 0; i < parameters.length; i++) {
+      param = parameters[i]
+
+      if(i == 0 && args[0] && args[0].name == null) {
+        arg = args[0]
+      } else {
+        arg = args.find((a) => { return a.name == param.name })
       }
 
-      // Push the block itself onto the stack and hook up the finisher
-      this.pushEval(node, codeBody, NodeType.FinishBlock, {previousSpace: this.currentSpace})
-
-      // Push the block starter which will set up the block's new space,
-      // take our arguments off the data stack, and apply them
-      this.pushEval(node, [], NodeType.StartBlock, {scope: scope, argumentCount: toEval.length})
-
-      // Push each argument evaluation
-      for(let code of toEval) {
-        // @ts-ignore
-        this.pushEval(...code)
+      if(arg) {
+        usedArgs.push(arg)
+        toEval.push([node, [arg.value], NodeType.PushArgument, { name: param.name, comment: arg.comment }])
+      } else if(param.default) {
+        toEval.push([node, [param.default], NodeType.PushArgument, { name: param.name }])
+      } else {
+        unusedParams.push(param)
       }
+    }
+
+    // TODO: Error on usedArgs and unusedParams, like Interpeter
+
+    this.pushEval(node, codeBody, NodeType.FinishBlock, { previousSpace: this.currentSpace })
+
+    // Push the block starter which will set up the block's new space,
+    // take our arguments off the data stack, and apply them
+    this.pushEval(node, [], NodeType.StartBlock, {
+      receiver: receiver,
+      scope: scope,
+      argumentCount: toEval.length,
+    })
+
+    // Push each argument evaluation
+    for(let code of toEval) {
+      // @ts-ignore
+      this.pushEval(...code)
     }
   }
 
@@ -362,8 +450,9 @@ export default class WebSafeInterpreter {
   }
 
   startBlock(node: StartBlockNode) {
-    let space = this.pushSpace(node.scope)
     let argWrapper
+
+    this.pushSpace(node.scope)
 
     for(let i = 0; i < node.argumentCount; i++) {
       argWrapper = this.popData()
@@ -375,10 +464,25 @@ export default class WebSafeInterpreter {
         SendMessage(argWrapper, AsString("comment")),
       )
     }
+
+    if(node.receiver) {
+      SetSlot(this.currentSpace, AsString("self"), node.receiver)
+    }
   }
 
   finishBlock(node: FinishBlockNode) {
     this.pushData(node.returnValue.value)
+    this.currentSpace = node.previousSpace
+  }
+
+  callBuiltIn(node: BuiltInNode) {
+    let builtIn = node.builtIn.data
+    let receiver = SendMessage(this.currentSpace, AsString("self"))
+
+    // All variables for this built-in are in the current space.
+    // It's up to the built-in itself to pull them out with the given
+    // helper methods and ensure all exist and are of the right type.
+    this.pushData(builtIn.call(receiver, this.currentSpace, this))
     this.currentSpace = node.previousSpace
   }
 
@@ -525,6 +629,11 @@ interface EvalArgumentNode extends EvalNode {
 }
 
 interface StartBlockNode extends EvalNode {
+  // The owner of the block we are calling.
+  // This is used to set `self`.
+  // Can be null
+  receiver?: IObject
+
   // Link to the block's scope, used to create a properly encapsulated
   // Space for local assignment.
   scope: IObject
@@ -537,4 +646,9 @@ interface FinishBlockNode extends EvalNode {
   // Link to the space that was active before this block was ran
   // so we know how to pop back out.
   previousSpace: IObject
+}
+
+interface BuiltInNode extends FinishBlockNode {
+  // Object wrapping our built-in function
+  builtIn: IObject
 }

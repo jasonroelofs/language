@@ -11,6 +11,7 @@ import {
 } from "@vm/object"
 import Lexer from "@compiler/lexer"
 import Parser from "@compiler/parser"
+import WebSafeVM from "@vm/web_safe_vm"
 import WebSafeInterpreter from "@vm/web_safe_interpreter"
 
 describe("Web Safe VM", () => {
@@ -87,7 +88,7 @@ describe("Web Safe VM", () => {
       //"World.objectName": AsString("World"),
       //"Object.objectName": AsString("Object"),
       "a = 1; a.objectName": AsString("a"),
-      //"dog = Object.new(); dog.objectName": AsString("dog"),
+      "dog = Object.new(); dog.objectName": AsString("dog"),
       // Make sure that multiple assignment to the same static value
       // gets its own name (e.g. we aren't overwriting Number.objectName).
       "a = 1; b = 1; a.objectName": AsString("a")
@@ -135,7 +136,6 @@ describe("Web Safe VM", () => {
       // Single arguments can be given keyword args
       "a = { |x| x }; a.call(x: 10)": ToObject(10),
 
-      /*
       // Keyword multi-arguments
       "a = { |a, b| a + b }; a.call(a: 1, b: 2)": ToObject(3),
 
@@ -155,7 +155,6 @@ describe("Web Safe VM", () => {
       // be able to match the first parameter, and let further params be keyworded
       // to make it easy to add params later if you need more specificity.
       "a = { |x, y: 2| x * y }; a.call(5) + a.call(10, y: 10)": ToObject(110),
-       */
 
       // Blocks can be executed with just parens and without the explicit .call
       "a = { 1 }; a()": ToObject(1),
@@ -164,7 +163,7 @@ describe("Web Safe VM", () => {
       "{ 2 }()": ToObject(2),
 
       // Objects with the `call` method can stand in as blocks
-      // "a = Object.new(call: { |x| x * 2 }); a(2)": ToObject(4)
+      "a = Object.new(call: { |x| x * 2 }); a(2)": ToObject(4),
     }
 
     for(var input in tests) {
@@ -189,22 +188,13 @@ describe("Web Safe VM", () => {
     assert(result, `We didn't a result back for ''${input}'', check for errors?`)
 
     assert.equal(result.parents.length, expected.parents.length)
-    assert.equal(result.parents[0], expected.parents[0])
+    assert.equal(result.parents[0], expected.parents[0], `Wrong parent type for ${input}`)
     assert.equal(result.data, expected.data, `Incorrect return value for "${input}"`)
   }
 
   async function evalAndReturn(input: string) {
-    // Bypassing the VM layer for now, this will eventually be cleaned up
-    // to actually call to the VM.
-    let interp = new WebSafeInterpreter(null)
-    interp.ready()
-
-    let lexer = new Lexer(input)
-    let tokens = lexer.tokenize()
-
-    let parser = new Parser(tokens)
-    let expressions = parser.parse()
-
-    return interp.eval(expressions).promise
+    let vm = new WebSafeVM()
+    await vm.ready()
+    return vm.eval(input)
   }
 })

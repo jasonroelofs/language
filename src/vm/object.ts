@@ -245,6 +245,8 @@ var Array = NewObject(Objekt, [], {objectId: 7})
 
 var Slot = NewObject(Objekt, null, {objectId: 8})
 
+var Block = NewObject(Objekt, null, {objectId: 9})
+
 // Assign objectName values for each of our built-ins
 // Order of operations is important here as we need to not try to use String
 // before it's been defined.
@@ -256,6 +258,7 @@ SetSlot(Number, AsString("objectName"), AsString("Number"))
 SetSlot(String, AsString("objectName"), AsString("String"))
 SetSlot(Array, AsString("objectName"), AsString("Array"))
 SetSlot(Slot, AsString("objectName"), AsString("Slot"))
+SetSlot(Block, AsString("objectName"), AsString("Block"))
 
 function ToObject(nativeValue: any): IObject {
   if(nativeValue === undefined || nativeValue === null) {
@@ -348,4 +351,5 @@ export {
   Number,
   String,
   Array,
+  Block,
 }

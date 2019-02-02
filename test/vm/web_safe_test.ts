@@ -99,9 +99,6 @@ describe("Web Safe VM", () => {
     }
   })
 
-    /*
-     * Awaiting loading of the core library so we have things like Number.+
-     *
   it("implements Ruby-esque scope lookup and re-assignment", async () => {
     // What makes the most sense to me and what I think is the least surprising
     // is when a variable is referenced that's defined in an outer scope, to default
@@ -113,18 +110,17 @@ describe("Web Safe VM", () => {
     let tests = {
       "a = 1; b = { a = a + 1 }; b(); b(); b(); a": ToObject(4),
       // depth doesn't matter
-      // "a = 1; { a = 2; { a = 3; { a = 4; { a = 5 }() }() }() }(); a": ToObject(5),
+      "a = 1; { a = 2; { a = 3; { a = 4; { a = 5 }() }() }() }(); a": ToObject(5),
       // Object ownership and nested blocks are handled correctly
       // Here `get` and `ifTrue` are nested scopes, which need to be linked back
       // to outer scopes to properly find the right value of `a`.
-      // "obj = Object.new(a: 1, get: { true.do(ifTrue: { a }) }); obj.get()": ToObject(1),
+      //"obj = Object.new(a: 1, get: { true.do(ifTrue: { a }) }); obj.get()": ToObject(1),
     }
 
     for(var test in tests) {
       await assertObjectEval(test, tests[test])
     }
   })
-     */
 
   it("evaluates blocks", async () => {
     let tests = {

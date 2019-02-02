@@ -248,10 +248,8 @@ export default class WebSafeInterpreter {
     SetSlot(block, AsString("body"), NewObject(this.Array, node.body))
     SetSlot(block, AsString("parameters"), NewObject(this.Array, node.parameters))
     SetSlot(block, AsString("scope"), this.currentSpace)
+    SetSlot(block, AsString("call"), block) // Can this be gotten rid of?
     block.codeBlock = true
-
-    // TODO Need to get rid of this, probably need correct `self` handling
-    SetSlot(block, AsString("call"), block)
 
     this.pushData(block)
   }
@@ -277,8 +275,8 @@ export default class WebSafeInterpreter {
 
     // Look up the space stack to find the first scope that already has this
     // slot defined and assume that is the scope we should also be changing values in
-    let owningObject = FindIn(this.currentSpace, (obj) => obj.slots.has(node.name))
-    SetSlot(owningObject || this.currentSpace, varName, varValue, ToObject(node.comment))
+    let owningObject = FindIn(this.currentSpace, (obj) => obj.slots.has(node.node.name))
+    SetSlot(owningObject || this.currentSpace, varName, varValue, ToObject(node.node.comment))
 
     // Assignment always returns the value that was assigned
     this.pushData(varValue)

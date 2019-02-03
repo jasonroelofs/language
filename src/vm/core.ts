@@ -87,12 +87,16 @@ SetSlot(Objekt, AsString("setSlots"), BuiltInFunc(function(space): IObject {
 }))
 
 function setSlots(obj: IObject, space: IObject) {
+  // See VM.startBlock for how this specific slot is set
+  // This list is used to pull other slots out of this space as the arguments
+  // actually passed into the setSlots message
+  let argumentNames = SendMessage(space, AsString("__argumentNames__"))
   let comment
+  let key: string
+  let name: IObject
 
-  space.slots.forEach((value, key) => {
-    if(key === "self") {
-      return
-    }
+  for(name of argumentNames.data) {
+    key = name.data
 
     if(space.metaSlots.has(key)) {
       let mSlot = space.metaSlots.get(key)
@@ -101,8 +105,8 @@ function setSlots(obj: IObject, space: IObject) {
       comment = null
     }
 
-    SetSlot(obj, AsString(key), value, ToObject(comment))
-  })
+    SetSlot(obj, name, space.slots.get(key), ToObject(comment))
+  }
 }
 
 /**

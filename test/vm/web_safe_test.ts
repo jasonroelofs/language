@@ -85,8 +85,8 @@ describe("Web Safe VM", () => {
 
   it("assigns object names to values stored in variables", async () => {
     let tests = {
-      //"World.objectName": AsString("World"),
-      //"Object.objectName": AsString("Object"),
+      "World.objectName": AsString("World"),
+      "Object.objectName": AsString("Object"),
       "a = 1; a.objectName": AsString("a"),
       "dog = Object.new(); dog.objectName": AsString("dog"),
       // Make sure that multiple assignment to the same static value

@@ -285,12 +285,13 @@ export default class WebSafeInterpreter {
   finishMessageSend(node: EvalNode) {
     let receiver = node.returnValue.value
     let message = node.node.message.name
+    let toAsk = receiver || this.currentSpace
 
-    let slotValue = SendMessage(receiver || this.currentSpace, AsString(message))
+    let slotValue = SendMessage(toAsk, AsString(message))
 
     if(!slotValue) {
       // TODO Actual error handling here
-      console.log("No value found for %s.%s", receiver || this.currentSpace, message)
+      console.log("No value found for %s.%s", toAsk, message)
     }
 
     if(slotValue.codeBlock) {
@@ -448,20 +449,32 @@ export default class WebSafeInterpreter {
   }
 
   startBlock(node: StartBlockNode) {
-    let argWrapper
+    let argWrapper, argName
+    let argNames = []
 
     this.pushSpace(node.scope)
 
     for(let i = 0; i < node.argumentCount; i++) {
       argWrapper = this.popData()
+      let argName = SendMessage(argWrapper, AsString("name"))
+      argNames.push(argName)
 
       SetSlot(
         this.currentSpace,
-        SendMessage(argWrapper, AsString("name")),
+        argName,
         SendMessage(argWrapper, AsString("value")),
         SendMessage(argWrapper, AsString("comment")),
       )
     }
+
+    // We also keep track of the exact set of names assigned
+    // to this space, so as to keep track of which are the arguments
+    // and which ones are system-level slots.
+    SetSlot(
+      this.currentSpace,
+      AsString("__argumentNames__"),
+      NewObject(this.Array, argNames)
+    )
 
     if(node.receiver) {
       SetSlot(this.currentSpace, AsString("self"), node.receiver)

@@ -114,7 +114,7 @@ describe("Web Safe VM", () => {
       // Object ownership and nested blocks are handled correctly
       // Here `get` and `ifTrue` are nested scopes, which need to be linked back
       // to outer scopes to properly find the right value of `a`.
-      //"obj = Object.new(a: 1, get: { true.do(ifTrue: { a }) }); obj.get()": ToObject(1),
+      "obj = Object.new(a: 1, get: { true.do(ifTrue: { a }) }); obj.get()": ToObject(1),
     }
 
     for(var test in tests) {
@@ -189,6 +189,26 @@ describe("Web Safe VM", () => {
     // Higher order functions all work
     result = await vm.eval("add = { |x| { |y| x + y } }; add2 = add(2); add2(3)")
     assert.equal(result.data, 5, "Higher order function didn't work")
+  })
+
+  it("sets up an implicit `self` receiver on calls to object blocks", async () => {
+    let vm = new WebSafeVM()
+    await vm.ready()
+
+    let result = await vm.eval(`
+      test = Object.new(
+        size: 1,
+        count: 2,
+        add: { size + count }
+      )
+
+      test2 = test.new()
+      add = test2.add
+
+      test.add() + test2.add() + add()
+    `)
+
+    assert.equal(result.data, 3 + 3 + 3)
   })
 
   it("keeps the value of `self` through nested messages", async () => {

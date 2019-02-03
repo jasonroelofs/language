@@ -478,6 +478,12 @@ export default class WebSafeInterpreter {
 
     if(node.receiver) {
       SetSlot(this.currentSpace, AsString("self"), node.receiver)
+
+      // Also inject the receiver in the current scope to ensure slot lookups
+      // properly check this object.
+      // We inject the parent first in the parents list to ensure it's values
+      // are found over what else may be in the space stack
+      this.currentSpace.parents.unshift(node.receiver)
     }
   }
 

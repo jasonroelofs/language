@@ -169,6 +169,40 @@ describe("Web Safe VM", () => {
     }
   })
 
+  it("blocks are closures", async () => {
+    let vm = new WebSafeVM()
+    let result: IObject
+    await vm.ready()
+
+    // Attached blocks link back to the owning object
+    result = await vm.eval("str = Object.toString; str()")
+    assert.equal(result.data, "Object")
+
+    // Instances of other objects close properly around parent methods
+    result = await vm.eval("obj = Object.new(); obj.toString()")
+    assert.equal(result.data, "obj")
+
+    // Passing activation records as parameters works
+    result = await vm.eval("str = Object.toString; block = {|cb| cb()}; block(str)")
+    assert.equal(result.data, "Object")
+
+    // Higher order functions all work
+    result = await vm.eval("add = { |x| { |y| x + y } }; add2 = add(2); add2(3)")
+    assert.equal(result.data, 5, "Higher order function didn't work")
+  })
+
+  it("keeps the value of `self` through nested messages", async () => {
+    let vm = new WebSafeVM()
+    await vm.ready()
+
+    let result = await vm.eval(`
+      obj = Object.new(one: 1, two: { self.one + self.one }, three: { self.two() + self.one })
+      obj.three()
+    `)
+
+    assert.equal(result.data, 3)
+  })
+
   /**
    * TO TEST:
    *  - Assignment doesn't leave stray values on the stack.

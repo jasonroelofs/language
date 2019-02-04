@@ -223,14 +223,22 @@ describe("Web Safe VM", () => {
     assert.equal(result.data, 3)
   })
 
-  /**
-   * TO TEST:
-   *  - Assignment doesn't leave stray values on the stack.
-   *    Ala, clear stack data when the current space ends?
-   *    Use case: assignment is the last expression of the method so it needs to be
-   *    the return value. Yet if no-one uses it, is it a problem? Seems like a possible
-   *    memory leak.
-   */
+  it("provides a caller slot to all blocks with call stack information", async () => {
+    let vm = new WebSafeVM()
+    await vm.ready()
+    let result = await vm.eval(`
+      obj = Object.new(
+        callMe: { sender }
+      )
+      obj.callMe()
+    `)
+
+    assert.equal(result.data.length, 1)
+
+    let sender = result.data[0]
+    assert.equal(SendMessage(sender, ToObject("line")).data, 5)
+    assert.equal(SendMessage(sender, ToObject("file")).data, "[script]")
+  })
 
   async function assertObjectEval(input: string, expected: IObject) {
     let result = await evalAndReturn(input)

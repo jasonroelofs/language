@@ -51,8 +51,14 @@ export default class WebSafeInterpreter {
   // as the execution context of each block.
   currentSpace: IObject
 
+  // Code stack. The set of expressions that need to be evaluated
   codeStack = null
+
+  // Data stack. What people normally think of when they hear "stack"
   dataStack = null
+
+  // Keep track of actual block calls so we can build a nice in-language backtrace
+  callStack: IObject[]
 
   // Pointers to some in-language objects that we make use of directly here.
   Block: IObject
@@ -66,11 +72,9 @@ export default class WebSafeInterpreter {
   constructor(vm) {
     this.vm = vm
 
-    // Code stack. The set of expressions that need to be evaluated
     this.codeStack = new Array()
-
-    // Data stack. What people normally think of when they hear "stack"
     this.dataStack = new Array()
+    this.callStack = new Array()
 
     // The World is our top-level storage space.
     this.currentSpace = World
@@ -453,6 +457,7 @@ export default class WebSafeInterpreter {
     let argNames = []
 
     this.pushSpace(node.scope)
+    this.pushCallStack(node.node)
 
     for(let i = 0; i < node.argumentCount; i++) {
       argWrapper = this.popData()
@@ -476,6 +481,9 @@ export default class WebSafeInterpreter {
       NewObject(this.Array, argNames)
     )
 
+    // Expose a copy of the call stack
+    SetSlot(this.currentSpace, AsString("sender"), ToObject(this.callStack))
+
     if(node.receiver) {
       SetSlot(this.currentSpace, AsString("self"), node.receiver)
 
@@ -488,8 +496,7 @@ export default class WebSafeInterpreter {
   }
 
   finishBlock(node: FinishBlockNode) {
-    this.pushData(node.returnValue.value)
-    this.currentSpace = node.previousSpace
+    this.finishBlockCall(node, node.returnValue.value)
   }
 
   callBuiltIn(node: BuiltInNode) {
@@ -499,7 +506,12 @@ export default class WebSafeInterpreter {
     // All variables for this built-in are in the current space.
     // It's up to the built-in itself to pull them out with the given
     // helper methods and ensure all exist and are of the right type.
-    this.pushData(builtIn.call(receiver, this.currentSpace, this))
+    this.finishBlockCall(node, builtIn.call(receiver, this.currentSpace, this))
+  }
+
+  finishBlockCall(node: FinishBlockNode | BuiltInNode, value: IObject) {
+    this.pushData(value)
+    this.popCallStack()
     this.currentSpace = node.previousSpace
   }
 
@@ -553,6 +565,23 @@ export default class WebSafeInterpreter {
 
     evalNode.returnValue = returnValue
     evalNode.promise = returnValue.promise
+  }
+
+  pushCallStack(node: Node) {
+    let sender = NewObject(this.Sender)
+
+    // TODO Something that lets us print out the name of the message?
+    // Line is 0-based internally, so we push it to 1-based here for user readability
+    SetSlot(sender, AsString("line"), ToObject(node.token.line + 1))
+    SetSlot(sender, AsString("file"), AsString(node.token.file))
+
+    // We make use of shift/unshift to keep a reverse order so that in the language
+    // `sender` is in the order of most recent call stack first.
+    this.callStack.unshift(sender)
+  }
+
+  popCallStack() {
+    this.callStack.shift()
   }
 
   pushCode(node: Node) {

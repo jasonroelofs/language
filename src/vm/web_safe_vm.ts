@@ -10,7 +10,7 @@ import WebSafeInterpreter from "@vm/web_safe_interpreter"
 import * as errors from "@vm/errors"
 import { SystemError, ErrorReport } from "@vm/error_report"
 
-export default class VM {
+export default class WebSafeVM {
 
   interpreter: WebSafeInterpreter
 
@@ -58,11 +58,20 @@ export default class VM {
     return stdLibs
   }
 
+  async loadFile(filePath) {
+    let script = Platform.readFile(filePath)
+    return this.eval(script.toString(), filePath)
+  }
+
   async loadFiles(files) {
     for(var file of files) {
       //console.log("Evaluating %o", file[1])
       await this.eval(file[0], file[1])
     }
+  }
+
+  async call(obj: IObject, message: string, args = {}): Promise<IObject> {
+    return this.interpreter.call(obj, message, args)
   }
 
   async eval(program: string, filePath: string = null): Promise<IObject> {
@@ -83,10 +92,4 @@ export default class VM {
 
     return this.interpreter.eval(expressions).promise
   }
-
-  /*
-  evalBlockWithArgs(receiver, block, args = []) {
-    return this.interpreter.evalBlockWithArgs(receiver, block, args)
-  }
-  */
 }

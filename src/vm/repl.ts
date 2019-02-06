@@ -1,4 +1,4 @@
-import VM from "@vm/vm"
+import WebSafeVM from "@vm/web_safe_vm"
 import {
   SyntaxError,
   UnterminatedStringError,
@@ -12,7 +12,7 @@ import { IObject, SendMessage, ToObject } from "@vm/object"
 import * as readline from "readline"
 
 export default class REPL {
-  vm: VM
+  vm: WebSafeVM
   line: number
 
   rl = null
@@ -22,7 +22,7 @@ export default class REPL {
   // buffer until its parsing passes.
   inputBuffer: string
 
-  constructor(vm: VM) {
+  constructor(vm: WebSafeVM) {
     this.vm = vm
     this.line = 0
     this.inputBuffer = ""
@@ -36,14 +36,14 @@ export default class REPL {
   run() {
     this.tickPrompt()
 
-    this.rl.on("line", (line) => {
+    this.rl.on("line", async (line) => {
       switch(line.trimEnd()) {
         case "quit":
         case "exit":
           this.rl.close();
           break;
         default:
-          this.evalLine(line)
+          await this.evalLine(line)
       }
 
       this.tickPrompt()
@@ -73,16 +73,19 @@ export default class REPL {
     this.rl.prompt()
   }
 
-  evalLine(line: string) {
+  async evalLine(line: string) {
     this.inputBuffer += line + "\n"
 
     try {
-      let result = this.vm.eval(this.inputBuffer.trim())
-      console.log(" => %s", this.getStringOf(result))
+      let result = await this.vm.eval(this.inputBuffer.trim())
+      let str = await this.vm.call(result, "toString")
+
+      console.log(" => %s", str)
     } catch(error) {
       if(this.expectingMoreInput(error)) {
         return
       }
+      throw(error)
 
       let report = null
 
@@ -100,11 +103,6 @@ export default class REPL {
     }
 
     this.inputBuffer = ""
-  }
-
-  getStringOf(obj: IObject): IObject {
-    let toString = SendMessage(obj, ToObject("toString"))
-    return this.vm.evalBlockWithArgs(obj, toString)
   }
 
   expectingMoreInput(error): boolean {

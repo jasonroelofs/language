@@ -381,7 +381,7 @@ SetSlot(BuiltIn, AsString("arrayEach"), BuiltInFunc(function(space, vm): IObject
 }))
 
 SetSlot(BuiltIn, AsString("arrayPush"), BuiltInFunc(function(space): IObject {
-  let [array, obj] = extractParams(space, "array", "objet")
+  let [array, obj] = extractParams(space, "array", "object")
   array.data.push(obj)
   return array
 }))

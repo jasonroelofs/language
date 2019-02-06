@@ -93,6 +93,48 @@ export default class WebSafeInterpreter {
     this.pushSpace(this.currentSpace)
   }
 
+  // Given an object, a message, and optionally some arguments, return
+  // the result of the message or the block at that message.
+  // Arguments need to be a Javascript array of IObjects with the correct
+  // matching names that the underlying block expects.
+  //
+  // To get just the value for a message without evaluating any block, use
+  // SendMessage instead.
+  //
+  // Returns a promise that will contain the results
+  async call(obj: IObject, message: string, args = {}): Promise<IObject> {
+    let block = SendMessage(obj, ToObject(message))
+
+    let codeBody = SendMessage(block, AsString("body")).data
+    let scope = SendMessage(block, AsString("scope"))
+    let receiver = obj
+
+    let argCount = 0
+
+    for(let name in args) {
+      let argObj = ToObject(args[name])
+      SetSlot(argObj, AsString("objectName"), ToObject(name))
+
+      argCount += 1
+      this.pushData(argObj)
+    }
+
+    let returnVal = this.pushEval(
+      block.astNode,
+      codeBody,
+      NodeType.FinishBlock,
+      { previousSpace: this.currentSpace }
+    )
+
+    this.pushEval(block.astNode, [], NodeType.StartBlock, {
+      receiver: receiver,
+      scope: scope,
+      argumentCount: argCount,
+    })
+
+    return returnVal.promise
+  }
+
   // Evaluate the given set of expressions and return the value of
   // the final expression.
   //
@@ -218,11 +260,11 @@ export default class WebSafeInterpreter {
        * should now have all of the values they need to continue their own processing.
        */
 
-      case NodeType.EvalAssignment:
+      case NodeType.FinishAssignment:
         this.finishAssignment(node as EvalNode)
         break
 
-      case NodeType.EvalMessageSend:
+      case NodeType.FinishMessageSend:
         this.finishMessageSend(node as EvalNode)
         break
 
@@ -254,12 +296,13 @@ export default class WebSafeInterpreter {
     SetSlot(block, AsString("scope"), this.currentSpace)
     SetSlot(block, AsString("call"), block) // Can this be gotten rid of?
     block.codeBlock = true
+    block.astNode = node
 
     this.pushData(block)
   }
 
   pushAssignment(node) {
-    this.pushEval(node, [node.right], NodeType.EvalAssignment)
+    this.pushEval(node, [node.right], NodeType.FinishAssignment)
   }
 
   pushMessageSend(node: MessageSendNode) {
@@ -269,12 +312,14 @@ export default class WebSafeInterpreter {
       toEval.push(node.receiver)
     }
 
-    this.pushEval(node, toEval, NodeType.EvalMessageSend)
+    this.pushEval(node, toEval, NodeType.FinishMessageSend)
   }
 
   finishAssignment(node: EvalNode) {
     let varName = AsString(node.node.name)
     let varValue = node.returnValue.value
+    varValue.astNode = node.node
+
     SetSlot(varValue, AsString("objectName"), varName)
 
     // Look up the space stack to find the first scope that already has this
@@ -311,19 +356,7 @@ export default class WebSafeInterpreter {
         // by using a child object. This then acts exactly like the parent
         // block object without polluting that object with call-specific information.
         if(receiver) {
-          let wrapper = NewObject(slotValue)
-          wrapper.codeBlock = true
-          wrapper.builtIn = slotValue.builtIn
-
-          SetSlot(wrapper, AsString("receiver"), receiver)
-
-          // TODO Remove this when `self` scoping is fixed again
-          SetSlot(wrapper, AsString("call"), wrapper)
-
-          // Should callBuiltIn be looking for our data or check the parent?
-          wrapper.data = slotValue.data
-
-          slotValue = wrapper
+          slotValue = this.wrapBlock(slotValue, receiver)
         }
 
         this.pushData(slotValue)
@@ -331,6 +364,22 @@ export default class WebSafeInterpreter {
     } else {
       this.pushData(slotValue)
     }
+  }
+
+  wrapBlock(block: IObject, receiver: IObject): IObject {
+    let wrapper = NewObject(block)
+    wrapper.codeBlock = true
+    wrapper.builtIn = block.builtIn
+
+    SetSlot(wrapper, AsString("receiver"), receiver)
+
+    // TODO Remove this when `self` scoping is fixed again
+    SetSlot(wrapper, AsString("call"), wrapper)
+
+    // Should callBuiltIn be looking for our data or check the parent?
+    wrapper.data = block.data
+
+    return wrapper
   }
 
   /**
@@ -441,6 +490,7 @@ export default class WebSafeInterpreter {
 
   pushArgument(node: EvalArgumentNode) {
     let argValue = node.returnValue.value
+    argValue.astNode = node.node
 
     // TODO There a better way to make sure the names of arguments
     // properly flow through to the block?
@@ -565,6 +615,8 @@ export default class WebSafeInterpreter {
 
     evalNode.returnValue = returnValue
     evalNode.promise = returnValue.promise
+
+    return evalNode
   }
 
   pushCallStack(node: Node) {

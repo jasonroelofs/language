@@ -17,14 +17,14 @@
   "dependencies": {
     "@ef-carbon/tspm": "^2.2.5",
     "@types/mocha": "^5.2.5",
-    "@types/node": "^10.12.18",
+    "@types/node": "^10.12.21",
     "common-tags": "^1.8.0",
     "fast-glob": "^2.2.6",
     "mocha": "^5.2.0",
-    "typescript": "^3.2.2"
+    "typescript": "^3.3.1"
   },
   "devDependencies": {
-    "webpack": "^4.28.4",
-    "webpack-cli": "^3.2.1"
+    "webpack": "^4.29.2",
+    "webpack-cli": "^3.2.3"
   }
 }

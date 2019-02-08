@@ -356,6 +356,23 @@ describe("VM", () => {
     assert.equal(SendMessage(sender, ToObject("file")).data, "[script]")
   })
 
+  it("handles recursive calls correctly", () => {
+    let vm = new VM()
+
+    let result = vm.eval(`
+      num = 0
+      count = {
+        num = num + 1
+        (num < 3).do({ count() })
+      }
+      count()
+      num
+    `)
+
+    assert.equal(result.data, 3)
+  })
+
+
   describe("Error Handling", () => {
     it("errors on failed slot lookup", () => {
       let vm = new VM()

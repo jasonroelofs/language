@@ -104,7 +104,10 @@ export default class WebSafeInterpreter {
   // Returns a promise that will contain the results
   async call(obj: IObject, message: string, args = {}): Promise<IObject> {
     let block = SendMessage(obj, ToObject(message))
+    return this.callBlock(obj, block, args)
+  }
 
+  async callBlock(obj: IObject, block: IObject, args = {}): Promise<IObject> {
     let codeBody = SendMessage(block, AsString("body")).data
     let scope = SendMessage(block, AsString("scope"))
     let receiver = obj
@@ -112,11 +115,12 @@ export default class WebSafeInterpreter {
     let argCount = 0
 
     for(let name in args) {
-      let argObj = ToObject(args[name])
-      SetSlot(argObj, AsString("objectName"), ToObject(name))
+      let argWrapper = NewObject(Objekt)
+      SetSlot(argWrapper, AsString("name"), ToObject(name))
+      SetSlot(argWrapper, AsString("value"), ToObject(args[name]))
 
       argCount += 1
-      this.pushData(argObj)
+      this.pushData(argWrapper)
     }
 
     let returnVal = this.pushEval(
@@ -152,8 +156,8 @@ export default class WebSafeInterpreter {
     let result = new ReturnValue()
     this.pushCode(result)
 
-    for(var node of nodes.reverse()) {
-      this.pushCode(node)
+    for(let i = nodes.length - 1; i >= 0; i--) {
+      this.pushCode(nodes[i])
     }
 
     this._nextTick()
@@ -286,15 +290,16 @@ export default class WebSafeInterpreter {
 
       default:
         // Throw exception: don't now how to evaluate node type
+        console.log("Don't know how to handle node type ", node.type)
     }
   }
 
   pushBlockLiteral(node: BlockNode) {
     let block = NewObject(this.Block)
-    SetSlot(block, AsString("body"), NewObject(this.Array, node.body))
-    SetSlot(block, AsString("parameters"), NewObject(this.Array, node.parameters))
+    SetSlot(block, AsString("body"), NewObject(Objekt, node.body))
+    SetSlot(block, AsString("parameters"), NewObject(Objekt, node.parameters))
     SetSlot(block, AsString("scope"), this.currentSpace)
-    SetSlot(block, AsString("call"), block) // Can this be gotten rid of?
+    SetSlot(block, AsString("call"), block)
     block.codeBlock = true
     block.astNode = node
 
@@ -350,7 +355,6 @@ export default class WebSafeInterpreter {
         } else {
           this.evalBlock(node.node as MessageSendNode, slotValue)
         }
-
       } else {
         // Keep track of the receiver / owner of this block for this call
         // by using a child object. This then acts exactly like the parent
@@ -376,7 +380,7 @@ export default class WebSafeInterpreter {
     // TODO Remove this when `self` scoping is fixed again
     SetSlot(wrapper, AsString("call"), wrapper)
 
-    // Should callBuiltIn be looking for our data or check the parent?
+    // TODO Should callBuiltIn be looking for our data or check the parent?
     wrapper.data = block.data
 
     return wrapper
@@ -443,6 +447,7 @@ export default class WebSafeInterpreter {
 
     if(args.length > 0 && parameters.length == 0) {
       // TODO We weren't expecting arguments!
+      console.log("We got arguments but no params necessary")
     }
 
     let arg, param

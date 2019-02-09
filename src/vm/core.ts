@@ -78,6 +78,7 @@ SetSlot(Objekt, AsString("new"), BuiltInFunc(function(space, vm): IObject {
     slot = this.metaSlots.get(key)
 
     if(slot && slot.astNode) {
+      // This needs to re-eval the AST node for this slot. Hmm...
       SetSlot(obj, ToObject(key), vm._evalNode(slot.astNode))
     }
   })
@@ -340,14 +341,16 @@ SetSlot(BuiltIn, AsString("print"), BuiltInFunc(function(space): IObject {
  *
  */
 SetSlot(Array, AsString("new"), BuiltInFunc(function(space): IObject {
+  let argumentNames = SendMessage(space, AsString("__argumentNames__"))
   let array = []
+  let name: IObject
 
-    /*
-     * Replace with setSlots logic above
-  for(var slotName in args) {
-    array[slotName] = args[slotName]
+  for(name of argumentNames.data) {
+    let idx = parseInt(name.data, 10)
+    let value = SendMessage(space, name)
+
+    array[idx] = value
   }
-     */
 
   return NewObject(Array, array)
 }))
@@ -365,19 +368,6 @@ SetSlot(BuiltIn, AsString("arraySet"), BuiltInFunc(function(space): IObject {
   // TODO index needs to be a Number
   array.data[index.data] = value
   return value
-}))
-
-SetSlot(BuiltIn, AsString("arrayEach"), BuiltInFunc(function(space, vm): IObject {
-  let [array, block] = extractParams(space, "array", "block")
-
-  let parameters = SendMessage(block, AsString("parameters")).data
-  let paramName = ToObject(parameters[0].name)
-
-  for(var entry of array.data) {
-    vm.evalBlockWithArgs(null, block, [[paramName, entry]])
-  }
-
-  return Null
 }))
 
 SetSlot(BuiltIn, AsString("arrayPush"), BuiltInFunc(function(space): IObject {
@@ -491,6 +481,12 @@ function printObjSlots(obj: IObject, depth: number) {
 // Requires running the system through `node --inspect` to do anything.
 SetSlot(BuiltIn, AsString("debugger"), BuiltInFunc(function(): IObject {
   debugger
+  return Null
+}))
+
+SetSlot(BuiltIn, AsString("inspect"), BuiltInFunc(function(space): IObject {
+  let obj = getArgument(space, "object") || getArgument(space, "0")
+  console.log("%o", obj)
   return Null
 }))
 

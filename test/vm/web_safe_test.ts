@@ -240,6 +240,23 @@ describe("Web Safe VM", () => {
     assert.equal(SendMessage(sender, ToObject("file")).data, "[script]")
   })
 
+  it("handles recursive calls correctly", async () => {
+    let vm = new WebSafeVM()
+    await vm.ready()
+
+    let result = await vm.eval(`
+      num = 0
+      count = {
+        num = num + 1
+        (num < 3).do({ count() })
+      }
+      count()
+      num
+    `)
+
+    assert.equal(result.data, 3)
+  })
+
   async function assertObjectEval(input: string, expected: IObject) {
     let result = await evalAndReturn(input)
 

@@ -16,11 +16,11 @@ import { isArray, arrayFrom } from "@vm/js_core"
 // Our core set of built-ins
 //
 
-type BuiltInFunctionT = (space: IObject, vm) => IObject
+type BuiltInFunctionT = (space: IObject) => IObject
 
 // Define a Javascript function to properly expose it
 // to the language runtime as an executable block.
-function BuiltInFunc(func): IObject { // : BuiltInFunctionT): IObject {
+function BuiltInFunc(func: BuiltInFunctionT): IObject {
   let value = NewObject(Block, func)
   value.codeBlock = true
   value.builtIn = true
@@ -61,7 +61,7 @@ function getArgument(space, name) {
  * Create and return a new object with the current object as the first
  * parent, and all provided slots added to the new object.
  */
-SetSlot(Objekt, AsString("new"), BuiltInFunc(function(space, vm): IObject {
+SetSlot(Objekt, AsString("new"), BuiltInFunc(function(space): IObject {
   let obj = NewObject(this)
     /*
   let slot
@@ -125,7 +125,7 @@ function setSlots(obj: IObject, space: IObject) {
  * Use this to programmatically send messages to objects or to send messages
  * that aren't proper identifiers.
  */
-SetSlot(Objekt, AsString("send"), BuiltInFunc(function(space, vm): IObject {
+SetSlot(Objekt, AsString("send"), BuiltInFunc(function(space): IObject {
   let obj = this
   let message = getArgument(space, "message") || getArgument(space, "0")
   let slotValue = SendMessage(obj, message)
@@ -152,7 +152,7 @@ SetSlot(Objekt, AsString("send"), BuiltInFunc(function(space, vm): IObject {
 
     let codeBlock = slotValue
 
-    return vm.evalBlockWithArgs(obj, codeBlock, params)
+    //return vm.evalBlockWithArgs(obj, codeBlock, params)
   }
 
   return slotValue
@@ -175,10 +175,13 @@ SetSlot(BuiltIn, AsString("exit"), BuiltInFunc(function(space): IObject {
 }))
 
 // Load a language file into the space given in `into`.
-SetSlot(BuiltIn, AsString("load"), BuiltInFunc(function(args, meta = {}, vm): IObject {
+SetSlot(BuiltIn, AsString("load"), BuiltInFunc(function(space): IObject {
+  /*
   let [filePath, into] = extractParams(args, "filePath", "into")
 
   return vm.loadFile(filePath, into)
+   */
+  return Null
 }))
 
 /**
@@ -271,13 +274,13 @@ SetSlot(BuiltIn, AsString("numberOp"), BuiltInFunc(function(scope): IObject {
   }
 }))
 
-SetSlot(BuiltIn, AsString("numberTimes"), BuiltInFunc(function(space, vm): IObject {
+SetSlot(BuiltIn, AsString("numberTimes"), BuiltInFunc(function(space): IObject {
   let [count, block] = extractParams(space, "count", "block")
 
   let rawCount = count.data
 
   for(let i = 0; i < rawCount; i++) {
-    vm.evalBlockWithArgs(null, block, [])
+    //vm.evalBlockWithArgs(null, block, [])
   }
 
   return count
@@ -516,7 +519,8 @@ SetSlot(World, AsString("Null"),   Null)
 // If `catch` is provided, it is called with the error.
 // If `finally` is provided, it is called after any `catch`.
 // Finally the value is returned from `try` or `catch` if there was an error.
-SetSlot(World, AsString("try"), BuiltInFunc(function(args, meta = {}, vm): IObject {
+SetSlot(World, AsString("try"), BuiltInFunc(function(space): IObject {
+  /*
   let block = args["block"] || args["0"]
   let catchBlock = args["catch"]
   let finallyBlock = args["finally"]
@@ -537,16 +541,20 @@ SetSlot(World, AsString("try"), BuiltInFunc(function(args, meta = {}, vm): IObje
   }
 
   return result
+   */
+  return Null
 }))
 
 // Use World.throw to throw an exception.
 // The exception can be any object and does not have to explicitly be an Exception
 // object or one of its children.
-SetSlot(World, AsString("throw"), BuiltInFunc(function(args, meta = {}, vm): IObject {
+SetSlot(World, AsString("throw"), BuiltInFunc(function(space): IObject {
+  /*
   let exception = args["0"]
 
   vm.throwException(exception)
 
+   */
   return Null
 }))
 

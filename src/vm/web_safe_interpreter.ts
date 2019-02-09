@@ -179,7 +179,7 @@ export default class WebSafeInterpreter {
   // such that the code should never get into a blocking loop that never
   // leaves this function.
   _evalNextChunk() {
-    let start = Date.now()
+    let start = Platform.now()
     // Start at 10ms windows
     let window = 10
     this.ticked = false
@@ -187,7 +187,7 @@ export default class WebSafeInterpreter {
     let next: Node
 
     try {
-      while((Date.now() - start) < window) {
+      while((Platform.now() - start) < window) {
         next = this.popCode()
         if(next) {
           this._evalNode(next)

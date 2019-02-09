@@ -12,6 +12,7 @@ var Platform: any = {
 }
 
 if(Platform.isNode()) {
+  var { performance } = require("perf_hooks")
 
   Platform.isDirectory = (path) => {
     let stats = fs.lstatSync(path)
@@ -75,6 +76,11 @@ if(Platform.isNode()) {
   Platform.nextTick = (callback) => {
     setTimeout(callback, 0)
   }
+
+}
+
+Platform.now = () => {
+  return performance.now()
 }
 
 export default Platform

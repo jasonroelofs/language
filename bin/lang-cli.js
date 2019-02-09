@@ -16,9 +16,9 @@ if(toRun) {
   }
 }
 
-let vm = new WebSafeVM(rest)
+let vm = new WebSafeVM()
 
-vm.ready().then(async () => {
+vm.ready(rest).then(async () => {
   try {
     if(toRun) {
       await vm.loadFile(toRun)

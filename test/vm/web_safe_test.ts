@@ -1,5 +1,6 @@
 import "mocha"
 import * as assert from "assert"
+import * as util from "util"
 import {
   ToObject,
   IObject,
@@ -9,6 +10,7 @@ import {
   SendMessage,
   AsString,
 } from "@vm/object"
+import * as errors from "@vm/errors"
 import Lexer from "@compiler/lexer"
 import Parser from "@compiler/parser"
 import WebSafeVM from "@vm/web_safe_vm"
@@ -255,6 +257,133 @@ describe("Web Safe VM", () => {
     `)
 
     assert.equal(result.data, 3)
+  })
+
+  describe("Error Handling", () => {
+    it("errors on failed slot lookup", async () => {
+      let vm = new WebSafeVM()
+      await vm.ready()
+      var error
+
+      let tests = {
+        "World.unknownSlot": [errors.NoSuchMessageError, "World", 0],
+        "missing": [errors.SlotNotFoundError, "missing", 0],
+        "{ missing() }()": [errors.SlotNotFoundError, "missing", 2],
+      }
+
+      for(var test in tests) {
+        try {
+          await vm.eval(test)
+        } catch(e) {
+          error = e.data
+        }
+
+        let expected = tests[test]
+
+        assertErrorType(error, expected[0])
+
+        assert.equal(error.chunk, expected[1], `Wrong chunk, expected ${tests[test][0]} got ${error.chunk}`)
+        assert.equal(error.ch, expected[2], `Wrong position, expected ${tests[test][1]} got ${error.ch}`)
+      }
+    })
+
+    it("errors on invalid message block invocation", async () => {
+      let vm = new WebSafeVM()
+      await vm.ready()
+      var error
+
+      try {
+        await vm.eval(`a = Object.new(m: 1); a.m()`)
+      } catch(e) {
+        error = e.data
+      }
+
+      assertErrorType(error, errors.NotABlockError)
+
+      assert.equal(error.chunk, "(")
+      assert.equal(error.ch, 25)
+    })
+
+    it("errors on invalid block invocation", async () => {
+      let vm = new WebSafeVM()
+      await vm.ready()
+      var error
+
+      // Explicit .call
+      try {
+        await vm.eval(`a = 1; a.call()`)
+      } catch(e) {
+        error = e.data
+      }
+
+      assertErrorType(error, errors.NotABlockError)
+
+      assert.equal(error.chunk, "(")
+      assert.equal(error.ch, 13)
+
+      // Implicit version
+      try {
+        await vm.eval(`a = 1; a()`)
+      } catch(e) {
+        error = e.data
+      }
+
+      assertErrorType(error, errors.NotABlockError)
+
+      assert.equal(error.chunk, "(")
+      assert.equal(error.ch, 8)
+    })
+
+    it("errors when block parameters and call arguments don't line up", async () => {
+      let vm = new WebSafeVM()
+      await vm.ready()
+      var error
+
+      let tests = {
+        // Block doesn't have any arguments defined
+        "a = { 1 }; a(1)": ["a", 11],
+
+        // Block expects more arguments
+        "a = { |b| }; a()": ["a", 13],
+
+        // Block doesn't have an argument with that name
+        "a = { |b| }; a(c: 1)": ["a", 13],
+
+        // Block expects more arguments
+        "a = { |b,c| }; a(b: 1)": ["a", 15],
+
+        // Call uses too many arguments
+        "a = { |b| }; a(b: 1, c: 2)": ["a", 13],
+
+        // Same rules apply to message send invocations
+        "a = Object.new(b: { |c| }); a.b()": ["b", 30],
+        "a = Object.new(b: { }); a.b(1)": ["b", 26],
+
+        // And make sure rules apply to direct invocation
+        "{ |a| }()": ["{", 0],
+        "{ }(1)": ["{", 0],
+      }
+
+      for(var test in tests) {
+        let expected = tests[test]
+
+        try {
+          await vm.eval(test)
+        } catch(e) {
+          error = e.data
+        }
+
+        assertErrorType(error, errors.ArgumentMismatchError)
+
+        assert.equal(error.chunk, expected[0], `Wrong chunk for '${test}'`)
+        assert.equal(error.ch, expected[1], `Wrong position for '${test}'`)
+      }
+    })
+
+    function assertErrorType(result: errors.RuntimeError, errorClass) {
+      assert(result instanceof errorClass,
+             util.format("Result %o was not an instance of %o", result, errorClass))
+    }
   })
 
   async function assertObjectEval(input: string, expected: IObject) {

@@ -22,6 +22,8 @@ export enum NodeType {
   FinishBlock = "FinishBlock",
   CallBuiltIn = "CallBuiltIn",
   ReturnValue = "ReturnValue",
+
+  ThrowException = "ThrowException"
 }
 
 export interface Node {

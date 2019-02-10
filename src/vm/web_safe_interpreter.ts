@@ -15,6 +15,7 @@ import {
   SetSlot,
   ToObject,
   AsString,
+  ObjectIs,
   FindIn,
   Number,
   True,
@@ -24,7 +25,8 @@ import {
 import {
   World,
 } from "@vm/core"
-
+import * as errors from "@vm/errors"
+import { SyntaxError } from "@compiler/errors"
 import Platform from "@vm/platform"
 
 /**
@@ -165,13 +167,6 @@ export default class WebSafeInterpreter {
     return result
   }
 
-  _nextTick() {
-    if(!this.ticked && this.codeStack.length > 0) {
-      this.ticked = true
-      Platform.nextTick(() => this._evalNextChunk())
-    }
-  }
-
   // The workhorse of the evaluator.
   // This works through the current codeStack and evaluates each expression
   // but only runs for a set amount of time before releasing control back
@@ -199,6 +194,13 @@ export default class WebSafeInterpreter {
       console.log(error)
     } finally {
       this._nextTick()
+    }
+  }
+
+  _nextTick() {
+    if(!this.ticked && this.codeStack.length > 0) {
+      this.ticked = true
+      Platform.nextTick(() => this._evalNextChunk())
     }
   }
 
@@ -238,9 +240,11 @@ export default class WebSafeInterpreter {
         let slotName = AsString(node.value)
         let found = SendMessage(this.currentSpace, slotName)
 
-        // If not found ...
-
-        this.pushData(found)
+        if(found) {
+          this.pushData(found)
+        } else {
+          this.throwException(node, new errors.SlotNotFoundError(node, slotName))
+        }
         break
 
       /**
@@ -286,6 +290,10 @@ export default class WebSafeInterpreter {
 
       case NodeType.CallBuiltIn:
         this.callBuiltIn(node as BuiltInNode)
+        break
+
+      case NodeType.ThrowException:
+        this.handleException(node as ExceptionNode)
         break
 
       default:
@@ -338,36 +346,45 @@ export default class WebSafeInterpreter {
 
   finishMessageSend(node: EvalNode) {
     let receiver = node.returnValue.value
+    if(receiver) {
+      receiver.astNode = node.node.receiver
+    }
+
     let message = node.node.message.name
     let toAsk = receiver || this.currentSpace
 
     let slotValue = SendMessage(toAsk, AsString(message))
 
     if(!slotValue) {
-      // TODO Actual error handling here
-      console.log("No value found for %s.%s", toAsk, message)
-    }
-
-    if(slotValue.codeBlock) {
       if(message === "call") {
-        if(slotValue.builtIn) {
-          this.evalBuiltIn(node.node as MessageSendNode, slotValue)
-        } else {
-          this.evalBlock(node.node as MessageSendNode, slotValue)
-        }
+        this.throwException(node.node, new errors.NotABlockError(node.node))
+      } else if(receiver) {
+        this.throwException(receiver, new errors.NoSuchMessageError(receiver, AsString(message)))
       } else {
-        // Keep track of the receiver / owner of this block for this call
-        // by using a child object. This then acts exactly like the parent
-        // block object without polluting that object with call-specific information.
-        if(receiver) {
-          slotValue = this.wrapBlock(slotValue, receiver)
-        }
-
-        this.pushData(slotValue)
+        this.throwException(node.node, new errors.SlotNotFoundError(node.node, AsString(message)))
       }
-    } else {
-      this.pushData(slotValue)
+
+      return
     }
+
+    if(message === "call") {
+      if(slotValue.builtIn) {
+        this.evalBuiltIn(node.node as MessageSendNode, slotValue)
+      } else {
+        this.evalBlock(node.node as MessageSendNode, slotValue)
+      }
+
+      return
+    } else if(slotValue.codeBlock) {
+      // Keep track of the receiver / owner of this block for this call
+      // by using a child object. This then acts exactly like the parent
+      // block object without polluting that object with call-specific information.
+      if(receiver) {
+        slotValue = this.wrapBlock(slotValue, receiver)
+      }
+    }
+
+    this.pushData(slotValue)
   }
 
   wrapBlock(block: IObject, receiver: IObject): IObject {
@@ -446,8 +463,8 @@ export default class WebSafeInterpreter {
     let args = node.message.arguments
 
     if(args.length > 0 && parameters.length == 0) {
-      // TODO We weren't expecting arguments!
-      console.log("We got arguments but no params necessary")
+      this.throwException(node, new errors.ArgumentMismatchError(node.receiver, parameters, args))
+      return
     }
 
     let arg, param
@@ -474,7 +491,11 @@ export default class WebSafeInterpreter {
       }
     }
 
-    // TODO: Error on usedArgs and unusedParams, like Interpeter
+    let unusedArgs = args.filter((a) => { return !usedArgs.includes(a) })
+    if(unusedParams.length > 0 || unusedArgs.length > 0) {
+      this.throwException(node, new errors.ArgumentMismatchError(node.receiver, parameters, args))
+      return
+    }
 
     this.pushEval(node, codeBody, NodeType.FinishBlock, { previousSpace: this.currentSpace })
 
@@ -570,6 +591,72 @@ export default class WebSafeInterpreter {
     this.currentSpace = node.previousSpace
   }
 
+  // When an exception is thrown we need to grab the current callStack
+  // and then trigger the eval to unwind the current call stack until we hit
+  // a command that can handle the exception or we end execution entirely.
+  throwException(node: Node, exception) {
+    let orig = exception
+
+    // If we've got a Javascript-level exception, built a new Exception object
+    // providing the JS exception as its `data` field.
+    if(orig instanceof Error) {
+      exception = NewObject(this.Exception, orig)
+      SetSlot(exception, AsString("message"), ToObject(orig.message))
+    }
+
+    // Try to get our message exposed as well, which is different depending on
+    // a JS-level error or one of our own custom errors
+    //
+    // TODO This is a little messy checking for lexer/parser errors
+    // at this level. Possibly a place for pulling out logic.
+    if((orig instanceof errors.RuntimeError) || (orig instanceof SyntaxError)) {
+      SetSlot(exception, AsString("message"), ToObject(orig.errorType()))
+    }
+
+    // Apply our language-level call stack to the new exception
+    // but only if there isn't already a callstack. We don't want to clobber if
+    // this exception goes through multiple handlers!
+    if(ObjectIs(exception, this.Exception) == True) {
+      // TODO: If this exception is re-thrown, do we need to make sure the
+      // backtrace isn't clobbered?
+
+      // By default the call stack is just the series of calls that led to
+      // the current line, and does not include the current line.
+      // We have to push one more time at the point of failure to make sure
+      // the top of the exceptions backtrace points to the actual line of failure/throw.
+      //this.pushCallStack((exception.data && exception.data.token) ? exception.data : exception.astNode)
+      SetSlot(exception, AsString("backtrace"), ToObject(this.callStack))
+      //this.popCallStack()
+    }
+
+    // console.log("Throwing exception %o", exception)
+
+    this.pushEval(
+      node,
+      [],
+      NodeType.ThrowException,
+      { exception: exception }
+    )
+  }
+
+  // The above function, throwException, prepares a Javascript-level exception
+  // or an in-language exception to be thrown and sets up a ThrowException eval Node.
+  // That node is then passed into this function to actually be processed.
+  handleException(node: ExceptionNode) {
+
+    // Handling exceptions:
+    // - iterate through the call stack looking for the nearest Eval node
+    //   that can handle exceptions
+    // - If we get to the end of the code stack, take the first Eval node,
+    //   which will always be a ReturnValue for the eval itself and pass
+    //   the exception to that node's promise.
+
+    // As we don't have `try` implemented yet in the new VM, we just dive
+    // all the way to the end of the call stack and reject!
+
+    this.codeStack[0].reject(node.exception)
+  }
+
   // Push a new Space onto the stack, building it off of the passed in object.
   // Returns the previous currentSpace for restoration.
   // Changes `this.currentSpace`
@@ -663,6 +750,11 @@ export default class WebSafeInterpreter {
  * the execution path hooks to know when and to whom we need to return certain
  * values after execution. This object is a Node that encapsulates a Promise
  * that will resolve with the top value on the data stack.
+ *
+ * If an exception is thrown that is not caught by in-language use of `try`
+ * then the ReturnValue will recieve a `reject` on its promise, trigging
+ * a throw in javascript land of that exception object (which will be an in-language
+ * child of Exception)
  */
 class ReturnValue {
 
@@ -687,6 +779,10 @@ class ReturnValue {
   resolve(value: IObject) {
     this._resolve(value)
     this._value = value
+  }
+
+  reject(exception: IObject) {
+    this._reject(exception)
   }
 
   get value() {
@@ -754,4 +850,9 @@ interface FinishBlockNode extends EvalNode {
 interface BuiltInNode extends FinishBlockNode {
   // Object wrapping our built-in function
   builtIn: IObject
+}
+
+interface ExceptionNode extends EvalNode {
+  // Our in-language Exception object encapsulating all error details
+  exception: IObject
 }

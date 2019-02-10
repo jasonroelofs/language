@@ -54,7 +54,7 @@ setup:
 	@npm upgrade
 	@npm link
 
-test: unit-tests # specs
+test: unit-tests specs
 
 unit-tests:
 	@echo "Running VM test suite"

@@ -190,8 +190,6 @@ export default class WebSafeInterpreter {
           break
         }
       }
-    } catch (error) {
-      console.log(error)
     } finally {
       this._nextTick()
     }
@@ -582,11 +580,22 @@ export default class WebSafeInterpreter {
     // All variables for this built-in are in the current space.
     // It's up to the built-in itself to pull them out with the given
     // helper methods and ensure all exist and are of the right type.
-    this.finishBlockCall(node, builtIn.call(receiver, this.currentSpace, this))
+    let result = null
+
+    try {
+      result = builtIn.call(receiver, this.currentSpace, this)
+    } catch(error) {
+      this.throwException(node, error)
+    } finally {
+      this.finishBlockCall(node, result)
+    }
   }
 
   finishBlockCall(node: FinishBlockNode | BuiltInNode, value: IObject) {
-    this.pushData(value)
+    if(value) {
+      this.pushData(value)
+    }
+
     this.popCallStack()
     this.currentSpace = node.previousSpace
   }
@@ -628,8 +637,6 @@ export default class WebSafeInterpreter {
       SetSlot(exception, AsString("backtrace"), ToObject(this.callStack))
       //this.popCallStack()
     }
-
-    // console.log("Throwing exception %o", exception)
 
     this.pushEval(
       node,

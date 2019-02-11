@@ -253,6 +253,30 @@ describe("Web Safe VM", () => {
     assert.equal(result.data, 3)
   })
 
+  it("treates static parent slots as initialization values for children", async() => {
+    let vm = new WebSafeVM()
+    let result: IObject
+    await vm.ready()
+
+    // Setup
+    await vm.eval(`
+      parent = Object.new(a: 1, list: [], name: "String")
+      parent.list.push(12)
+      parent.name = "Not Me"
+
+      child = parent.new()
+    `)
+
+    result = await vm.eval(`child.a`)
+    assert.equal(result.data, 1)
+
+    result = await vm.eval(`child.list`)
+    assert.equal(result.data.length, 0)
+
+    result = await vm.eval(`child.name`)
+    assert.equal(result.data, "String")
+  })
+
   describe("Error Handling", () => {
     it("errors on failed slot lookup", async () => {
       let vm = new WebSafeVM()

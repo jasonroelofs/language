@@ -2,7 +2,7 @@ import * as path from "path"
 
 import Platform from "@vm/platform"
 import {
-  NewObject, ToObject, AsString,
+  NewObject, CopyObject, ToObject, AsString,
   IObject, Objekt,
   Number, String, Array, Block,
   True, False, Null,
@@ -39,9 +39,12 @@ function BuiltInFunc(func: BuiltInFunctionT): IObject {
 // It does not do parent lookups.
 function extractParams(space, ...argKeys) {
   let ret = []
+  let provided = SendMessage(space, AsString("__argumentNames__"))
+
+  // TODO Convert this to ArgumentMismatch error
   for(let key of argKeys) {
     if(!space.slots.has(key)) {
-      throw new Error(`[BuiltIn Error] Expected argument '${key}' not found in the provided arguments: `) // ${Object.keys(args).join(", ")}`)
+      throw new Error(`[BuiltIn Error] Expected argument '${key}' not found in the provided arguments: ${provided.data.join(", ")}`)
     }
 
     ret.push(space.slots.get(key))
@@ -63,8 +66,7 @@ function getArgument(space, name) {
  */
 SetSlot(Objekt, AsString("new"), BuiltInFunc(function(space): IObject {
   let obj = NewObject(this)
-    /*
-  let slot
+  let slot, originalValue
 
   // Look for slots with defined default values and apply
   // those to this new object first.
@@ -75,14 +77,15 @@ SetSlot(Objekt, AsString("new"), BuiltInFunc(function(space): IObject {
       return
     }
 
-    slot = this.metaSlots.get(key)
+    if(this.metaSlots.has(key)) {
+      slot = this.metaSlots.get(key)
+      originalValue = SendMessage(slot, AsString("originalValue"))
 
-    if(slot && slot.astNode) {
-      // This needs to re-eval the AST node for this slot. Hmm...
-      SetSlot(obj, ToObject(key), vm._evalNode(slot.astNode))
+      if(originalValue) {
+        SetSlot(obj, ToObject(key), CopyObject(originalValue))
+      }
     }
   })
-     */
 
   // Then apply the values provided to us from the parameters to .new()
   // to ensure we overwrite any matching slots

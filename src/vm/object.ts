@@ -184,9 +184,9 @@ function FindIn(obj: IObject, checkFunc: FindInCheckFunc, seen: Set<number> = nu
  */
 function SetSlot(receiver: IObject, message: IObject, value: IObject, comments: IObject = Null) {
   let metaSlot = NewObject(Slot)
-  metaSlot.astNode = value.astNode
   metaSlot.slots.set("value", value)
   metaSlot.slots.set("comments", comments)
+  metaSlot.slots.set("originalValue", CopyObject(value))
 
   let key = message.data
   receiver.slots.set(key, value)
@@ -224,6 +224,22 @@ function ObjectIs(obj: IObject, expected: IObject): IObject {
   }
 
   return False
+}
+
+/**
+ * For a given Object do a deep copy and return a new object with all
+ * the same data
+ */
+function CopyObject(copyFrom: IObject): IObject {
+  let newObj = NewObject(copyFrom.parents[0], copyFrom.data)
+  newObj.codeBlock = copyFrom.codeBlock
+  newObj.builtIn = copyFrom.builtIn
+
+  if(isArray(copyFrom.data)) {
+    newObj.data = copyFrom.data.slice(0)
+  }
+
+  return newObj
 }
 
 /**
@@ -333,6 +349,7 @@ function AsNumber(num: number): IObject {
 export {
   IObject,
   NewObject,
+  CopyObject,
   SendMessage,
   SetSlot,
   RemoveSlot,

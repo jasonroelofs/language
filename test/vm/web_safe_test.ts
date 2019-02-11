@@ -194,10 +194,7 @@ describe("Web Safe VM", () => {
   })
 
   it("sets up an implicit `self` receiver on calls to object blocks", async () => {
-    let vm = new WebSafeVM()
-    await vm.ready()
-
-    let result = await vm.eval(`
+    let input = `
       test = Object.new(
         size: 1,
         count: 2,
@@ -208,21 +205,18 @@ describe("Web Safe VM", () => {
       add = test2.add
 
       test.add() + test2.add() + add()
-    `)
+    `
 
-    assert.equal(result.data, 3 + 3 + 3)
+    await assertObjectEval(input, ToObject(3 + 3 + 3))
   })
 
   it("keeps the value of `self` through nested messages", async () => {
-    let vm = new WebSafeVM()
-    await vm.ready()
-
-    let result = await vm.eval(`
+    let input = `
       obj = Object.new(one: 1, two: { self.one + self.one }, three: { self.two() + self.one })
       obj.three()
-    `)
+    `
 
-    assert.equal(result.data, 3)
+    await assertObjectEval(input, ToObject(3))
   })
 
   it("provides a caller slot to all blocks with call stack information", async () => {

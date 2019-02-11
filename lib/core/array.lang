@@ -15,9 +15,8 @@ Array.setSlots(
   # Iterate over each entry in the array, evaluating the passed-in block
   # for every element.
   each: { |block|
-    block(head())
-
-    (length() > 1).do(ifTrue: {
+    (length() > 0).do(ifTrue: {
+      block(head())
       rest().each(block)
     })
   },

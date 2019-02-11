@@ -75,7 +75,12 @@ export default class WebSafeVM {
   }
 
   async eval(program: string, filePath: string = null): Promise<IObject> {
+    let expressions = this.lexAndParse(program, filePath)
 
+    return this.interpreter.eval(expressions).promise
+  }
+
+  lexAndParse(program: string, filePath: string) {
     // This can happen through integrations or a REPL,
     // make sure there's something we can link back to for raw source input.
     if(!filePath) {
@@ -88,8 +93,6 @@ export default class WebSafeVM {
     var tokens = l.tokenize()
 
     let p = new Parser(tokens)
-    var expressions = p.parse()
-
-    return this.interpreter.eval(expressions).promise
+    return p.parse()
   }
 }

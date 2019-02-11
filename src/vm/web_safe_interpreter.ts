@@ -141,6 +141,20 @@ export default class WebSafeInterpreter {
     return returnVal.promise
   }
 
+  // Parse and eval the given file in the context of an object.
+  // See `World.load` for more details.
+  loadFile(path: IObject, into: IObject) {
+    let previousSpace = this.currentSpace
+    this.currentSpace = into
+
+    let script = Platform.readFile(path.data)
+    let fileBody = this.vm.lexAndParse(script.toString(), path.data)
+
+    // We treat loading the file as loading a block of code.
+    // This lets us drop back to our previous state when the file has finished loading.
+    this.pushEval(path.astNode, fileBody, NodeType.FinishBlock, { previousSpace: this.currentSpace })
+  }
+
   // Evaluate the given set of expressions and return the value of
   // the final expression.
   //

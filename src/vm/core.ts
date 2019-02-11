@@ -16,7 +16,7 @@ import { isArray, arrayFrom } from "@vm/js_core"
 // Our core set of built-ins
 //
 
-type BuiltInFunctionT = (space: IObject) => IObject
+type BuiltInFunctionT = (space: IObject, vm?) => IObject
 
 // Define a Javascript function to properly expose it
 // to the language runtime as an executable block.
@@ -178,12 +178,11 @@ SetSlot(BuiltIn, AsString("exit"), BuiltInFunc(function(space): IObject {
 }))
 
 // Load a language file into the space given in `into`.
-SetSlot(BuiltIn, AsString("load"), BuiltInFunc(function(space): IObject {
-  /*
-  let [filePath, into] = extractParams(args, "filePath", "into")
+SetSlot(BuiltIn, AsString("load"), BuiltInFunc(function(space, vm): IObject {
+  let [filePath, into] = extractParams(space, "filePath", "into")
 
-  return vm.loadFile(filePath, into)
-   */
+  vm.loadFile(filePath, into)
+
   return Null
 }))
 

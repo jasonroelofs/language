@@ -4,6 +4,13 @@ World.setSlots(
   # top level World, but providing `into` lets the code specify a different
   # object in which to load this code.
   load: { |filePath, into: World|
+    # We kind of cheat here.
+    # The call into the built-in *must* be the last value in this block.
+    # Technically this block will finish evaluating before the requested
+    # file starts processing, but due to the nature of the interpreter,
+    # the file's code will then start executing immediately after. Once
+    # that code is done the next call will be the code that sent
+    # this message.
     BuiltIn.load(filePath: filePath, into: into)
   },
 

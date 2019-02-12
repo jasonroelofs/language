@@ -14,6 +14,30 @@ World.setSlots(
     BuiltIn.load(filePath: filePath, into: into)
   },
 
+  # Catch and handle exceptions.
+  # Proving a block, potentially a `catch` and optionally a `finally` block,
+  # catch any exceptions thrown in the original block.
+  # `catch` will be called with the exception thrown, from which the exception
+  # can be handled or re-thrown with `throw`. The `finally` block will be called
+  # after all exception handling has been processed.
+  #
+  # If no `catch` block is provided then the exception will not be caught but
+  # will propogate back up the callstack. However, if a `finally` block *is*
+  # provided, then that block will get called before the exception is re-thrown.
+  #
+  # This will return the value of the last-evaluated block, whether that
+  # be the original block, catch (if there's no finally) or the finally block.
+  try: { |block, catch: null, finally: null|
+    BuiltIn.try(block: block, catch: catch, finally: finally)
+  },
+
+  # Throw an exception. If there's a `try` on the call stack it will catch
+  # this exception, otherwise if the exception propogates to the end of the
+  # call stack, this will end execution.
+  throw: { |exception|
+    BuiltIn.throw(exception: exception)
+  },
+
   # Explicit halt the current process, setting the exist status to the
   # given number.
   #

@@ -23,7 +23,8 @@ export enum NodeType {
   CallBuiltIn = "CallBuiltIn",
   ReturnValue = "ReturnValue",
 
-  ThrowException = "ThrowException"
+  ThrowException = "ThrowException",
+  HandleException = "HandleException",
 }
 
 export interface Node {

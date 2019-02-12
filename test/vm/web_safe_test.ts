@@ -404,8 +404,62 @@ describe("Web Safe VM", () => {
     }
   })
 
+  describe("Exception Handling", () => {
+    it("can throw explicit exceptions", async () => {
+      let vm = new WebSafeVM()
+      await vm.ready()
+      let error
+
+      try {
+        await vm.eval(`throw(Exception.new(message: "This is an exception!"))`)
+      } catch(e) {
+        error = e
+      }
+
+      assert.equal(SendMessage(error, AsString("message")).data, "This is an exception!")
+    })
+
+    it("can throw anything as an exception", async () => {
+      let vm = new WebSafeVM()
+      await vm.ready()
+      let error
+
+      try {
+        await vm.eval(`throw("Throwing a plain string")`)
+      } catch(e) {
+        error = e
+      }
+
+      assert.equal(error.data, "Throwing a plain string")
+    })
+
+    it("can catch a thrown exception", async () => {
+      let input = `
+        try({ throw("A Test") }, catch: { |error| error })
+      `
+
+      await assertObjectEval(input, AsString("A Test"))
+    })
+
+    it("allows a finally clause to fire after catching an exception", async () => {
+      let input = `
+        finally = null
+        try({ throw("A Test") }, catch: { |error| error }, finally: { finally = "called!" })
+        finally
+      `
+
+      await assertObjectEval(input, AsString("called!"))
+    })
+  })
+
   async function assertObjectEval(input: string, expected: IObject) {
-    let result = await evalAndReturn(input)
+    let result
+    try {
+      result = await evalAndReturn(input)
+    } catch (e) {
+      assert.fail(util.format("Threw an unexpected exception: ", e))
+      return
+    }
 
     assert(result, `We didn't a result back for ''${input}'', check for errors?`)
 

@@ -25,6 +25,7 @@ import {
 import {
   World,
 } from "@vm/core"
+import { isArray } from "@vm/js_core"
 import * as errors from "@vm/errors"
 import { SyntaxError } from "@compiler/errors"
 import Platform from "@vm/platform"
@@ -100,6 +101,10 @@ export default class WebSafeInterpreter {
   // Arguments need to be a Javascript array of IObjects with the correct
   // matching names that the underlying block expects.
   //
+  // For situations where you're passing in a single argument to a block
+  // and don't care about the name, pass in a single-element array to `args`
+  // instead of an object.
+  //
   // To get just the value for a message without evaluating any block, use
   // SendMessage instead.
   //
@@ -113,6 +118,17 @@ export default class WebSafeInterpreter {
     let codeBody = SendMessage(block, AsString("body")).data
     let scope = SendMessage(block, AsString("scope"))
     let receiver = obj
+
+    if(isArray(args)) {
+      let blockParams = SendMessage(block, AsString("parameters")).data
+      let arg = args[0]
+
+      // TODO Error handling if block expects more arguments
+      // TODO Error if we get more than one element in the args array
+
+      args = {}
+      args[blockParams[0].name] = arg
+    }
 
     let argCount = 0
 
@@ -153,6 +169,22 @@ export default class WebSafeInterpreter {
     // We treat loading the file as loading a block of code.
     // This lets us drop back to our previous state when the file has finished loading.
     this.pushEval(path.astNode, fileBody, NodeType.FinishBlock, { previousSpace: this.currentSpace })
+  }
+
+  // We've been asked to wrap a block in a `try` clause. This will set up the appropriate
+  // code hooks to grab and catch any exceptions, handling them with a catchBlock and
+  // ensuring code runs in the provided finallyBlock.
+  insertTryHook(codeBlock: IObject, catchBlock: IObject, finallyBlock: IObject) {
+    // Our hook to handle exceptions
+    this.pushEval(
+      codeBlock.astNode,
+      [],
+      NodeType.HandleException,
+      { catchBlock: catchBlock, finallyBlock: finallyBlock }
+    )
+
+    // Run the original block
+    this.callBlock(null, codeBlock)
   }
 
   // Evaluate the given set of expressions and return the value of
@@ -305,7 +337,11 @@ export default class WebSafeInterpreter {
         break
 
       case NodeType.ThrowException:
-        this.handleException(node as ExceptionNode)
+        this.propogateException(node as ExceptionNode)
+        break
+
+      case NodeType.HandleException:
+        this.handleException(node as HandleExceptionNode)
         break
 
       default:
@@ -663,19 +699,36 @@ export default class WebSafeInterpreter {
   // The above function, throwException, prepares a Javascript-level exception
   // or an in-language exception to be thrown and sets up a ThrowException eval Node.
   // That node is then passed into this function to actually be processed.
-  handleException(node: ExceptionNode) {
+  propogateException(node: ExceptionNode) {
+    let nextNode
 
-    // Handling exceptions:
-    // - iterate through the call stack looking for the nearest Eval node
-    //   that can handle exceptions
-    // - If we get to the end of the code stack, take the first Eval node,
-    //   which will always be a ReturnValue for the eval itself and pass
-    //   the exception to that node's promise.
+    while(this.codeStack.length > 0) {
+      nextNode = this.codeStack.pop()
 
-    // As we don't have `try` implemented yet in the new VM, we just dive
-    // all the way to the end of the call stack and reject!
+      if(nextNode.type === NodeType.HandleException) {
+        this.handleException(nextNode, node)
+        return
+      }
+    }
 
-    this.codeStack[0].reject(node.exception)
+    // If we end up here, nextNode is the first node of our callstack, which
+    // is always the initial ReturnValue. Reject that so it will throw and
+    // end all execution in the VM
+    nextNode.reject(node.exception)
+  }
+
+  // This hook pulls double duty. If we hit this node through normal evaluation,
+  // we need to set up the finalizer and make sure it works, when one exists.
+  // If we're being called from propogateException above then we need to catch
+  // that exception, if so configured, and also ensure finalize runs.
+  handleException(node: HandleExceptionNode, catching: ExceptionNode = null) {
+    if(node.finallyBlock && node.finallyBlock != Null) {
+      this.callBlock(null, node.finallyBlock)
+    }
+
+    if(catching) {
+      this.callBlock(null, node.catchBlock, [catching.exception])
+    }
   }
 
   // Push a new Space onto the stack, building it off of the passed in object.
@@ -876,4 +929,12 @@ interface BuiltInNode extends FinishBlockNode {
 interface ExceptionNode extends EvalNode {
   // Our in-language Exception object encapsulating all error details
   exception: IObject
+}
+
+interface HandleExceptionNode extends EvalNode {
+  // User-provided block to handle any exception this node catches
+  catchBlock: IObject
+
+  // User-provided finally block to run as necessary
+  finallyBlock: IObject
 }

@@ -186,6 +186,30 @@ SetSlot(BuiltIn, AsString("load"), BuiltInFunc(function(space, vm): IObject {
   return Null
 }))
 
+// `try` is our exception handling catching and handling tool.
+// It takes a block in which to execute that may throw an exception.
+// If `catch` is provided, it is called with the error.
+// If `finally` is provided, it is called after any `catch`.
+// Finally the value is returned from `try` or `catch` if there was an error.
+SetSlot(BuiltIn, AsString("try"), BuiltInFunc(function(space, vm): IObject {
+  let [block, catchBlock, finallyBlock] = extractParams(space, "block", "catch", "finally")
+
+  vm.insertTryHook(block, catchBlock, finallyBlock)
+
+  return Null
+}))
+
+// Use World.throw to throw an exception.
+// The exception can be any object and does not have to explicitly be an Exception
+// object or one of its children.
+SetSlot(BuiltIn, AsString("throw"), BuiltInFunc(function(space, vm): IObject {
+  let [exception] = extractParams(space, "exception")
+
+  vm.throwException(exception.astNode, exception)
+
+  return Null
+}))
+
 /**
  * Object BuiltIns
  */
@@ -515,50 +539,6 @@ SetSlot(World, AsString("Array"),  Array)
 SetSlot(World, AsString("True"),   True)
 SetSlot(World, AsString("False"),  False)
 SetSlot(World, AsString("Null"),   Null)
-
-// World.try is our exception handling catching and handling tool.
-// It takes a block in which to execute that may throw an exception.
-// If `catch` is provided, it is called with the error.
-// If `finally` is provided, it is called after any `catch`.
-// Finally the value is returned from `try` or `catch` if there was an error.
-SetSlot(World, AsString("try"), BuiltInFunc(function(space): IObject {
-  /*
-  let block = args["block"] || args["0"]
-  let catchBlock = args["catch"]
-  let finallyBlock = args["finally"]
-  let result = Null
-
-  try {
-    result = vm.evalBlockWithArgs(null, block, [])
-  } catch(e) {
-    if(catchBlock) {
-      result = vm.evalBlockWithArgs(null, catchBlock, [[AsString("error"), e]])
-    } else {
-      throw(e)
-    }
-  } finally {
-    if(finallyBlock) {
-      vm.evalBlockWithArgs(null, finallyBlock, [])
-    }
-  }
-
-  return result
-   */
-  return Null
-}))
-
-// Use World.throw to throw an exception.
-// The exception can be any object and does not have to explicitly be an Exception
-// object or one of its children.
-SetSlot(World, AsString("throw"), BuiltInFunc(function(space): IObject {
-  /*
-  let exception = args["0"]
-
-  vm.throwException(exception)
-
-   */
-  return Null
-}))
 
 // If anything changes on our base objects, make sure they get
 // re-exported here.

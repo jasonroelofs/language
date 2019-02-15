@@ -162,6 +162,9 @@ describe("Web Safe VM", () => {
 
       // Objects with the `call` method can stand in as blocks
       "a = Object.new(call: { |x| x * 2 }); a(2)": ToObject(4),
+
+      // Empty blocks always return null
+      "{}().toString()": ToObject("null"),
     }
 
     for(var input in tests) {

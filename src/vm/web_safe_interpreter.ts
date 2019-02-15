@@ -642,10 +642,7 @@ export default class WebSafeInterpreter {
   }
 
   finishBlockCall(node: FinishBlockNode | BuiltInNode, value: IObject) {
-    if(value) {
-      this.pushData(value)
-    }
-
+    this.pushData(value ? value : Null)
     this.popCallStack()
     this.currentSpace = node.previousSpace
   }

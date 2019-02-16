@@ -446,12 +446,12 @@ describe("Web Safe VM", () => {
 
     it("allows a finally clause to fire after catching an exception", async () => {
       let input = `
-        finally = null
-        try({ throw("A Test") }, catch: { |error| error }, finally: { finally = "called!" })
-        finally
+        message = ""
+        try({ throw("A Test") }, catch: { |error| message = message + error }, finally: { message = message + " finally!" })
+        message
       `
 
-      await assertObjectEval(input, AsString("called!"))
+      await assertObjectEval(input, AsString("A Test finally!"))
     })
   })
 

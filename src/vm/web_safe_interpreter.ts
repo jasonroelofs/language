@@ -118,6 +118,7 @@ export default class WebSafeInterpreter {
     let codeBody = SendMessage(block, AsString("body")).data
     let scope = SendMessage(block, AsString("scope"))
     let receiver = obj
+    let unwrappedArgs = []
 
     if(isArray(args)) {
       let blockParams = SendMessage(block, AsString("parameters")).data
@@ -126,19 +127,17 @@ export default class WebSafeInterpreter {
       // TODO Error handling if block expects more arguments
       // TODO Error if we get more than one element in the args array
 
-      args = {}
-      args[blockParams[0].name] = arg
-    }
-
-    let argCount = 0
-
-    for(let name in args) {
-      let argWrapper = NewObject(Objekt)
-      SetSlot(argWrapper, AsString("name"), ToObject(name))
-      SetSlot(argWrapper, AsString("value"), ToObject(args[name]))
-
-      argCount += 1
-      this.pushData(argWrapper)
+      unwrappedArgs.push({
+        name: ToObject(blockParams[0].name),
+        value: ToObject(arg),
+      })
+    } else {
+      for(let name in args) {
+        unwrappedArgs.push({
+          name: ToObject(name),
+          value: ToObject(args[name])
+        })
+      }
     }
 
     let returnVal = this.pushEval(
@@ -151,7 +150,7 @@ export default class WebSafeInterpreter {
     this.pushEval(block.astNode, [], NodeType.StartBlock, {
       receiver: receiver,
       scope: scope,
-      argumentCount: argCount,
+      arguments: unwrappedArgs
     })
 
     return returnVal.promise

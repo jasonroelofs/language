@@ -108,6 +108,6 @@ Object.setSlots(
 
   # Return a string that represents this object
   toString: {
-    self.objectName
+    BuiltIn.objectToString(object: self)
   },
 )

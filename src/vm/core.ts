@@ -266,6 +266,11 @@ SetSlot(BuiltIn, AsString("objectIs"), BuiltInFunc(function(space): IObject {
   return ObjectIs(obj, expected)
 }))
 
+SetSlot(BuiltIn, AsString("objectToString"), BuiltInFunc(function(space): IObject {
+  let [obj] = extractParams(space, "object")
+
+  return ToObject(obj.toString())
+}))
 
 /**
  * Number BuiltIns

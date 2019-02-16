@@ -54,7 +54,15 @@ interface ObjectAttrs {
  */
 let baseToString = function() {
   if(this.data != undefined && this.data != null) {
-    return this.data
+    if(this.builtIn) {
+      return "BuiltIn function"
+    } else if(this.codeBlock) {
+      return "Code Block"
+    } else if(isArray(this.data)) {
+      return "Array (" + this.data.length + ")"
+    } else {
+      return this.data
+    }
   } else if(this === Null) {
     return "null"
   } else {
@@ -63,7 +71,7 @@ let baseToString = function() {
       return objName.data
     } else {
       // This blasts the whole structure which can be very verbose.
-      return this
+      return util.format(this)
     }
   }
 }

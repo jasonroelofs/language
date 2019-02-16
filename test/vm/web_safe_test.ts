@@ -453,6 +453,24 @@ describe("Web Safe VM", () => {
 
       await assertObjectEval(input, AsString("A Test finally!"))
     })
+
+    it("re-raises the exception if try() does not contain a catch clause", async () => {
+      let vm = new WebSafeVM()
+      await vm.ready()
+      let error
+
+      try {
+        await vm.eval(`
+          try({
+            throw("This bubbles to the top")
+          })
+        `)
+      } catch(e) {
+        error = e
+      }
+
+      assert.equal(error.data, "This bubbles to the top")
+    })
   })
 
   async function assertObjectEval(input: string, expected: IObject) {

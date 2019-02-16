@@ -699,8 +699,9 @@ export default class WebSafeInterpreter {
       nextNode = this.codeStack.pop()
 
       if(nextNode.type === NodeType.HandleException) {
-        this.handleException(nextNode, node)
-        return
+        if(this.handleException(nextNode, node)) {
+          return
+        }
       }
     }
 
@@ -719,9 +720,12 @@ export default class WebSafeInterpreter {
       this.callBlock(null, node.finallyBlock)
     }
 
-    if(catching) {
+    if(catching && node.catchBlock != Null) {
       this.callBlock(null, node.catchBlock, [catching.exception])
+      return true
     }
+
+    return false
   }
 
   // Push a new Space onto the stack, building it off of the passed in object.

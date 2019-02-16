@@ -52,7 +52,8 @@ Test.describe("Object", as: { |test|
     obj = Object.new(slot: "value")
 
     assert(obj.slotNames().length() > 1)
-    assert(obj.slotNames(includeParents: false) == ["slot", "objectName"])
+    # TODO: order here doesn't really matter, maybe a sort is in order?
+    assert(obj.slotNames(includeParents: false) == ["objectName", "slot"])
   })
 
   test("send", is: { |assert|

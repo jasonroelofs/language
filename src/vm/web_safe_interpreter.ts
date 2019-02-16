@@ -356,6 +356,7 @@ export default class WebSafeInterpreter {
     SetSlot(block, AsString("parameters"), NewObject(Objekt, node.parameters))
     SetSlot(block, AsString("scope"), this.currentSpace)
     SetSlot(block, AsString("call"), block)
+
     block.codeBlock = true
     block.astNode = node
 
@@ -423,13 +424,11 @@ export default class WebSafeInterpreter {
       }
 
       return
-    } else if(slotValue.codeBlock) {
+    } else if(slotValue.codeBlock && receiver) {
       // Keep track of the receiver / owner of this block for this call
       // by using a child object. This then acts exactly like the parent
       // block object without polluting that object with call-specific information.
-      if(receiver) {
-        slotValue = this.wrapBlock(slotValue, receiver)
-      }
+      slotValue = this.wrapBlock(slotValue, receiver)
     }
 
     this.pushData(slotValue)
@@ -463,9 +462,15 @@ export default class WebSafeInterpreter {
     let receiver = SendMessage(block, AsString("receiver"))
     let toEval = [], arg, argName
 
+    let startBlockOps = {
+      receiver: receiver,
+      scope: scope,
+      arguments: []
+    }
+
     for(let arg of node.message.arguments) {
       argName = arg.name || "0"
-      toEval.push([node, [arg.value], NodeType.PushArgument, { name: argName, comment: arg.comment }])
+      toEval.push([node, [arg.value], NodeType.PushArgument, { name: argName, comment: arg.comment, startBlock: startBlockOps }])
     }
 
     this.pushEval(
@@ -480,11 +485,7 @@ export default class WebSafeInterpreter {
 
     // Push the block starter which will set up the block's new space,
     // take our arguments off the data stack, and apply them
-    this.pushEval(node, [], NodeType.StartBlock, {
-      receiver: receiver,
-      scope: scope,
-      argumentCount: toEval.length,
-    })
+    this.pushEval(node, [], NodeType.StartBlock, startBlockOps)
 
     // Push each argument evaluation
     for(let code of toEval) {
@@ -520,6 +521,12 @@ export default class WebSafeInterpreter {
     let usedArgs = []
     let unusedParams = []
 
+    let startBlockOps = {
+      receiver: receiver,
+      scope: scope,
+      arguments: [],
+    }
+
     for(let i = 0; i < parameters.length; i++) {
       param = parameters[i]
 
@@ -531,9 +538,9 @@ export default class WebSafeInterpreter {
 
       if(arg) {
         usedArgs.push(arg)
-        toEval.push([node, [arg.value], NodeType.PushArgument, { name: param.name, comment: arg.comment }])
+        toEval.push([node, [arg.value], NodeType.PushArgument, { name: param.name, comment: arg.comment, startBlock: startBlockOps }])
       } else if(param.default) {
-        toEval.push([node, [param.default], NodeType.PushArgument, { name: param.name }])
+        toEval.push([node, [param.default], NodeType.PushArgument, { name: param.name, startBlock: startBlockOps }])
       } else {
         unusedParams.push(param)
       }
@@ -549,11 +556,7 @@ export default class WebSafeInterpreter {
 
     // Push the block starter which will set up the block's new space,
     // take our arguments off the data stack, and apply them
-    this.pushEval(node, [], NodeType.StartBlock, {
-      receiver: receiver,
-      scope: scope,
-      argumentCount: toEval.length,
-    })
+    this.pushEval(node, [], NodeType.StartBlock, startBlockOps)
 
     // Push each argument evaluation
     for(let code of toEval) {
@@ -566,33 +569,27 @@ export default class WebSafeInterpreter {
     let argValue = node.returnValue.value
     argValue.astNode = node.node
 
-    // TODO There a better way to make sure the names of arguments
-    // properly flow through to the block?
-    let argWrapper = NewObject(Objekt)
-    SetSlot(argWrapper, AsString("name"), ToObject(node.name))
-    SetSlot(argWrapper, AsString("value"), argValue)
-    SetSlot(argWrapper, AsString("comment"), ToObject(node.comment))
-
-    this.pushData(argWrapper)
+    node.startBlock.arguments.push({
+      name: ToObject(node.name),
+      value: argValue,
+      comment: ToObject(node.comment)
+    })
   }
 
   startBlock(node: StartBlockNode) {
-    let argWrapper, argName
     let argNames = []
 
     this.pushSpace(node.scope)
     this.pushCallStack(node.node)
 
-    for(let i = 0; i < node.argumentCount; i++) {
-      argWrapper = this.popData()
-      let argName = SendMessage(argWrapper, AsString("name"))
-      argNames.push(argName)
+    for(let arg of node.arguments) {
+      argNames.push(arg.name)
 
       SetSlot(
         this.currentSpace,
-        argName,
-        SendMessage(argWrapper, AsString("value")),
-        SendMessage(argWrapper, AsString("comment")),
+        arg.name,
+        arg.value,
+        arg.comment
       )
     }
 
@@ -893,9 +890,15 @@ interface EvalNode extends Node {
 }
 
 interface EvalArgumentNode extends EvalNode {
+  // Name of the argument
   name: string
 
+  // Optional comment to this argument from the parser
   comment?: string
+
+  // Link to the StartBlock command, allowing each pushArgument
+  // to update the startBlock data with the arguments it needs.
+  startBlock: any
 }
 
 interface StartBlockNode extends EvalNode {
@@ -909,7 +912,7 @@ interface StartBlockNode extends EvalNode {
   scope: IObject
 
   // How many arguments will be on the stack to apply to this block?
-  argumentCount: number
+  arguments: Array<any>
 }
 
 interface FinishBlockNode extends EvalNode {

@@ -305,18 +305,6 @@ SetSlot(BuiltIn, AsString("numberOp"), BuiltInFunc(function(scope): IObject {
   }
 }))
 
-SetSlot(BuiltIn, AsString("numberTimes"), BuiltInFunc(function(space): IObject {
-  let [count, block] = extractParams(space, "count", "block")
-
-  let rawCount = count.data
-
-  for(let i = 0; i < rawCount; i++) {
-    //vm.evalBlockWithArgs(null, block, [])
-  }
-
-  return count
-}))
-
 SetSlot(BuiltIn, AsString("numberToString"), BuiltInFunc(function(space): IObject {
   let [num] = extractParams(space, "number")
   return ToObject("" + num.data)

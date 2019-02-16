@@ -41,7 +41,12 @@ Number.setSlots(
 
   # Execute the provided block this number of times.
   times: { |block|
-    BuiltIn.numberTimes(count: self, block: block)
+    (self > 0).do({
+      block()
+      (self - 1).times(block)
+    })
+
+    self
   },
 
   toString: {

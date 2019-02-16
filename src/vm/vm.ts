@@ -23,40 +23,64 @@ export default class VM {
   // to the file in question.
   loadedFiles: Map<string, string>
 
-  constructor(argv = []) {
+  constructor() {
     this.loadedFiles = new Map<string, string>()
 
     this.interpreter = new Interpreter(this)
-
-    this.loadCoreLib()
-
-    // Eventually want this to be a package system
-    // and explicit imports but that's for a future time
-    this.loadStdLib()
-
-    this.interpreter.ready(argv)
   }
 
-  loadCoreLib() {
+  async ready(argv = []) {
+    let coreLibs = this.findCoreLibs()
+    let stdLibs = this.findStdLibs()
+
+    return this.loadFiles(coreLibs).
+      then(() => this.loadFiles(stdLibs)).
+      then(() => this.interpreter.ready(argv))
+  }
+
+  findCoreLibs() {
+    let coreLibs = []
+
     Platform.findCoreLibs((filePath, content) => {
-      this.eval(content, filePath)
+      coreLibs.push([content, filePath])
     })
+
+    return coreLibs
   }
 
-  loadStdLib() {
+  findStdLibs() {
+    let stdLibs = []
+
     Platform.findStdLibs((filePath, content) => {
-      this.eval(content, filePath)
+      stdLibs.push([content, filePath])
     })
+
+    return stdLibs
   }
 
-  loadFile(filePath: string): IObject {
+  async loadFile(filePath) {
     let script = Platform.readFile(filePath)
-    // console.log("Loading file %o", filePath)
     return this.eval(script.toString(), filePath)
   }
 
-  eval(program: string, filePath: string = null): IObject {
+  async loadFiles(files) {
+    for(var file of files) {
+      //console.log("Evaluating %o", file[1])
+      await this.eval(file[0], file[1])
+    }
+  }
 
+  async call(obj: IObject, message: string, args = {}): Promise<IObject> {
+    return this.interpreter.call(obj, message, args)
+  }
+
+  async eval(program: string, filePath: string = null): Promise<IObject> {
+    let expressions = this.lexAndParse(program, filePath)
+
+    return this.interpreter.eval(expressions).promise
+  }
+
+  lexAndParse(program: string, filePath: string) {
     // This can happen through integrations or a REPL,
     // make sure there's something we can link back to for raw source input.
     if(!filePath) {
@@ -69,12 +93,6 @@ export default class VM {
     var tokens = l.tokenize()
 
     let p = new Parser(tokens)
-    var expressions = p.parse()
-
-    return this.interpreter.eval(expressions)
-  }
-
-  evalBlockWithArgs(receiver, block, args = []) {
-    return this.interpreter.evalBlockWithArgs(receiver, block, args)
+    return p.parse()
   }
 }

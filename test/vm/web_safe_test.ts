@@ -13,8 +13,7 @@ import {
 import * as errors from "@vm/errors"
 import Lexer from "@compiler/lexer"
 import Parser from "@compiler/parser"
-import WebSafeVM from "@vm/web_safe_vm"
-import WebSafeInterpreter from "@vm/web_safe_interpreter"
+import VM from "@vm/vm"
 
 describe("Web Safe VM", () => {
   it("evaluates number literals", async () => {
@@ -175,7 +174,7 @@ describe("Web Safe VM", () => {
   })
 
   it("blocks are closures", async () => {
-    let vm = new WebSafeVM()
+    let vm = new VM()
     let result: IObject
     await vm.ready()
 
@@ -223,7 +222,7 @@ describe("Web Safe VM", () => {
   })
 
   it("provides a caller slot to all blocks with call stack information", async () => {
-    let vm = new WebSafeVM()
+    let vm = new VM()
     await vm.ready()
     let result = await vm.eval(`
       obj = Object.new(
@@ -240,7 +239,7 @@ describe("Web Safe VM", () => {
   })
 
   it("handles recursive calls correctly", async () => {
-    let vm = new WebSafeVM()
+    let vm = new VM()
     await vm.ready()
 
     let result = await vm.eval(`
@@ -257,7 +256,7 @@ describe("Web Safe VM", () => {
   })
 
   it("treates static parent slots as initialization values for children", async() => {
-    let vm = new WebSafeVM()
+    let vm = new VM()
     let result: IObject
     await vm.ready()
 
@@ -282,7 +281,7 @@ describe("Web Safe VM", () => {
 
   describe("Error Handling", () => {
     it("errors on failed slot lookup", async () => {
-      let vm = new WebSafeVM()
+      let vm = new VM()
       await vm.ready()
       var error
 
@@ -309,7 +308,7 @@ describe("Web Safe VM", () => {
     })
 
     it("errors on invalid message block invocation", async () => {
-      let vm = new WebSafeVM()
+      let vm = new VM()
       await vm.ready()
       var error
 
@@ -326,7 +325,7 @@ describe("Web Safe VM", () => {
     })
 
     it("errors on invalid block invocation", async () => {
-      let vm = new WebSafeVM()
+      let vm = new VM()
       await vm.ready()
       var error
 
@@ -356,7 +355,7 @@ describe("Web Safe VM", () => {
     })
 
     it("errors when block parameters and call arguments don't line up", async () => {
-      let vm = new WebSafeVM()
+      let vm = new VM()
       await vm.ready()
       var error
 
@@ -409,7 +408,7 @@ describe("Web Safe VM", () => {
 
   describe("Exception Handling", () => {
     it("can throw explicit exceptions", async () => {
-      let vm = new WebSafeVM()
+      let vm = new VM()
       await vm.ready()
       let error
 
@@ -423,7 +422,7 @@ describe("Web Safe VM", () => {
     })
 
     it("can throw anything as an exception", async () => {
-      let vm = new WebSafeVM()
+      let vm = new VM()
       await vm.ready()
       let error
 
@@ -455,7 +454,7 @@ describe("Web Safe VM", () => {
     })
 
     it("re-raises the exception if try() does not contain a catch clause", async () => {
-      let vm = new WebSafeVM()
+      let vm = new VM()
       await vm.ready()
       let error
 
@@ -490,7 +489,7 @@ describe("Web Safe VM", () => {
   }
 
   async function evalAndReturn(input: string) {
-    let vm = new WebSafeVM()
+    let vm = new VM()
     await vm.ready()
     return vm.eval(input)
   }

@@ -1,6 +1,6 @@
 import * as fs from "fs"
 
-import WebSafeVM from "@vm/web_safe_vm"
+import VM from "@vm/vm"
 import REPL from "@vm/repl"
 import { SyntaxError } from "@compiler/errors"
 import { ErrorReport } from "@vm/error_report"
@@ -16,7 +16,7 @@ if(toRun) {
   }
 }
 
-let vm = new WebSafeVM()
+let vm = new VM()
 
 vm.ready(rest).then(async () => {
   try {

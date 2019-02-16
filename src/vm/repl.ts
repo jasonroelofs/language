@@ -1,4 +1,4 @@
-import WebSafeVM from "@vm/web_safe_vm"
+import VM from "@vm/vm"
 import {
   SyntaxError,
   UnterminatedStringError,
@@ -12,7 +12,7 @@ import { IObject, SendMessage, ToObject } from "@vm/object"
 import * as readline from "readline"
 
 export default class REPL {
-  vm: WebSafeVM
+  vm: VM
   line: number
 
   rl = null
@@ -22,7 +22,7 @@ export default class REPL {
   // buffer until its parsing passes.
   inputBuffer: string
 
-  constructor(vm: WebSafeVM) {
+  constructor(vm: VM) {
     this.vm = vm
     this.line = 0
     this.inputBuffer = ""

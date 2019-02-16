@@ -194,7 +194,12 @@ function SetSlot(receiver: IObject, message: IObject, value: IObject, comments: 
   let metaSlot = NewObject(Slot)
   metaSlot.slots.set("value", value)
   metaSlot.slots.set("comments", comments)
-  metaSlot.slots.set("originalValue", CopyObject(value))
+
+  // For any non-Block value, keep a clone so that `new()` can fill in child objects
+  // with the appropriate defaults
+  if(!value.codeBlock) {
+    metaSlot.slots.set("originalValue", CopyObject(value))
+  }
 
   let key = message.data
   receiver.slots.set(key, value)

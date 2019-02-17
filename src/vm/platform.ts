@@ -47,6 +47,10 @@ if(Platform.isNode()) {
     setImmediate(callback)
   }
 
+  Platform.now = () => {
+    return performance.now()
+  }
+
 } else {
 
   Platform.isDirectory = () => {
@@ -77,10 +81,9 @@ if(Platform.isNode()) {
     setTimeout(callback, 0)
   }
 
-}
-
-Platform.now = () => {
-  return performance.now()
+  Platform.now = () => {
+    return Date.now()
+  }
 }
 
 export default Platform

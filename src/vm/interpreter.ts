@@ -730,7 +730,9 @@ export default class WebSafeInterpreter {
     // If we end up here, nextNode is the first node of our callstack, which
     // is always the initial ReturnValue. Reject that so it will throw and
     // end all execution in the VM
-    nextNode.reject(node.exception)
+    if(nextNode) {
+      nextNode.reject(node.exception)
+    }
   }
 
   // This hook pulls double duty. If we hit this node through normal evaluation,

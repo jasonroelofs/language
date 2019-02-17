@@ -15,6 +15,8 @@ export enum NodeType {
   Argument = "Argument",
   Parameter = "Parameter",
 
+  PushCurrentSpace = "PushCurrentSpace",
+
   FinishAssignment = "FinishAssignment",
   FinishMessageSend = "FinishMessageSend",
   PushArgument = "PushArgument",

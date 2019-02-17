@@ -159,15 +159,26 @@ export default class WebSafeInterpreter {
   // Parse and eval the given file in the context of an object.
   // See `World.load` for more details.
   loadFile(path: IObject, into: IObject) {
-    let previousSpace = this.currentSpace
-    this.currentSpace = into
-
     let script = Platform.readFile(path.data)
     let fileBody = this.vm.lexAndParse(script.toString(), path.data)
 
     // We treat loading the file as loading a block of code.
     // This lets us drop back to our previous state when the file has finished loading.
-    this.pushEval(path.astNode, fileBody, NodeType.FinishBlock, { previousSpace: this.currentSpace })
+    let finishBlockOps = {previousSpace: null}
+    this.pushEval(path.astNode, fileBody, NodeType.FinishBlock, finishBlockOps)
+
+    // Due to a quirk in the language and how `load` works, the contents of the
+    // loaded file don't actually get evaluated until after `load` itself finishes
+    // (see World.load for clarification). That means that we'll get a FinishBlock
+    // call, which will change our currentSpace into the space of who called `load`
+    // in the first place, breaking our use of `into`.
+    // However because *right now* we are in the space of `load`, we need to also
+    // capture the current space at the time this node is evaluated so that our own
+    // FinishBlock (above) has the right previousSpace set.
+    this.pushEval(path.astNode, [], NodeType.PushCurrentSpace, {
+      space: into,
+      finish: finishBlockOps
+    })
   }
 
   // We've been asked to wrap a block in a `try` clause. This will set up the appropriate
@@ -306,6 +317,11 @@ export default class WebSafeInterpreter {
         this.pushMessageSend(node as MessageSendNode)
         break
 
+      // See `loadFile` for how this option is used
+      case NodeType.PushCurrentSpace:
+        this.pushCurrentSpace(node)
+        break
+
       /**
        * Finally handle the nodes built from the previous section. These nodes
        * should now have all of the values they need to continue their own processing.
@@ -374,6 +390,12 @@ export default class WebSafeInterpreter {
     }
 
     this.pushEval(node, toEval, NodeType.FinishMessageSend)
+  }
+
+  pushCurrentSpace(node) {
+    node.finish.previousSpace = this.currentSpace
+
+    this.currentSpace = node.space
   }
 
   finishAssignment(node: EvalNode) {

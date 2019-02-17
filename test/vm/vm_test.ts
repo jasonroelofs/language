@@ -1,17 +1,22 @@
 import "mocha"
 import * as assert from "assert"
 import * as util from "util"
-import VM from "@vm/vm"
+import {
+  ToObject,
+  IObject,
+  True,
+  False,
+  Null,
+  SendMessage,
+  AsString,
+} from "@vm/object"
 import * as errors from "@vm/errors"
-import { IObject, ToObject, SendMessage, True, False, Null } from "@vm/object"
-import { Objekt, World } from "@vm/core"
+import Lexer from "@compiler/lexer"
+import Parser from "@compiler/parser"
+import VM from "@vm/vm"
 
-/*
- * No longer passes due to changes in core built-ins.
- * Keeping for now for posterity and reference.
- *
-describe("VM", () => {
-  it("evaluates numbers", () => {
+describe("Web Safe VM", () => {
+  it("evaluates number literals", async () => {
     let tests = {
       "1": ToObject(1),
       "2": ToObject(2),
@@ -20,11 +25,11 @@ describe("VM", () => {
     }
 
     for(var test in tests) {
-      assertObjectEval(test, tests[test])
+      await assertObjectEval(test, tests[test])
     }
   })
 
-  it("evaluates specials", () => {
+  it("evaluates specials", async () => {
     let tests = {
       "true": True,
       "false": False,
@@ -32,11 +37,11 @@ describe("VM", () => {
     }
 
     for(var test in tests) {
-      assertObjectEval(test, tests[test])
+      await assertObjectEval(test, tests[test])
     }
   })
 
-  it("evaluates strings", () => {
+  it("evaluates strings", async () => {
     let tests = {
       [`"A String"`]: ToObject("A String"),
       [`'Single Quotes'`]: ToObject("Single Quotes"),
@@ -44,11 +49,29 @@ describe("VM", () => {
     }
 
     for(var test in tests) {
-      assertObjectEval(test, tests[test])
+      await assertObjectEval(test, tests[test])
     }
   })
 
-  it("evaulates local assignment and lookup", () => {
+  it("builds block objects", async () => {
+    let tests = {
+      "{ 1 }": { bodyLength: 1, paramLength: 0 },
+      "{ 1\n2 }": { bodyLength: 2, paramLength: 0 },
+      "{ |a| a }": { bodyLength: 1, paramLength: 1 },
+      "{ |a, b| a + b }": { bodyLength: 1, paramLength: 2 },
+    }
+
+    for(var test in tests) {
+      let result = await evalAndReturn(test)
+      let expected = tests[test]
+
+      assert(result.codeBlock)
+      assert.equal(SendMessage(result, ToObject("body")).data.length, expected.bodyLength)
+      assert.equal(SendMessage(result, ToObject("parameters")).data.length, expected.paramLength)
+    }
+  })
+
+  it("evaulates local assignment and lookup", async () => {
     let tests = {
       // Assignment returns the value assigned
       "a = 1": ToObject(1),
@@ -57,11 +80,27 @@ describe("VM", () => {
     }
 
     for(var test in tests) {
-      assertObjectEval(test, tests[test])
+      await assertObjectEval(test, tests[test])
     }
   })
 
-  it("implements Ruby-esque scope lookup and re-assignment", () => {
+  it("assigns object names to values stored in variables", async () => {
+    let tests = {
+      "World.objectName": AsString("World"),
+      "Object.objectName": AsString("Object"),
+      "a = 1; a.objectName": AsString("a"),
+      "dog = Object.new(); dog.objectName": AsString("dog"),
+      // Make sure that multiple assignment to the same static value
+      // gets its own name (e.g. we aren't overwriting Number.objectName).
+      "a = 1; b = 1; a.objectName": AsString("a")
+    }
+
+    for(var test in tests) {
+      await assertObjectEval(test, tests[test])
+    }
+  })
+
+  it("implements Ruby-esque scope lookup and re-assignment", async () => {
     // What makes the most sense to me and what I think is the least surprising
     // is when a variable is referenced that's defined in an outer scope, to default
     // to accessing and updating that outer variable.
@@ -80,50 +119,11 @@ describe("VM", () => {
     }
 
     for(var test in tests) {
-      assertObjectEval(test, tests[test])
+      await assertObjectEval(test, tests[test])
     }
   })
 
-  it("builds block objects", () => {
-    let tests = {
-      "{ 1 }": { bodyLength: 1, paramLength: 0 },
-      "{ 1\n2 }": { bodyLength: 2, paramLength: 0 },
-      "{ |a| a }": { bodyLength: 1, paramLength: 1 },
-      "{ |a, b| a + b }": { bodyLength: 1, paramLength: 2 },
-    }
-
-    let vm = new VM()
-
-    for(var test in tests) {
-      let result = vm.eval(test)
-      let expected = tests[test]
-
-      assert.equal(SendMessage(result, ToObject("body")).data.length, expected.bodyLength)
-      assert.equal(SendMessage(result, ToObject("parameters")).data.length, expected.paramLength)
-    }
-  })
-
-  it("assigns object names based on the assignment variable", () => {
-    let tests = {
-      "World.objectName": "World",
-      "Object.objectName": "Object",
-      "a = 1; a.objectName": "a",
-      "dog = Object.new(); dog.objectName": "dog",
-      // Make sure that multiple assignment to the same static value
-      // gets its own name (e.g. we aren't overwriting Number.objectName).
-      "a = 1; b = 1; a.objectName": "a"
-    }
-
-    let vm = new VM()
-    for(var test in tests) {
-      let result = vm.eval(test)
-      let expected = tests[test]
-
-      assert.equal(result.data, expected)
-    }
-  })
-
-  it("evaluates blocks", () => {
+  it("evaluates blocks", async () => {
     let tests = {
       "a = { 1 }; a.call()": ToObject(1),
 
@@ -158,97 +158,45 @@ describe("VM", () => {
 
       // Blocks can be executed with just parens and without the explicit .call
       "{ 2 }()": ToObject(2),
+
+      // Objects with the `call` method can stand in as blocks
+      "a = Object.new(call: { |x| x * 2 }); a(2)": ToObject(4),
+
+      // Empty blocks always return null
+      "{}().toString()": ToObject("null"),
     }
 
-    let vm = new VM()
+    for(var input in tests) {
+      let expected = tests[input]
 
-    for(var test in tests) {
-      let result = vm.eval(test)
-      let expected = tests[test]
-
-      assert.equal(result.data, expected.data, `Incorrect return value for "${test}"`)
+      await assertObjectEval(input, expected)
     }
   })
 
-  it("blocks are closures", () => {
+  it("blocks are closures", async () => {
     let vm = new VM()
-    var result
+    let result: IObject
+    await vm.ready()
 
     // Attached blocks link back to the owning object
-    result = vm.eval("str = Object.toString; str()")
+    result = await vm.eval("str = Object.toString; str()")
     assert.equal(result.data, "Object")
 
     // Instances of other objects close properly around parent methods
-    result = vm.eval("obj = Object.new(); obj.toString()")
+    result = await vm.eval("obj = Object.new(); obj.toString()")
     assert.equal(result.data, "obj")
 
     // Passing activation records as parameters works
-    result = vm.eval("str = Object.toString; block = {|cb| cb()}; block(str)")
+    result = await vm.eval("str = Object.toString; block = {|cb| cb()}; block(str)")
     assert.equal(result.data, "Object")
 
     // Higher order functions all work
-    result = vm.eval("add = { |x| { |y| x + y } }; add2 = add(2); add2(3)")
+    result = await vm.eval("add = { |x| { |y| x + y } }; add2 = add(2); add2(3)")
     assert.equal(result.data, 5, "Higher order function didn't work")
   })
 
-  it("evaluates direct message calls on objects", () => {
-    let vm = new VM()
-
-    // Get raw values back
-    vm.eval(`obj = Object.new(); obj.setSlot("size", as: 3)`)
-    var result = vm.eval("obj.size")
-    assert.equal(result.data, 3)
-
-    // Eval a block with no arguments
-    vm.eval(`obj = Object.new(); obj.setSlot("count", as: { 5 })`)
-    var result = vm.eval("obj.count()")
-    assert.equal(result.data, 5)
-
-    // Call blocks at the slot with arguments
-    vm.eval(`obj = Object.new(); obj.setSlot("pow", as: { |x| x * x })`)
-    result = vm.eval("obj.pow(3)")
-    assert.equal(result.data, 9)
-  })
-
-  it("keeps the value of `self` through nested messages", () => {
-    let vm = new VM()
-
-    let result = vm.eval(`
-      obj = Object.new(one: 1, two: { self.one + self.one }, three: { self.two() + self.one })
-      obj.three()
-    `)
-
-    assert.equal(result.data, 3)
-  })
-
-  it("supports creation of new objects", () => {
-    let vm = new VM()
-
-    let test = vm.eval(`testObj = Object.new()`)
-    assert.equal(test.parents[0], Objekt)
-
-    let test2 = vm.eval(`test2 = testObj.new()`)
-    assert.equal(test2.parents[0], test)
-  })
-
-  it("supports adding slots to new objects in the constructor", () => {
-    let vm = new VM()
-    let result = vm.eval(`
-      test = Object.new(
-        size: 1,
-        count: 2,
-        add: { |x, y| x + y }
-      )
-
-      test.size + test.count + test.add(x: 4, y: 5)
-    `)
-
-    assert.equal(result.data, 12)
-  })
-
-  it("sets up an implicit `self` receiver on calls to object blocks", () => {
-    let vm = new VM()
-    let result = vm.eval(`
+  it("sets up an implicit `self` receiver on calls to object blocks", async () => {
+    let input = `
       test = Object.new(
         size: 1,
         count: 2,
@@ -259,23 +207,24 @@ describe("VM", () => {
       add = test2.add
 
       test.add() + test2.add() + add()
-    `)
+    `
 
-    assert.equal(result.data, 3 + 3 + 3)
+    await assertObjectEval(input, ToObject(3 + 3 + 3))
   })
 
-  it("loads the core and standard libraries into the World", () => {
-    let vm = new VM()
+  it("keeps the value of `self` through nested messages", async () => {
+    let input = `
+      obj = Object.new(one: 1, two: { self.one + self.one }, three: { self.two() + self.one })
+      obj.three()
+    `
 
-    // Have to use a name that's defined only in the core/stdlib for this to pass
-    let result = vm.eval(`World.getSlot("IO") == null`)
-
-    assert.equal(result, False)
+    await assertObjectEval(input, ToObject(3))
   })
 
-  it("provides a caller slot to all blocks with call stack information", () => {
+  it("provides a caller slot to all blocks with call stack information", async () => {
     let vm = new VM()
-    let result = vm.eval(`
+    await vm.ready()
+    let result = await vm.eval(`
       obj = Object.new(
         callMe: { sender }
       )
@@ -289,10 +238,11 @@ describe("VM", () => {
     assert.equal(SendMessage(sender, ToObject("file")).data, "[script]")
   })
 
-  it("handles recursive calls correctly", () => {
+  it("handles recursive calls correctly", async () => {
     let vm = new VM()
+    await vm.ready()
 
-    let result = vm.eval(`
+    let result = await vm.eval(`
       num = 0
       count = {
         num = num + 1
@@ -305,10 +255,34 @@ describe("VM", () => {
     assert.equal(result.data, 3)
   })
 
+  it("treates static parent slots as initialization values for children", async() => {
+    let vm = new VM()
+    let result: IObject
+    await vm.ready()
+
+    // Setup
+    await vm.eval(`
+      parent = Object.new(a: 1, list: [], name: "String")
+      parent.list.push(12)
+      parent.name = "Not Me"
+
+      child = parent.new()
+    `)
+
+    result = await vm.eval(`child.a`)
+    assert.equal(result.data, 1)
+
+    result = await vm.eval(`child.list`)
+    assert.equal(result.data.length, 0)
+
+    result = await vm.eval(`child.name`)
+    assert.equal(result.data, "String")
+  })
 
   describe("Error Handling", () => {
-    it("errors on failed slot lookup", () => {
+    it("errors on failed slot lookup", async () => {
       let vm = new VM()
+      await vm.ready()
       var error
 
       let tests = {
@@ -319,7 +293,7 @@ describe("VM", () => {
 
       for(var test in tests) {
         try {
-          vm.eval(test)
+          await vm.eval(test)
         } catch(e) {
           error = e.data
         }
@@ -333,53 +307,56 @@ describe("VM", () => {
       }
     })
 
-    it("errors on invalid message block invocation", () => {
+    it("errors on invalid message block invocation", async () => {
       let vm = new VM()
+      await vm.ready()
       var error
 
       try {
-        vm.eval(`a = Object.new(m: 1); a.m()`)
+        await vm.eval(`a = Object.new(m: 1); a.m()`)
       } catch(e) {
         error = e.data
       }
 
       assertErrorType(error, errors.NotABlockError)
 
-      assert.equal(error.chunk, "m")
-      assert.equal(error.ch, 24)
+      assert.equal(error.chunk, "(")
+      assert.equal(error.ch, 25)
     })
 
-    it("errors on invalid block invocation", () => {
+    it("errors on invalid block invocation", async () => {
       let vm = new VM()
+      await vm.ready()
       var error
 
       // Explicit .call
       try {
-        vm.eval(`a = 1; a.call()`)
+        await vm.eval(`a = 1; a.call()`)
       } catch(e) {
         error = e.data
       }
 
       assertErrorType(error, errors.NotABlockError)
 
-      assert.equal(error.chunk, "a")
-      assert.equal(error.ch, 7)
+      assert.equal(error.chunk, "(")
+      assert.equal(error.ch, 13)
 
       // Implicit version
       try {
-        vm.eval(`a = 1; a()`)
+        await vm.eval(`a = 1; a()`)
       } catch(e) {
         error = e.data
       }
 
       assertErrorType(error, errors.NotABlockError)
 
-      assert.equal(error.chunk, "a")
-      assert.equal(error.ch, 7)
+      assert.equal(error.chunk, "(")
+      assert.equal(error.ch, 8)
     })
 
-    it("errors when block parameters and call arguments don't line up", () => {
+    it("errors when block parameters and call arguments don't line up", async () => {
       let vm = new VM()
+      await vm.ready()
       var error
 
       let tests = {
@@ -411,7 +388,7 @@ describe("VM", () => {
         let expected = tests[test]
 
         try {
-          vm.eval(test)
+          await vm.eval(test)
         } catch(e) {
           error = e.data
         }
@@ -428,16 +405,92 @@ describe("VM", () => {
              util.format("Result %o was not an instance of %o", result, errorClass))
     }
   })
+
+  describe("Exception Handling", () => {
+    it("can throw explicit exceptions", async () => {
+      let vm = new VM()
+      await vm.ready()
+      let error
+
+      try {
+        await vm.eval(`throw(Exception.new(message: "This is an exception!"))`)
+      } catch(e) {
+        error = e
+      }
+
+      assert.equal(SendMessage(error, AsString("message")).data, "This is an exception!")
+    })
+
+    it("can throw anything as an exception", async () => {
+      let vm = new VM()
+      await vm.ready()
+      let error
+
+      try {
+        await vm.eval(`throw("Throwing a plain string")`)
+      } catch(e) {
+        error = e
+      }
+
+      assert.equal(error.data, "Throwing a plain string")
+    })
+
+    it("can catch a thrown exception", async () => {
+      let input = `
+        try({ throw("A Test") }, catch: { |error| error })
+      `
+
+      await assertObjectEval(input, AsString("A Test"))
+    })
+
+    it("allows a finally clause to fire after catching an exception", async () => {
+      let input = `
+        message = ""
+        try({ throw("A Test") }, catch: { |error| message = message + error }, finally: { message = message + " finally!" })
+        message
+      `
+
+      await assertObjectEval(input, AsString("A Test finally!"))
+    })
+
+    it("re-raises the exception if try() does not contain a catch clause", async () => {
+      let vm = new VM()
+      await vm.ready()
+      let error
+
+      try {
+        await vm.eval(`
+          try({
+            throw("This bubbles to the top")
+          })
+        `)
+      } catch(e) {
+        error = e
+      }
+
+      assert.equal(error.data, "This bubbles to the top")
+    })
+  })
+
+  async function assertObjectEval(input: string, expected: IObject) {
+    let result
+    try {
+      result = await evalAndReturn(input)
+    } catch (e) {
+      assert.fail(util.format("Threw an unexpected exception: ", e))
+      return
+    }
+
+    assert(result, `We didn't a result back for ''${input}'', check for errors?`)
+
+    assert.equal(result.parents.length, expected.parents.length)
+    assert.equal(result.parents[0], expected.parents[0], `Wrong parent type for ${input}`)
+    assert.equal(result.data, expected.data, `Incorrect return value for "${input}"`)
+  }
+
+  async function evalAndReturn(input: string) {
+    let vm = new VM()
+    await vm.ready()
+    return vm.eval(input)
+  }
 })
-
-function assertObjectEval(input: string, expected: IObject) {
-  let vm = new VM()
-  let result = vm.eval(input)
-
-  assert(result, `We didn't a result back for ''${input}'', check for errors?`)
-
-  assert.equal(result.parents.length, expected.parents.length)
-  assert.equal(result.parents[0], expected.parents[0])
-  assert.equal(result.data, expected.data, `Incorrect return value for "${input}"`)
-}
-*/

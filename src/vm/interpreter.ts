@@ -45,7 +45,7 @@ import Platform from "@vm/platform"
  * This means that the interpeter needs to be treated as an asyncronous process,
  * where interactions with it are handled and resolved through Promises.
  */
-export default class WebSafeInterpreter {
+export default class Interpreter {
 
   // Pointer back to the main VM object running us
   vm = null

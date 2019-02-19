@@ -115,6 +115,10 @@ export default class Interpreter {
   }
 
   async callBlock(obj: IObject, block: IObject, args = {}): Promise<IObject> {
+    return this._callBlock(obj, block, args).promise
+  }
+
+  _callBlock(obj: IObject, block: IObject, args = {}): ReturnValue {
     let codeBody = SendMessage(block, AsString("body")).data
     let scope = SendMessage(block, AsString("scope"))
     let receiver = obj
@@ -140,7 +144,7 @@ export default class Interpreter {
       }
     }
 
-    let returnVal = this.pushEval(
+    let returnNode = this.pushEval(
       block.astNode,
       codeBody,
       NodeType.FinishBlock,
@@ -153,7 +157,7 @@ export default class Interpreter {
       arguments: unwrappedArgs
     })
 
-    return returnVal.promise
+    return returnNode.returnValue
   }
 
   // Parse and eval the given file in the context of an object.
@@ -185,16 +189,47 @@ export default class Interpreter {
   // code hooks to grab and catch any exceptions, handling them with a catchBlock and
   // ensuring code runs in the provided finallyBlock.
   insertTryHook(codeBlock: IObject, catchBlock: IObject, finallyBlock: IObject) {
-    // Our hook to handle exceptions
-    this.pushEval(
+    // Similar to how loadFile above works, this is called from BuiltIn.try
+    // which is eval'd through a CallBuiltIn message which has no further nodes
+    // after it (aka there is no FinishBlock command when calling a built-in).
+    // We also rely on the call to BuiltIn.try being the last expression of `World.try`
+    // itself so we can reliably inject our hook into the evaluation stream to make sure
+    // that when `World.try` returns, we can provide the right value to the caller,
+    // whether that be the block `try` was given or the result of `catch`.
+    //
+    // Given the above, we can now search the code stack for the first FinishBlock
+    // command and keep a link to it in our HandleException command.
+    // This command will then give to the FinishBlock node which returnvalue it should
+    // actually return.
+
+    let finishBlockNode = null
+    let idx = this.codeStack.length - 1
+
+    while(!finishBlockNode) {
+      if(this.codeStack[idx].type == NodeType.FinishBlock) {
+        finishBlockNode = this.codeStack[idx]
+        break
+      }
+
+      idx -= 1
+      if(idx < 0) {
+        throw new Error("CORE BUG: Could not find `try`'s FinishBlock node")
+      }
+    }
+
+    let evalNode = this.pushEval(
       codeBlock.astNode,
       [],
       NodeType.HandleException,
-      { catchBlock: catchBlock, finallyBlock: finallyBlock }
-    )
+      {
+        finishBlockNode: finishBlockNode,
+        result: null,
+        catchBlock: catchBlock,
+        finallyBlock: finallyBlock
+      }
+    ) as HandleExceptionNode
 
-    // Run the original block
-    this.callBlock(null, codeBlock)
+    evalNode.result = this._callBlock(null, codeBlock)
   }
 
   // Evaluate the given set of expressions and return the value of
@@ -359,6 +394,10 @@ export default class Interpreter {
         this.handleException(node as HandleExceptionNode)
         break
 
+      case NodeType.FinalizeException:
+        this.finalizeException(node as FinalizeExceptionNode)
+        break
+
       default:
         // Throw exception: don't now how to evaluate node type
         console.log("Don't know how to handle node type ", node.type)
@@ -491,7 +530,12 @@ export default class Interpreter {
 
     for(let arg of node.message.arguments) {
       argName = arg.name || "0"
-      toEval.push([node, [arg.value], NodeType.PushArgument, { name: argName, comment: arg.comment, startBlock: startBlockOps }])
+      toEval.push([
+        node,
+        [arg.value],
+        NodeType.PushArgument,
+        { name: argName, comment: arg.comment, startBlock: startBlockOps }
+      ])
     }
 
     this.pushEval(
@@ -559,9 +603,19 @@ export default class Interpreter {
 
       if(arg) {
         usedArgs.push(arg)
-        toEval.push([node, [arg.value], NodeType.PushArgument, { name: param.name, comment: arg.comment, startBlock: startBlockOps }])
+        toEval.push([
+          node,
+          [arg.value],
+          NodeType.PushArgument,
+          { name: param.name, comment: arg.comment, startBlock: startBlockOps }
+        ])
       } else if(param.default) {
-        toEval.push([node, [param.default], NodeType.PushArgument, { name: param.name, startBlock: startBlockOps }])
+        toEval.push([
+          node,
+          [param.default],
+          NodeType.PushArgument,
+          { name: param.name, startBlock: startBlockOps }
+        ])
       } else {
         unusedParams.push(param)
       }
@@ -740,16 +794,47 @@ export default class Interpreter {
   // If we're being called from propogateException above then we need to catch
   // that exception, if so configured, and also ensure finalize runs.
   handleException(node: HandleExceptionNode, catching: ExceptionNode = null) {
+    let evalNode = this.pushEval(
+      node.node,
+      [],
+      NodeType.FinalizeException,
+      {
+        finishBlockNode: node.finishBlockNode,
+        blockResult: node.result,
+        finalizeResult: null,
+        catchResult: null
+      }
+    ) as FinalizeExceptionNode
+
     if(node.finallyBlock && node.finallyBlock != Null) {
-      this.callBlock(null, node.finallyBlock)
+      evalNode.finalizeResult = this._callBlock(null, node.finallyBlock)
     }
 
     if(catching && node.catchBlock != Null) {
-      this.callBlock(null, node.catchBlock, [catching.exception])
+      evalNode.catchResult = this._callBlock(null, node.catchBlock, [catching.exception])
       return true
     }
 
     return false
+  }
+
+  // This node will fire on three situations.
+  // 1) The block succeeded with no exception
+  // 2) The block succeeded and `finally` ran
+  // 3) The block threw, `catch` ran
+  // 4) The block threw, `catch` ran, and `finally` ran
+  //
+  // Through all of these we need to make sure the following happen:
+  //
+  // 1) If the block succeeded, the final return value is the block's result.
+  // 2) If the block threw, the final return value is the catch's result.
+  // 3) We never return the value of a finally block.
+  finalizeException(node: FinalizeExceptionNode) {
+    if(node.catchResult) {
+      node.finishBlockNode.returnValue = node.catchResult
+    } else {
+      node.finishBlockNode.returnValue = node.blockResult
+    }
   }
 
   // Push a new Space onto the stack, building it off of the passed in object.
@@ -853,7 +938,7 @@ export default class Interpreter {
  */
 class ReturnValue {
 
-  public promise: Promise<IObject> = null
+  _promise: Promise<IObject> = null
 
   // Match the Node interface
   type = NodeType.ReturnValue
@@ -865,7 +950,7 @@ class ReturnValue {
   _value = null
 
   constructor() {
-    this.promise = new Promise<IObject>((resolve, reject) => {
+    this._promise = new Promise<IObject>((resolve, reject) => {
       this._resolve = resolve
       this._reject = reject
     })
@@ -878,6 +963,10 @@ class ReturnValue {
 
   reject(exception: IObject) {
     this._reject(exception)
+  }
+
+  get promise() {
+    return this._promise
   }
 
   get value() {
@@ -909,7 +998,7 @@ interface EvalNode extends Node {
   node: Node
 
   // The promise wrapper that will receive the computation result
-  value: ReturnValue
+  returnValue: ReturnValue
 
   // The underlying Promise so calls into the interpreter can
   // properly wait for a response
@@ -959,9 +1048,29 @@ interface ExceptionNode extends EvalNode {
 }
 
 interface HandleExceptionNode extends EvalNode {
+  // Link back to `try`'s FinishBlock node
+  finishBlockNode: Node
+
+  // The result promise of the base try block
+  result: ReturnValue
+
   // User-provided block to handle any exception this node catches
   catchBlock: IObject
 
   // User-provided finally block to run as necessary
   finallyBlock: IObject
+}
+
+interface FinalizeExceptionNode extends EvalNode {
+  // Link back to `try`'s FinishBlock node
+  finishBlockNode: Node
+
+  // The result of the base try block
+  blockResult: ReturnValue
+
+  // The result of the `catch` block
+  catchResult?: ReturnValue
+
+  // The result of the `finally` block
+  finalizeResult?: ReturnValue
 }

@@ -27,6 +27,7 @@ export enum NodeType {
 
   ThrowException = "ThrowException",
   HandleException = "HandleException",
+  FinalizeException = "FinalizeException",
 }
 
 export interface Node {

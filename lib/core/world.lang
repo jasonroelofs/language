@@ -28,6 +28,11 @@ World.setSlots(
   # This will return the value of the last-evaluated block, whether that
   # be the original block, catch (if there's no finally) or the finally block.
   try: { |block, catch: null, finally: null|
+    # Like load above, this must be the last line in this block.
+    # To make try catching work, we rely on this built-in returning and
+    # being the end of the current block as we inject the try clause handler
+    # before this block ends and use that to return the final value out
+    # of `try`.
     BuiltIn.try(block: block, catch: catch, finally: finally)
   },
 

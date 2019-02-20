@@ -4,7 +4,43 @@ World.setSlots(
   # top level World, but providing `into` lets the code specify a different
   # object in which to load this code.
   load: { |filePath, into: World|
+    # We kind of cheat here.
+    # The call into the built-in *must* be the last value in this block.
+    # Technically this block will finish evaluating before the requested
+    # file starts processing, but due to the nature of the interpreter,
+    # the file's code will then start executing immediately after. Once
+    # that code is done the next call will be the code that sent
+    # this message.
     BuiltIn.load(filePath: filePath, into: into)
+  },
+
+  # Catch and handle exceptions.
+  # Proving a block, potentially a `catch` and optionally a `finally` block,
+  # catch any exceptions thrown in the original block.
+  # `catch` will be called with the exception thrown, from which the exception
+  # can be handled or re-thrown with `throw`. The `finally` block will be called
+  # after all exception handling has been processed.
+  #
+  # If no `catch` block is provided then the exception will not be caught but
+  # will propogate back up the callstack. However, if a `finally` block *is*
+  # provided, then that block will get called before the exception is re-thrown.
+  #
+  # This will return the value of the last-evaluated block, whether that
+  # be the original block, catch (if there's no finally) or the finally block.
+  try: { |block, catch: null, finally: null|
+    # Like load above, this must be the last line in this block.
+    # To make try catching work, we rely on this built-in returning and
+    # being the end of the current block as we inject the try clause handler
+    # before this block ends and use that to return the final value out
+    # of `try`.
+    BuiltIn.try(block: block, catch: catch, finally: finally)
+  },
+
+  # Throw an exception. If there's a `try` on the call stack it will catch
+  # this exception, otherwise if the exception propogates to the end of the
+  # call stack, this will end execution.
+  throw: { |exception|
+    BuiltIn.throw(exception: exception)
   },
 
   # Explicit halt the current process, setting the exist status to the

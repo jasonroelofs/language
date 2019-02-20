@@ -14,6 +14,20 @@ export enum NodeType {
   Message = "Message",
   Argument = "Argument",
   Parameter = "Parameter",
+
+  PushCurrentSpace = "PushCurrentSpace",
+
+  FinishAssignment = "FinishAssignment",
+  FinishMessageSend = "FinishMessageSend",
+  PushArgument = "PushArgument",
+  StartBlock = "StartBlock",
+  FinishBlock = "FinishBlock",
+  CallBuiltIn = "CallBuiltIn",
+  ReturnValue = "ReturnValue",
+
+  ThrowException = "ThrowException",
+  HandleException = "HandleException",
+  FinalizeException = "FinalizeException",
 }
 
 export interface Node {
@@ -61,9 +75,5 @@ export interface ParameterNode extends Node {
 
 export interface BlockNode extends Node {
   parameters: ParameterNode[]
-  body: Expression[]
-}
-
-export interface Expression {
-  node: Node
+  body: Node[]
 }

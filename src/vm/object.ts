@@ -54,7 +54,15 @@ interface ObjectAttrs {
  */
 let baseToString = function() {
   if(this.data != undefined && this.data != null) {
-    return this.data
+    if(this.builtIn) {
+      return "BuiltIn function"
+    } else if(this.codeBlock) {
+      return "Code Block"
+    } else if(isArray(this.data)) {
+      return "Array (" + this.data.length + ")"
+    } else {
+      return this.data
+    }
   } else if(this === Null) {
     return "null"
   } else {
@@ -63,7 +71,7 @@ let baseToString = function() {
       return objName.data
     } else {
       // This blasts the whole structure which can be very verbose.
-      return this
+      return util.format(this)
     }
   }
 }
@@ -184,9 +192,14 @@ function FindIn(obj: IObject, checkFunc: FindInCheckFunc, seen: Set<number> = nu
  */
 function SetSlot(receiver: IObject, message: IObject, value: IObject, comments: IObject = Null) {
   let metaSlot = NewObject(Slot)
-  metaSlot.astNode = value.astNode
   metaSlot.slots.set("value", value)
   metaSlot.slots.set("comments", comments)
+
+  // For any non-Block value, keep a clone so that `new()` can fill in child objects
+  // with the appropriate defaults
+  if(!value.codeBlock) {
+    metaSlot.slots.set("originalValue", CopyObject(value))
+  }
 
   let key = message.data
   receiver.slots.set(key, value)
@@ -226,6 +239,21 @@ function ObjectIs(obj: IObject, expected: IObject): IObject {
   return False
 }
 
+/**
+ * For a given Object do a deep copy and return a new object with all
+ * the same data
+ */
+function CopyObject(copyFrom: IObject): IObject {
+  let newObj = NewObject(copyFrom.parents[0], copyFrom.data)
+  newObj.codeBlock = copyFrom.codeBlock
+  newObj.builtIn = copyFrom.builtIn
+
+  if(isArray(copyFrom.data)) {
+    newObj.data = copyFrom.data.slice(0)
+  }
+
+  return newObj
+}
 
 /**
  * The base of all objects.
@@ -246,6 +274,8 @@ var Array = NewObject(Objekt, [], {objectId: 7})
 
 var Slot = NewObject(Objekt, null, {objectId: 8})
 
+var Block = NewObject(Objekt, null, {objectId: 9})
+
 // Assign objectName values for each of our built-ins
 // Order of operations is important here as we need to not try to use String
 // before it's been defined.
@@ -257,6 +287,7 @@ SetSlot(Number, AsString("objectName"), AsString("Number"))
 SetSlot(String, AsString("objectName"), AsString("String"))
 SetSlot(Array, AsString("objectName"), AsString("Array"))
 SetSlot(Slot, AsString("objectName"), AsString("Slot"))
+SetSlot(Block, AsString("objectName"), AsString("Block"))
 
 function ToObject(nativeValue: any): IObject {
   if(nativeValue === undefined || nativeValue === null) {
@@ -331,6 +362,7 @@ function AsNumber(num: number): IObject {
 export {
   IObject,
   NewObject,
+  CopyObject,
   SendMessage,
   SetSlot,
   RemoveSlot,
@@ -349,4 +381,5 @@ export {
   Number,
   String,
   Array,
+  Block,
 }

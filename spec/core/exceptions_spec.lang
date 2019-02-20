@@ -37,6 +37,15 @@ Test.describe("Exceptions", as: { |test|
     assert(result == "success!")
   })
 
+  test("try with no exception and a finally block returns the value of the block", is: { |assert|
+    result = try(
+      { "success!" },
+      finally: { "Finally!" }
+    )
+
+    assert(result == "success!")
+  })
+
   test("nested try handle exceptions at the lowest point", is: { |assert|
     caught = null
 

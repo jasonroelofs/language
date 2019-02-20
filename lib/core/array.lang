@@ -15,7 +15,21 @@ Array.setSlots(
   # Iterate over each entry in the array, evaluating the passed-in block
   # for every element.
   each: { |block|
-    BuiltIn.arrayEach(array: self, block: block)
+    (length() > 0).do(ifTrue: {
+      block(head())
+      rest().each(block)
+    })
+  },
+
+  # Get the first element of this array
+  head: {
+    self[0]
+  },
+
+  # Returns a new array that contains every element of this array
+  # except for the first element.
+  rest: {
+    slice(1)
   },
 
   # Iterate over each element of this array applying the given block to

@@ -29,17 +29,3 @@ describe("Array", () => {
     assert.equal(after.data[2].data, 3)
   })
 })
-
-function assertExpression(input, expected) {
-  let vm = new VM()
-
-  let result = vm.eval(input)
-
-  if((typeof result) != "object" || !("objectId" in result)) {
-    assert.fail(util.format("expected an IObject, but got %o", result))
-  }
-
-  // console.log("Got result: %o", result)
-
-  assert.equal(result.data, expected.data, `Eval failed for ${input}`)
-}

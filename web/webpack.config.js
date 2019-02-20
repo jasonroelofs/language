@@ -15,7 +15,8 @@ module.exports = {
   },
   resolve: {
     alias: {
-      vm: path.resolve(__dirname, "../dist/src/vm")
+      vm: path.resolve(__dirname, "../dist/src/vm"),
+      perf_hooks: path.resolve(__dirname, "./empty.js")
     }
   },
   output: {

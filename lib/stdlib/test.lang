@@ -40,7 +40,7 @@ Suite = Object.new(
   runOneTest: { |reporter, test|
     try(
       {
-        test.test(assert)
+        test.test(reporter.assert)
       },
       catch: { |error|
         reporter.errored(error)
@@ -65,14 +65,6 @@ Runner = Object.new(
   suites: [],
 
   reporter: null,
-
-  assert: { |expr, message: null|
-    where = sender[0]
-    expr.do(
-      ifTrue: { reporter.success() },
-      ifFalse: { reporter.failure(where, message: message || "Expected true, was false") }
-    )
-  },
 
   run: {
     reporter.start()
@@ -111,6 +103,14 @@ Reporter = Object.new(
   startTime: 0,
 
   currentTest: null,
+
+  assert: { |expr, message: null|
+    where = sender[0]
+    expr.do(
+      ifTrue: { success() },
+      ifFalse: { failure(where, message: message || "Expected true, was false") }
+    )
+  },
 
   start: {
     startTime = Time.utc()

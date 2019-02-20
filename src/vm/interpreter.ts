@@ -263,8 +263,9 @@ export default class Interpreter {
   // leaves this function.
   _evalNextChunk() {
     let start = Platform.now()
-    // Start at 10ms windows
-    let window = 10
+    // Evaluation window in milliseconds
+    // 16 ms is roughly equivalent to 60fps
+    let window = 16
     this.ticked = false
 
     let next: Node

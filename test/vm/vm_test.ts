@@ -15,7 +15,7 @@ import Lexer from "@compiler/lexer"
 import Parser from "@compiler/parser"
 import VM from "@vm/vm"
 
-describe("Web Safe VM", () => {
+describe("VM", () => {
   it("evaluates number literals", async () => {
     let tests = {
       "1": ToObject(1),
@@ -469,6 +469,67 @@ describe("Web Safe VM", () => {
       }
 
       assert.equal(error.data, "This bubbles to the top")
+    })
+  })
+
+  describe("Stack Management", () => {
+    it("keeps the call stack in check", async () => {
+      let vm = new VM()
+      await vm.ready()
+
+      let startSize = vm.interpreter.callStack.length
+
+      await vm.eval(`
+        {
+          [1, 2, 3].length()
+
+          [4, 5, 6].each({ |entry|
+            entry * 2
+          })
+        }()
+      `)
+
+      assert.equal(vm.interpreter.callStack.length, startSize)
+    })
+
+    it("keeps the code stack in check", async () => {
+      let vm = new VM()
+      await vm.ready()
+
+      let startSize = vm.interpreter.codeStack.length
+
+      await vm.eval(`
+        {
+          [1, 2, 3].length()
+
+          [4, 5, 6].each({ |entry|
+            entry * 2
+          })
+        }()
+      `)
+
+      assert.equal(vm.interpreter.codeStack.length, startSize)
+    })
+
+    it("keeps the data stack in check", async () => {
+      let vm = new VM()
+      await vm.ready()
+
+      let startSize = await vm.eval("World.__stack__.length()")
+
+      let after = await vm.eval(`
+        {
+          [1, 2, 3].length()
+
+          [4, 5, 6].each({ |entry|
+            entry * 2
+          })
+        }()
+
+        World.__stack__.length()
+      `)
+
+      assert.equal(after.data, startSize.data)
     })
   })
 

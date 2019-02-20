@@ -57,9 +57,6 @@ export default class Interpreter {
   // Code stack. The set of expressions that need to be evaluated
   codeStack = null
 
-  // Data stack. What people normally think of when they hear "stack"
-  dataStack = null
-
   // Keep track of actual block calls so we can build a nice in-language backtrace
   callStack: IObject[]
 
@@ -76,11 +73,11 @@ export default class Interpreter {
     this.vm = vm
 
     this.codeStack = new Array()
-    this.dataStack = new Array()
     this.callStack = new Array()
 
     // The World is our top-level storage space.
     this.currentSpace = World
+    SetSlot(this.currentSpace, AsString("__stack__"), ToObject([]))
   }
 
   ready(argv = []) {
@@ -168,8 +165,8 @@ export default class Interpreter {
 
     // We treat loading the file as loading a block of code.
     // This lets us drop back to our previous state when the file has finished loading.
-    let finishBlockOps = {previousSpace: null}
-    this.pushEval(path.astNode, fileBody, NodeType.FinishBlock, finishBlockOps)
+    // previousSpace will get filled in by PushCurrentSpace below.
+    let evalNode = this.pushEval(path.astNode, fileBody, NodeType.FinishBlock, {previousSpace: null})
 
     // Due to a quirk in the language and how `load` works, the contents of the
     // loaded file don't actually get evaluated until after `load` itself finishes
@@ -181,7 +178,7 @@ export default class Interpreter {
     // FinishBlock (above) has the right previousSpace set.
     this.pushEval(path.astNode, [], NodeType.PushCurrentSpace, {
       space: into,
-      finish: finishBlockOps
+      finish: evalNode
     })
   }
 
@@ -714,9 +711,14 @@ export default class Interpreter {
   }
 
   finishBlockCall(node: FinishBlockNode | BuiltInNode, value: IObject) {
-    this.pushData(value ? value : Null)
     this.popCallStack()
     this.currentSpace = node.previousSpace
+
+    // Pushing the result is the last step because the stack is stored
+    // on a per-space basis. We need to make sure we're now in the calling
+    // space before pushing this block's return values to a stack so that
+    // the caller properly gets the return value.
+    this.pushData(value ? value : Null)
   }
 
   // When an exception is thrown we need to grab the current callStack
@@ -846,6 +848,7 @@ export default class Interpreter {
     this.currentSpace = NewObject(newSpace)
     SetSlot(this.currentSpace, AsString("space"), this.currentSpace)
     SetSlot(this.currentSpace, AsString("objectName"), ToObject(`Space (${this.currentSpace.objectId})`))
+    SetSlot(this.currentSpace, AsString("__stack__"), ToObject([]))
 
     // Link this space back to the previous space so we can keep a proper
     // stack of spaces, ensuring correct scoping at all times.
@@ -917,11 +920,11 @@ export default class Interpreter {
   }
 
   pushData(obj: IObject) {
-    this.dataStack.push(obj)
+    this.currentSpace.slots.get("__stack__").data.push(obj)
   }
 
   popData(): IObject {
-    return this.dataStack.pop()
+    return this.currentSpace.slots.get("__stack__").data.pop()
   }
 }
 

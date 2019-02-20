@@ -837,6 +837,9 @@ export default class Interpreter {
     } else {
       node.finishBlockNode.returnValue = node.blockResult
     }
+
+    // And make sure our call stack stays clean.
+    this.popCallStack()
   }
 
   // Push a new Space onto the stack, building it off of the passed in object.

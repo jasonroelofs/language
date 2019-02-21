@@ -69,9 +69,12 @@ Test.describe("Array", as: { |test|
     a = [1, 2, 3]
     b = []
 
-    a.each({ |entry|
+    ret = a.each({ |entry|
       b.push(entry * 2)
     })
+
+    # each returns the original array
+    assert(ret.objectId() == a.objectId())
 
     assert(b == [2, 4, 6])
   })

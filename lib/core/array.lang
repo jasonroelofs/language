@@ -19,6 +19,8 @@ Array.setSlots(
       block(head())
       rest().each(block)
     })
+
+    self
   },
 
   # Get the first element of this array

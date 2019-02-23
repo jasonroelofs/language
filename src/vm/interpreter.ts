@@ -271,13 +271,8 @@ export default class Interpreter {
     let next: Node
 
     try {
-      while((Platform.now() - start) < window) {
-        next = this.popCode()
-        if(next) {
-          this._evalNode(next)
-        } else {
-          break
-        }
+      while((Platform.now() - start) < window && (next = this.popCode())) {
+        this._evalNode(next)
       }
     } finally {
       this._nextTick()

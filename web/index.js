@@ -49,7 +49,9 @@ function vmReady() {
   specsButton.addEventListener("click", async () => {
     var specFiles = window.FakeFS.all("spec")
 
-    specFiles.forEach(async (content, path) => {
+    for(var path of specFiles.keys()) {
+      let content = specFiles.get(path)
+
       // Ignore all non-language files and skip everything under
       // spec/errors, as those are small language snippets explicitly built
       // to excersize individual errors.
@@ -62,7 +64,7 @@ function vmReady() {
       } else {
         console.log("Skipping %s", path)
       }
-    })
+    }
 
     codeEl.value = runTestSuite
   })

@@ -140,6 +140,11 @@ type EachParentFunc = (IObject) => void
 /**
  * Iterate over an object and all of its parents, depth first, running callbackFunc
  * against each object in the set.
+ *
+ * If the callback returns a value of any sort (including null) then the search
+ * will stop and that value will pass back up and be the return value of this call.
+ * Thus this can be used to find a specific parent or it can be used to iterate over all
+ * parents.
  */
 function EachParent(obj: IObject, callbackFunc: EachParentFunc, seen: Set<number> = null) {
   // Protection against lookup loops where parents can point
@@ -154,10 +159,18 @@ function EachParent(obj: IObject, callbackFunc: EachParentFunc, seen: Set<number
 
   seen.add(obj.objectId)
 
-  callbackFunc(obj)
+  let result = callbackFunc(obj)
+
+  if (result != undefined) {
+    return result
+  }
 
   for(var parent of obj.parents) {
-    EachParent(parent, callbackFunc, seen)
+    result = EachParent(parent, callbackFunc, seen)
+
+    if(result != undefined) {
+      return result
+    }
   }
 }
 
@@ -171,15 +184,9 @@ type FindInCheckFunc = (IObject) => boolean
 function FindIn(obj: IObject, checkFunc: FindInCheckFunc, seen: Set<number> = null): IObject {
   let found = null
 
-  EachParent(obj, (o) => {
-    // TODO: Is there a nice way to trigger EachParent to cancel
-    // any future iterations?
-    if(found != null) {
-      return
-    }
-
+  found = EachParent(obj, (o) => {
     if(checkFunc(o)) {
-      found = o
+      return o
     }
   })
 

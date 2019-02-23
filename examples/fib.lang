@@ -1,0 +1,18 @@
+memo = [1, 1]
+
+memoFib = { |n|
+  memo[n].do(
+    ifTrue: { memo[n] },
+    ifFalse: { memo[n] = memoFib(n - 1) + memoFib(n - 2) }
+  )
+}
+
+fib = { |n|
+  (n <= 1).do(
+    ifTrue: { 1 },
+    ifFalse: { fib(n - 1) + fib(n - 2) }
+  )
+}
+
+IO.puts("[Memoized] Fib(100) == " + memoFib(100))
+IO.puts("[Raw] fib(20) == " + fib(20))
